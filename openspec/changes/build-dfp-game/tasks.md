@@ -62,4 +62,4 @@
 - [x] 10.1 Generate one to three unlocked items, including repeats and drinks within the limit, while preserving partial orders on unlock and reload.
 - [x] 10.2 Support complete multi-item shop baskets, summed checkout payments and employee carrying trips on every floor.
 - [x] 10.3 Verify partial fulfillment, repeated units, all-floor employees, browser service and offline persistence. 66 unit tests, 18 gameplay browser checks and 5 Pages-build checks passed.
-- [ ] 10.4 Publish the update through the existing GitHub Pages workflow.
+- [x] 10.4 Publish the update through the existing GitHub Pages workflow. Deployment 35950309271 succeeded for commit 6d5487a.
