@@ -1,11 +1,12 @@
 import * as T from 'three';
-import { LAYOUTS, OUTFITS, ROSTER, WORLD, FLOOR_FOODS, stationPrice } from './config.js';
+import { LAYOUTS, OUTFITS, ROSTER, WORLD, FLOOR_FOODS } from './config.js';
 import { stationStatus } from './simulation.js';
 import { room, character, food, shape, disposeRoom } from './scene-assets.js';
 import { animateCharacter, crowdTargets, separateCrowd, damp } from './animation.js';
 import { icon } from './icons.js';
 
 const itemNames={controller:'Controller',drink:'Drink',tower:'Tower',handheld:'Handheld',wine:'Wine',souvenir:'DFP bag',keychain:'Keychain',snack2:'Shop Crunch',snack3:'Arcade Crunch'},v=new T.Vector3();
+const stationIcons={prep:'prep',fryer:'fry',pickup:'pickup',drinks:'wine',wine:'wine',tower:'controller',handheld:'controller',snack:'controller',counter:'serve',stack:'stack',trash:'trash',table:'table',stock:'bag',keyStock:'gift',shelf:'gift',keyShelf:'gift',checkout:'coin',arcade:'arcade',vr:'arcade'};
 export class Renderer {
   constructor(canvas) {
     this.canvas=canvas;this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-10,10,10,-10,.1,80);
@@ -41,6 +42,7 @@ export class Renderer {
     const st=LAYOUTS[this.floor].find(s=>Math.hypot(s.pad.x-hit.x,s.pad.y-hit.z)<.7);return st?{...st.pad,station:st.id,locked:!this.world.userData.stations.get(st.id).open}:{x:Math.max(.4,Math.min(WORLD.width-.4,hit.x)),y:Math.max(.4,Math.min(WORLD.depth-.4,hit.z))};
   }
   feedback(event,time) {
+    if(event.kind!=='money'){if(event.floor===undefined||event.floor===this.floor)this.burst(event.x??6,event.y??5,'#a5dcaf',4);return;}
     if(event.floor!==undefined&&event.floor!==this.floor)return;const el=document.createElement('span');el.className=`world-feedback ${event.kind==='money'?'money-feedback':''}`;el.textContent=event.text;this.layer.append(el);
     this.effects.push({el,x:event.x??6,z:event.y??5,time,kind:event.kind});if(this.effects.length>10)this.effects.shift().el.remove();if(!this.reducedMotion)this.burst(event.x??6,event.y??5,event.kind==='money'?'#f5ca5b':'#a5dcaf',event.kind==='money'?6:4);
   }
@@ -51,19 +53,20 @@ export class Renderer {
   stations(state,time) {
     const fs=state.floors[state.floor],placed=[];
     for(const [id,data] of this.world.userData.stations) {
-      const {st,open}=data,label=this.labels.get(id),active=state.player.action===id,text=open?st.name:`${st.name} · $${stationPrice(st)}`;if(label.textContent!==text)label.textContent=text;
+      const {st,open}=data,label=this.labels.get(id),active=state.player.action===id,dirty=st.kind==='table'&&fs.tables[Number(id.slice(5))].state==='dirty';
+      const symbol=!open?'lock':dirty?'clean':stationIcons[st.kind]||'bag';if(label.dataset.icon!==symbol){label.innerHTML=icon(symbol);label.dataset.icon=symbol;}
       label.classList.toggle('locked',!open);label.classList.toggle('at-station',active);label.setAttribute('aria-label',`${st.name}: ${stationStatus(state,state.floor,st)}`);
-      const projected=this.p(st.pad.x,st.pad.y),w=text.length*(this.width<500?4.7:5.7)+20,h=this.width<500?44:40;
+      const projected=this.p(st.pad.x,st.pad.y),w=44,h=44;
       label.hidden=projected.x<8||projected.x>this.width-8||projected.y<20||projected.y>this.height-20;
       let shift=12;if(!label.hidden){for(const delta of [12,36,-12,60,-36,84,-60,108,-84]){const y=projected.y+delta;if(y<h/2||y>this.height-h/2)continue;if(!placed.some(r=>Math.abs(r.x-projected.x)<(r.w+w)/2&&Math.abs(r.y-y)<(r.h+h)/2+2)){shift=delta;break;}}placed.push({x:projected.x,y:projected.y+shift,w,h});}
       this.place(label,st.pad.x,st.pad.y,0,shift);label.style.setProperty('--stem-height',`${Math.max(0,Math.abs(shift)-10)}px`);label.style.setProperty('--stem-top',shift<0?'calc(50% + 9px)':`calc(50% - ${shift}px)`);
       data.pad.scale.setScalar((id==='counter'?1.25:1)*(active&&!this.reducedMotion?1+Math.sin(time*4)*.045:1));
       const items=[],x=st.x+st.w/2,z=st.y+st.d/2;
-      if(id==='pickup')for(let i=0;i<Math.min(6,fs.stock.controller);i++)items.push({kind:'controller',x:x+(i%2-.5)*.65,y:1.24+Math.floor(i/2)*.16,z});
+      if(id==='pickup')for(let i=0;i<Math.min(6,fs.stock.controller);i++)items.push({kind:'controller',x:x+(i%3-1)*.5,y:1.205,z:z+(Math.floor(i/3)-.5)*.36,scale:.7});
       if(id==='stack')FLOOR_FOODS[state.floor].forEach((kind,k)=>{for(let i=0;i<Math.min(4,fs.counter[kind]);i++)items.push({kind,x:2.85+k*.7,y:1.15+i*(['controller','snack2','snack3','handheld'].includes(kind)?.18:.43),z:7.58,scale:.82});});
       if(id==='shelf'||id==='keyShelf'){const kind=id==='shelf'?'souvenir':'keychain';for(let i=0;i<Math.min(8,fs.shelves[kind]);i++)items.push({kind,x:st.x+.4+(i%4)*.52,y:.27+Math.floor(i/4)*.56,z,scale:.85});}
       if(st.kind==='arcade'){const m=fs.machines[Number(id.at(-1))];for(let i=0;i<Math.min(8,m.quarters);i++)items.push({kind:'quarter',x:x+.5,y:.15+i*.055,z:z+.69});data.screens.forEach((pixel,i)=>{pixel.position.y=1.32+Math.floor(i/3)*.27+(!this.reducedMotion&&m.customer?Math.sin(time*3+i)*.055:0);});}
-      if(st.kind==='table'){const t=fs.tables[Number(id.slice(5))],c=fs.customers.find(c=>c.id===t.customer);if(c?.state==='dining')for(let i=0;i<c.needs.length;i++)if(c.delivered[i])items.push({kind:c.needs[i],x:x-.3+i*.54,y:1.11,z,scale:.72});if(t.state==='dirty')items.push({kind:'raw',x:x-.36,y:1.12,z,scale:.38});label.classList.toggle('dirty-table',t.state==='dirty');if(t.state==='dirty')label.textContent='CLEAN TABLE';}
+      if(st.kind==='table'){const t=fs.tables[Number(id.slice(5))],c=fs.customers.find(c=>c.id===t.customer);if(c?.state==='dining')for(let i=0;i<c.needs.length;i++)if(c.delivered[i])items.push({kind:c.needs[i],x:x-.3+i*.54,y:1.11,z,scale:.72});if(t.state==='dirty')items.push({kind:'raw',x:x-.36,y:1.12,z,scale:.38});label.classList.toggle('dirty-table',dirty);}
       this.inventory(data,JSON.stringify(items),items);data.steam.forEach((p,i)=>{p.visible=fs.cooking&&!this.reducedMotion&&!this.reducedEffects;if(p.visible){const phase=(time*.7+i*.2)%1;p.position.y=1.4+phase*.72;p.scale.setScalar(.07+phase*.13);p.position.x=x+(i%2?-.34:.34)+Math.sin(time+i)*.05;}});
     }
   }
@@ -79,18 +82,17 @@ export class Renderer {
       if(received&&state.floor===0)this.transfer('controller',new T.Vector3(4.8,1.2,7.5),new T.Vector3(e.rig.root.position.x,.9,e.rig.root.position.z));
       if(e.role==='customer'){let label=this.customerLabels.get(e.key);if(!label){label=document.createElement('span');label.className='order-bubble';this.layer.append(label);this.customerLabels.set(e.key,label);}
         const a=e.actor,needs=(a.needs||[]).filter((n,i)=>!a.delivered[i]),text=a.state==='leaving'?'♥':a.state==='dining'?'Enjoying!':a.state==='payment'?'$':a.state==='playing'?'PLAY':a.state==='toTable'?'Table time':a.state==='waitingTable'?'Need a clean table':a.state==='seating'?'This way':needs.map(n=>itemNames[n]).join(' + ');
-        if(label.dataset.text!==text){label.dataset.text=text;label.setAttribute('aria-label',text);label.title=text;label.innerHTML=needs.length&&!['leaving','dining','payment','playing','seating'].includes(a.state)?needs.map(n=>`<span class="need-icon" title="${itemNames[n]}">${icon(n==='drink'||n==='wine'?'wine':n==='souvenir'||n==='keychain'?'gift':'controller')}</span>`).join(''):text;}
+        if(label.dataset.text!==text){label.dataset.text=text;label.setAttribute('aria-label',text);const stateIcon={leaving:'heart',dining:'serve',payment:'coin',playing:'arcade',toTable:'table',waitingTable:'clock',seating:'arrow'}[a.state];label.innerHTML=stateIcon?icon(stateIcon):needs.map(n=>`<span class="need-icon">${icon(n==='drink'||n==='wine'?'wine':n==='souvenir'||n==='keychain'?'gift':'controller')}</span>`).join('');}
         const queue=state.floors[state.floor].customers.filter(c=>c.state!=='leaving');
         label.hidden=!text||(a.state==='browsing'&&state.floor===2)||(state.floor===0&&queue.indexOf(a)>2)||(state.floor===1&&a.state==='waiting'&&queue.indexOf(a)>0);label.classList.toggle('happy',a.state==='leaving'||a.state==='dining');this.place(label,e.rig.root.position.x,e.rig.root.position.z,1.8,-2-(e.order%2)*9);}
     }
     separateCrowd(entries,state.floor);
-    const occupied=LAYOUTS[state.floor].map(st=>{const p=this.p(st.pad.x,st.pad.y);return{x:p.x,y:p.y+12,w:this.labels.get(st.id).textContent.length*(this.width<500?4.1:5.1)+14,h:20};});
+    const occupied=[...this.labels.values()].filter(el=>!el.hidden).map(el=>({x:parseFloat(el.style.left)-this.canvas.offsetLeft,y:parseFloat(el.style.top)-this.canvas.offsetTop,w:44,h:44}));
     for(const e of entries)if(e.role==='customer'){
       const label=this.customerLabels.get(e.key);if(label.hidden)continue;const p=this.p(e.rig.root.position.x,e.rig.root.position.z,1.8),w=Math.min(100,(label.textContent.length||3)*5+18),h=20;
       let dy=-12-(e.order%2)*9;for(const offset of [dy,dy-22,dy-44,dy-66]){if(!occupied.some(r=>Math.abs(r.x-p.x)<(r.w+w)/2+2&&Math.abs(r.y-(p.y+offset))<(r.h+h)/2+2)){dy=offset;break;}}
       occupied.push({x:p.x,y:p.y+dy,w,h});this.place(label,e.rig.root.position.x,e.rig.root.position.z,1.8,dy+10);
     }
-    if(!this.playerLabel){this.playerLabel=document.createElement('span');this.playerLabel.className='player-label';this.playerLabel.textContent='YOU';this.layer.append(this.playerLabel);}const player=this.actors.get('player'),p=player.root.position;this.place(this.playerLabel,p.x,p.z,Math.max(1.85,.9+(player.carry.userData.height||0)),-7);
   }
   draw(state,time) {
     if(this.contextLost||!this.resize(state))return;const now=performance.now(),dt=this.last?Math.max(0,Math.min(.1,(now-this.last)/1000)):1/60;

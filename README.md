@@ -45,7 +45,7 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 
 ## Play
 
-- **Move:** WASD or arrow keys; drag the on-screen joystick on phones. Click/tap a station label or floor to walk there. Stand inside a marked ring to work automatically.
+- **Move:** hold WASD/arrows, drag the phone joystick, or press and hold the floor. Release to stop. Tap a station icon or an area button to walk there automatically; the square stop button or Escape cancels that trip. Losing focus or opening a menu also stops movement. Stand inside a marked ring to work automatically.
 - **Unlock products:** use **Unlock items** on every floor. All food, drinks, merchandise, arcade cabinets, and VR start locked on a new game. Unlock Crispy Controller for $50 first. Guests only order products you have opened.
 - **Takeout:** PREP → FRY → PICK UP → **STACK FOOD**. Unload onto the marked counter spot, then stand in the separate middle **SERVE** circle to give the waiting customer food from that stack and collect payment. Unlock the drinks bar to add drinks to about 80% of orders. Drinks use the same stack-and-serve flow.
 - **Fine dining:** collect the requested Pixel Tower or Pocket Crunch meal and wine, unload at **STACK FOOD**, then stand in the middle **SERVE** circle. Guests pay there before taking their food to a purchased table.
@@ -76,6 +76,8 @@ Base payouts follow the requested harder economy:
 
 Customers pay for their combined order once. Product unlock prices and every payout are configurable in `src/config.js`. Existing opened items are preserved when older saves migrate to the new product-unlock system.
 
+**20% earnings boost:** all earned payouts receive an extra 20% after profit upgrades. Fractional bonuses accumulate into whole dollars and survive reloads: five $1 controller sales earn $6 total. Money is still collected once, and spending/unlock costs are unchanged.
+
 Each floor supplies five unique hires to a shared 20-person roster. Transfer employees to any unlocked floor, up to 12 working on one floor. Transfers preserve upgrades and return undelivered cargo safely to the previous floor.
 
 Buy **five player upgrades total per floor**, divided between speed, capacity, and profit. Each employee separately supports **three upgrades per category**. Earnings are:
@@ -86,6 +88,8 @@ round(base payment × (1 + 0.20 × floor player profit level
 ```
 
 The employee term is zero when the player collects. Bonuses are applied once, at collection. Outfits are cosmetic and bought with earned game money.
+
+The 20% earnings boost is applied to that upgraded payout; fractional bonus dollars carry forward per floor. Floating station names and instruction overlays are replaced by small action icons, while money, order icons, buttons and menus remain visible. Screen readers retain station names and statuses.
 
 ## Saves and updates
 
@@ -108,6 +112,7 @@ npm run spec:validate
 # With npm run preview active in another terminal:
 npm run test:browser
 node tests/seating-browser.mjs
+node tests/controls-browser.mjs
 node tests/visual-3d.mjs
 # Optional: record the real player/employee loop
 node tests/visual-3d.mjs --record

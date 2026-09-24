@@ -10,7 +10,7 @@ The restaurant SHALL use real 3D characters, furniture, machines, food and carri
 
 #### Scenario: Full takeout presentation
 - **WHEN** a player and an employee complete a takeout service loop
-- **THEN** their feet, turning, walk cadence, preparation, reach, carry stack, placement, handover and payment reactions are visible in the 3D world, with readable station labels and customer needs.
+- **THEN** their feet, turning, walk cadence, preparation, reach, carry stack, placement, handover and payment reactions are visible in the 3D world, with station action icons, accessible names and customer order icons.
 
 ### Requirement: Independent blended animation
 Presentation SHALL blend idle, walking, stopping, working, pickup, carrying, placement, serving, greeting, seating, eating, departure, restocking and quarter collection. Characters SHALL remain grounded and avoid visible furniture penetration or overlapping crowds. Brief object motion, particles, readable money labels and mute-aware audio SHALL communicate successful interactions, purchases, hires and unlocks without hiding controls.
@@ -20,14 +20,22 @@ Presentation SHALL blend idle, walking, stopping, working, pickup, carrying, pla
 - **THEN** the underlying job and exactly-once transaction proceed independently and goods or rewards cannot be duplicated by animation callbacks.
 
 ### Requirement: Trash on every floor
-Every floor SHALL contain a visible trash can with a labeled interaction ring. A player standing in the ring SHALL discard one carried item per action interval, receive discard feedback, and receive no refund or profit. Employees SHALL not discard their cargo while navigating.
+Every floor SHALL contain a visible trash can with an icon-marked interaction ring and accessible name. A player standing in the ring SHALL discard one carried item per action interval, receive discard feedback, and receive no refund or profit. Employees SHALL not discard their cargo while navigating.
 
 #### Scenario: Discard unwanted stock
 - **WHEN** the player carries goods to the trash ring on any floor
 - **THEN** carried goods are removed one at a time without changing money, and leaving the ring stops discarding.
 
 ### Requirement: Direct movement and automatic work
-The game SHALL provide an original isometric environment, keyboard WASD/arrows, a touch joystick, visible carried goods, capacity feedback, station labels, and automatic work inside marked interaction areas. Characters SHALL navigate without crossing solid stations. A short playable tutorial SHALL guide production, carrying, and service.
+The game SHALL provide an original isometric environment, keyboard WASD/arrows, a touch joystick, visible carried goods, capacity feedback, accessible station action icons, and automatic work inside marked interaction areas. Characters SHALL navigate without crossing solid stations. A short playable tutorial in the surrounding UI SHALL guide production, carrying, and service. Floating station names, player-name text, customer-state words and movement instruction overlays SHALL be hidden while money, order icons, buttons and menus remain available.
+
+#### Scenario: Stop direct and automatic movement
+- **WHEN** a player releases a movement key, joystick or held floor pointer, cancels a touch, loses focus or opens a menu
+- **THEN** direct movement stops without drifting; explicit station/area trips can also be cancelled with Escape or the stop button, and interrupted movement does not resume by itself.
+
+#### Scenario: Facing between simulation ticks
+- **WHEN** a walking character is drawn several times between fixed simulation steps
+- **THEN** the character continues facing its travel direction rather than turning toward an idle or work pose. Stationary crowds do not displace the player's displayed position.
 
 #### Scenario: First order
 - **WHEN** a new player follows the tutorial to preparation, frying, collection, counter stacking, and the middle service circle

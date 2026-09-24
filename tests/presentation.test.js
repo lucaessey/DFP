@@ -41,3 +41,31 @@ test('reduced motion removes idle and carry bounce but retains grounded action p
   animateCharacter(m,state.player,{x:6,y:4.6},state,.016,20);assert.equal(m.carry.position.y,y);assert.equal(m.head.rotation.z,0);assert.equal(m.bagModels.length,1);
   assert.ok(Math.abs(angleTowards(Math.PI-.05,-Math.PI+.05,.1)-Math.PI)<.06);
 });
+
+test('walking faces the travel direction between simulation ticks on every floor',()=>{
+  for(let floor=0;floor<4;floor++)for(const [dx,dy] of [[.1,0],[-.1,0],[0,.1],[0,-.1]]){
+    const state=newGame();state.floor=floor;
+    const actor={x:6,y:10,moving:true,state:'waiting',purpose:'food',bag:[],needs:[],delivered:[]};
+    const model=character(OUTFITS[0],0,'customer');
+    animateCharacter(model,actor,actor,state,1/60,0);
+    for(let frame=0;frame<90;frame++){
+      actor.moving=frame%9>=3; // Include the brief pause when a path waypoint is removed.
+      if(actor.moving&&frame%3===0){actor.x+=dx;actor.y+=dy;}
+      animateCharacter(model,actor,actor,state,1/60,frame/60);
+    }
+    const direction=Math.atan2(dx,dy);
+    assert.ok(Math.cos(model.angle-direction)>.999,`floor ${floor}, direction ${direction}: ${model.angle}`);
+  }
+});
+
+test('a stopped player stays anchored while nearby people separate',()=>{
+  const state=newGame(),actor=state.player;actor.x=6;actor.y=6;
+  const player=character(OUTFITS[0]);animateCharacter(player,actor,actor,state,.05,0);
+  actor.x+=.2;actor.moving=true;animateCharacter(player,actor,actor,state,.05,.05);
+  actor.moving=false;animateCharacter(player,actor,actor,state,.016,.066);
+  assert.equal(player.root.position.x,actor.x);assert.equal(player.walk,0);
+  const guest=character(OUTFITS[0],1,'customer');guest.root.position.copy(player.root.position);
+  separateCrowd([{role:'player',actor,rig:player},{role:'customer',actor:{x:actor.x,y:actor.y},rig:guest}],0);
+  assert.equal(player.root.position.x,actor.x);assert.equal(player.root.position.z,actor.y);
+  assert.ok(guest.root.position.distanceTo(player.root.position)>.55);
+});

@@ -17,7 +17,10 @@ export function emit(s, text, kind = 'info', pos) { s.events.push({ text, kind, 
 function changed(s) { s.revision++; }
 function pay(s, floor, actor, base, receipt) {
   if (receipt.paid) return 0;
-  const amount = Math.round(base * (1 + B.playerProfitBonus * s.floors[floor].upgrades.profit + (actor.upgrades?.profit || 0) * B.employeeProfitBonus));
+  const fs=s.floors[floor],subtotal=Math.round(base * (1 + B.playerProfitBonus * fs.upgrades.profit + (actor.upgrades?.profit || 0) * B.employeeProfitBonus));
+  // Carry fractional bonus dollars across receipts so even $1 sales earn 20% more.
+  const cents=(fs.bonusCents??0)+subtotal*B.earningsBoostPercent;
+  const amount=subtotal+Math.floor(cents/100);fs.bonusCents=cents%100;
   receipt.paid = true; s.money += amount; s.earned += amount; s.floors[floor].revenue += amount;
   changed(s); emit(s, `+$${amount}`, 'money', { x: actor.x, y: actor.y, floor }); return amount;
 }

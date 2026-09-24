@@ -14,7 +14,7 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: stack, serve, pay, seat, eat, then manua
   const s=setup(f);assert.ok(command(s,{type:'table',id:0}).ok);tick(s,19);const fs=s.floors[f],c=fs.customers[0];s.player.bag=[...c.needs];const cash=s.money;
   at(s,'counter',2);assert.equal(s.money,cash);assert.ok(c.delivered.every(v=>!v));
   at(s,'stack');assert.equal(s.money,cash);assert.ok(c.delivered.every(v=>!v));assert.equal(fs.counter[c.needs[0]],1);
-  at(s,'counter',1.4);assert.ok(c.paid);assert.equal(c.state,'toTable');assert.equal(s.money,cash+B.prices[c.needs[0]]);assert.equal(fs.tables[0].state,'reserved');
+  at(s,'counter',1.4);assert.ok(c.paid);assert.equal(c.state,'toTable');assert.equal(s.money,cash+[1,7,3,4][f]);assert.equal(fs.tables[0].state,'reserved');
   until(s,()=>c.state==='dining');assert.equal(fs.tables[0].state,'occupied');assert.deepEqual({x:c.x,y:c.y},tableSeat(0));
   const timer=c.timer;at(s,'table0',.7);assert.equal(fs.tables[0].state,'occupied');assert.ok(c.timer<timer&&c.timer>0);assert.equal(fs.tables[0].customer,c.id);
   until(s,()=>fs.tables[0].state==='dirty');assert.equal(c.state,'leaving');const paid=s.money;tick(s,3);assert.equal(fs.tables[0].state,'dirty');assert.equal(s.money,paid);
@@ -49,5 +49,5 @@ test('unfinished legacy dining orders retain delivered food and collect their bi
   const old=JSON.parse(readFileSync(new URL('../artifacts/3d-upgrade/comparison-state.json',import.meta.url)));old.floors[1].unlocked=true;old.floors[1].products={tower:true,handheld:true,wine:true};old.floors[1].section=true;
   const c={...structuredClone(old.floors[0].customers[0]),id:old.nextId++,state:'dining',needs:['tower','wine'],delivered:[true,true],paid:false,table:0,machine:null,x:3.4,y:4.7,path:[],pathKey:'',timer:3};old.floors[1].customers=[c];old.floors[1].tables[0]={state:'occupied',customer:c.id};
   const s=decode(JSON.stringify(old)),diner=s.floors[1].customers[0];assert.equal(diner.state,'payment');assert.deepEqual(diner.delivered,[true,true]);assert.equal(s.floors[1].tables[0].owned,true);
-  command(s,{type:'visit',floor:1});const revenue=s.floors[1].revenue,stock=structuredClone(s.floors[1].stock);at(s,'counter',1.4);assert.equal(s.floors[1].revenue,revenue+10);assert.deepEqual(s.floors[1].stock,stock);at(s,'counter',2);assert.equal(s.floors[1].revenue,revenue+10);assert.ok(validateSave(s));
+  command(s,{type:'visit',floor:1});const revenue=s.floors[1].revenue,stock=structuredClone(s.floors[1].stock);at(s,'counter',1.4);assert.equal(s.floors[1].revenue,revenue+12);assert.deepEqual(s.floors[1].stock,stock);at(s,'counter',2);assert.equal(s.floors[1].revenue,revenue+12);assert.ok(validateSave(s));
 });

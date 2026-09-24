@@ -20,6 +20,7 @@ export function validateSave(s) {
     const f = s.floors[i];
     if (!f || typeof f.unlocked !== 'boolean' || typeof f.section !== 'boolean' || !uValid(f.upgrades, 5) || upgradeCount(f.upgrades) > 5 || !f.stock || !['raw', ...ITEMS].every(k => integer(f.stock[k], 0, 100000))) return false;
     if (!finite(f.fry, 0, 100) || typeof f.cooking !== 'boolean' || !finite(f.arrival, -1e8, 100) || !integer(f.revenue) || !integer(f.served)) return false;
+    if (f.bonusCents !== undefined && !integer(f.bonusCents, 0, 99)) return false;
     if (f.unlocked && i > 0 && !s.floors[i - 1].unlocked) return false;
     if (!f.shelves || !integer(f.shelves.souvenir, 0, 100000) || !integer(f.shelves.keychain, 0, 100000)) return false;
     if (!f.counter || !ITEMS.every(k=>integer(f.counter[k],0,100000))) return false;

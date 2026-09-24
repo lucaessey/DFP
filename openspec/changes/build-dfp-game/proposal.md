@@ -36,4 +36,6 @@ The subsequent September 23 request extends every floor with a separate food sta
 The user subsequently requested public publication at https://lucaessey.github.io/DFP/. Use the existing public lucaessey/DFP repository and GitHub Pages, with assets, manifest and service worker scoped to /DFP/. Preserve the localhost development address and verify the published game in a fresh browser profile.
 
 ## Impact
+The post-publication feedback requests corrected character facing, a modest income increase, reliable movement stopping, a redesigned first-floor pickup station and fewer words over the game. The user confirmed hiding floating station names/instructions while retaining money, buttons and menus. Implement a 20% earnings boost with saved fractional carry, stable heading between simulation frames, direct-input release/cancellation, an open warming tray and accessible action icons; verify locally and update the existing GitHub Pages release.
+
 Only this project is affected. New application source, tests, static assets, localStorage keys prefixed `dfp.`, and a same-origin service worker are introduced. Project-pinned OpenSpec and Vite are development dependencies. No external runtime services, accounts, advertising, purchases, or cloud saves.

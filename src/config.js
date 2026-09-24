@@ -8,6 +8,7 @@ export const BALANCE = Object.freeze({
   capacity: 3, employeeCapacity: 2, playerCap: 5, employeeCap: 3,
   floorStaffCap: 12, playerSpeedBonus: 0.15, employeeSpeedBonus: 0.2,
   playerProfitBonus: 0.2, employeeProfitBonus: 0.15,
+  earningsBoostPercent: 20,
   actionTime: 0.65, fryTime: 2.4, diningTime: 6, arcadeTime: 6,
   arrivalTime: 4.8, maxCustomers: 6, batch: 3, stockCap: 18, drinkOrderChance: 0.8,
   prices: { controller: 1, drink: 3, tower: 6, handheld: 6, wine: 4, souvenir: 5, keychain: 3, snack2:3, snack3:4 },

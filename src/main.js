@@ -92,9 +92,10 @@ function refreshHome() {
   tablesButton.innerHTML=`${icon('people')} Tables <b>${fs.tables.filter(t=>t.owned).length}/6</b>`;
   let areaButton=document.querySelector('#area-button');if(!areaButton){areaButton=document.createElement('button');areaButton.id='area-button';areaButton.dataset.action='area';areaButton.className='small-button';document.querySelector('.play-area').append(areaButton);}
   areaButton.textContent=state.player.x>11?'← Kitchen':'Dining area →';
+  let stopButton=document.querySelector('#stop-movement');if(!stopButton){stopButton=document.createElement('button');stopButton.id='stop-movement';stopButton.dataset.action='stop';stopButton.setAttribute('aria-label','Stop walking');stopButton.innerHTML=icon('stop');document.querySelector('.play-area').append(stopButton);}stopButton.hidden=!target||surfacePointer!==null;
 }
 function selectTab(tab) {
-  activeTab = tab; target = null; keys.clear(); joystick.x = joystick.y = 0;
+  activeTab = tab; stopMovement();
   document.querySelector('#home-view').hidden = tab !== 'home'; document.querySelector('#panel-view').hidden = tab === 'home';
   document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
   if (tab === 'employees') filterFloor = state.floor;
@@ -115,7 +116,7 @@ function renderPanel() {
     panel.innerHTML = panelHeading('MANY HANDS. MORE HAPPY CUSTOMERS.', 'Your dream team.', `${state.employees.length} / 20 hired. Five unique faces from every floor.`) + `<div class="roster-tabs">${FLOORS.map(f => `<button class="${filterFloor === f.id ? 'selected' : ''}" data-action="filter" data-floor="${f.id}">${icon(f.icon)} ${f.short}<span>${floorCount(state,f.id)} / 12 working</span></button>`).join('')}</div><p class="roster-note">Hires from ${FLOORS[filterFloor].name}. Assign them to any open floor. Each skill has 3 upgrades.</p><div class="employee-grid">${ROSTER.filter(e => e.origin === filterFloor).map(def => { const e = state.employees.find(e => e.id === def.id), open = state.floors[def.origin].unlocked; return `<article class="employee-card"><div class="employee-header"><div class="employee-avatar" style="background:${def.color}33;color:${def.color}">${icon('people')}</div><div><h2>${def.name}</h2><span>${e ? 'All-rounder · on the job' : 'All-rounder · ready to help'}</span></div>${e ? '<span class="working-dot"></span>' : ''}</div>${e ? `<label class="assignment-label">WORKING ON<select data-assign="${e.id}" aria-label="Assign ${def.name} to floor">${FLOORS.map(f => `<option value="${f.id}" ${f.id === e.floor ? 'selected' : ''} ${!state.floors[f.id].unlocked ? 'disabled' : ''}>${f.id + 1} · ${f.name} (${floorCount(state,f.id)}/12)</option>`).join('')}</select></label><div class="employee-upgrades">${UPGRADE_TYPES.map(k => `<button data-action="employee-upgrade" data-id="${e.id}" data-category="${k}" ${e.upgrades[k] >= 3 ? 'disabled' : ''}><span>${icon(k === 'speed' ? 'bolt' : k === 'capacity' ? 'bag' : 'coin')} ${k}<b>${e.upgrades[k]}/3</b></span><small>${e.upgrades[k] >= 3 ? 'MAXED' : money(employeeUpgradeCost(e,k)) + ' +'}</small></button>`).join('')}</div>` : `<p>Preps, carries, serves, and collects.<br>One very useful pair of hands.</p><button class="dark-button" data-action="hire" data-id="${def.id}" ${!open ? 'disabled' : ''}>${open ? `Hire · ${money(def.cost)}` : `Unlock floor ${def.origin + 1}`} ${icon(open ? 'people' : 'lock')}</button>`}</article>`; }).join('')}</div><p class="panel-note">${icon('bag')} Transfers return carried stock to the previous floor. Skills always stay with the employee.</p>`;
   }
 }
-function showDialog(content) { document.querySelector('#dialog-content').innerHTML = `<button class="dialog-close icon-button" data-action="close" aria-label="Close">${icon('close')}</button>${content}`; target = null; keys.clear(); joystick.x = joystick.y = 0; dialog.showModal(); }
+function showDialog(content) { document.querySelector('#dialog-content').innerHTML = `<button class="dialog-close icon-button" data-action="close" aria-label="Close">${icon('close')}</button>${content}`; stopMovement(); dialog.showModal(); }
 function upgradesDialog() {
   const f = state.floor, fs = state.floors[f], used = upgradeCount(fs.upgrades);
   showDialog(`<span class="eyebrow">A LITTLE EXTRA OOMPH</span><h2>Make it your superpower.</h2><p>Upgrades apply to ${FLOORS[f].name}.</p><div class="allowance"><b>${used}/5</b> upgrades purchased <span>${'●'.repeat(used)}${'○'.repeat(5-used)}</span></div><div class="upgrade-options">${UPGRADE_TYPES.map(k => `<button data-action="player-upgrade" data-category="${k}" ${used >= 5 ? 'disabled' : ''}><span class="upgrade-symbol">${icon(k === 'speed' ? 'bolt' : k === 'capacity' ? 'bag' : 'coin')}</span><span><b>${k === 'speed' ? 'Faster feet' : k === 'capacity' ? 'Bigger stacks' : 'Better earnings'}</b><small>${k === 'speed' ? '+15% movement speed' : k === 'capacity' ? '+1 carrying capacity' : '+20% of base income'} · Lv. ${fs.upgrades[k]}</small></span><strong>${used >= 5 ? 'MAX' : money(playerUpgradeCost(state,f))}</strong></button>`).join('')}</div>${!fs.section ? `<div class="section-unlock"><h3>A little room to grow.</h3><p>Open the ${FLOORS[f].section.toLowerCase()}.</p><button class="dark-button" data-action="section">Unlock ${FLOORS[f].section} · ${money(FLOORS[f].sectionCost)}</button></div>` : ''}<p class="fine-print">5 purchases combined across all three skills per floor. Employee profit adds +15% per level to the same base payment; bonuses apply once.</p>`);
@@ -126,7 +127,7 @@ function settingsDialog() {
 }
 function menuDialog() {
   const f=state.floor,fs=state.floors[f];
-  showDialog(`<span class="eyebrow">BUILD YOUR MENU, ONE ITEM AT A TIME</span><h2>Something worth unlocking.</h2><p>Every product starts here. ${FLOORS[f].name}.</p><div class="product-list">${PRODUCTS.filter(p=>p.floor===f).map(p=>`<article><span class="product-symbol">${icon(p.icon)}</span><div><h3>${p.name}</h3><p>${p.description}</p><small>${B.prices[p.id]?`Earn $${B.prices[p.id]} per sale before upgrades`:p.id==='vr'?`Earn $${B.vrBaseReward} + $${B.vrDodgeReward} per dodge`:`Earn $${B.quarters} per completed play`}</small></div><button class="${fs.products[p.id]?'outline-button':'dark-button'}" data-action="product" data-id="${p.id}" ${fs.products[p.id]?'disabled':''}>${fs.products[p.id]?'Open':money(p.cost)}</button></article>`).join('')}</div><p class="fine-print">Your starting cash covers your first controller unlock. Guests only order items you have opened.</p>`);
+  showDialog(`<span class="eyebrow">BUILD YOUR MENU, ONE ITEM AT A TIME</span><h2>Something worth unlocking.</h2><p>Every product starts here. ${FLOORS[f].name}.</p><div class="product-list">${PRODUCTS.filter(p=>p.floor===f).map(p=>`<article><span class="product-symbol">${icon(p.icon)}</span><div><h3>${p.name}</h3><p>${p.description}</p><small>${B.prices[p.id]?`Earn $${B.prices[p.id]} per sale before upgrades`:p.id==='vr'?`Earn $${B.vrBaseReward} + $${B.vrDodgeReward} per dodge`:`Earn $${B.quarters} per completed play`}</small></div><button class="${fs.products[p.id]?'outline-button':'dark-button'}" data-action="product" data-id="${p.id}" ${fs.products[p.id]?'disabled':''}>${fs.products[p.id]?'Open':money(p.cost)}</button></article>`).join('')}</div><p class="fine-print">All earnings get a 20% boost. Small bonuses build up into extra dollars. Guests only order items you have opened.</p>`);
 }
 function tablesDialog(){
   const fs=state.floors[state.floor];
@@ -159,6 +160,7 @@ app.addEventListener('click', event => {
   if(action==='buy-table'){act({type:'table',id:Number(id)});dialog.close();tablesDialog();}
   if(action==='walk-table'){dialog.close();target={...LAYOUTS[state.floor].find(st=>st.id===`table${id}`).pad};}
   if(action==='area')target=state.player.x>11?{x:6,y:5}:{x:16,y:7.4};
+  if(action==='stop')stopMovement();
   if (action === 'product') { act({type:'product',id});dialog.close();menuDialog(); }
   if (action === 'close') dialog.close();
   if (action === 'return-stock') act({type:'return-stock'});
@@ -186,17 +188,22 @@ app.addEventListener('change', event => { if (event.target.matches('[data-assign
 document.querySelector('.brand').addEventListener('click', e => { e.preventDefault(); selectTab('home'); });
 dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
 dialog.addEventListener('close',()=>{if(dialog.classList.contains('vr-dialog')){dialog.classList.remove('vr-dialog');if(state.vr&&!state.vr.done){state.vr=null;save();}}});
-canvas.addEventListener('pointerdown', e => { if (lockBlocked) return; sound.unlock(); const picked = renderer.pick(e.clientX, e.clientY); if (picked.locked) { if(picked.station?.startsWith('table'))tablesDialog();else menuDialog(); return; } target = picked; canvas.focus({preventScroll:true}); });
-window.addEventListener('keydown', e => { if (dialog.open && state.vr && document.querySelector('#vr-field')) { if(['arrowleft','a','arrowright','d'].includes(e.key.toLowerCase())){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(e.key.toLowerCase())?-1:1);}return;} if (dialog.open || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return; if (['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase())) { e.preventDefault(); keys.add(e.key.toLowerCase()); target = null; sound.unlock(); } });
-window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-window.addEventListener('blur', () => { keys.clear(); joystick.x = joystick.y = 0; });
-const joy = document.querySelector('#joystick'), knob = document.querySelector('#joystick-knob'); let joyPointer = null;
+const joy = document.querySelector('#joystick'), knob = document.querySelector('#joystick-knob'); let joyPointer = null, surfacePointer = null;
+function stopPath(){target=null;state.player.path=[];state.player.pathKey='';state.player.moving=false;}
+function releaseJoy(){joyPointer=null;joystick.x=joystick.y=0;knob.style.transform='';}
+function stopMovement(){stopPath();keys.clear();releaseJoy();surfacePointer=null;}
+canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) return; stopMovement();sound.unlock();const picked=renderer.pick(e.clientX,e.clientY);if(picked.locked){if(picked.station?.startsWith('table'))tablesDialog();else menuDialog();return;}surfacePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);target=picked;canvas.focus({preventScroll:true}); });
+canvas.addEventListener('pointermove',e=>{if(e.pointerId===surfacePointer)target=renderer.pick(e.clientX,e.clientY);});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{if(e.pointerId===surfacePointer){surfacePointer=null;stopPath();}});
+const movementKey=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'}[e.code]||e.key.toLowerCase());
+window.addEventListener('keydown', e => {const key=movementKey(e);if(e.key==='Escape'){stopMovement();return;}if(dialog.open&&state.vr&&document.querySelector('#vr-field')){if(['arrowleft','a','arrowright','d'].includes(key)){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(key)?-1:1);}return;}if(dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();keys.add(key);target=null;state.player.path=[];state.player.pathKey="";surfacePointer=null;sound.unlock();}});
+window.addEventListener('keyup',e=>{const key=movementKey(e);if(!['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key))return;keys.delete(key);if(!keys.size&&!joystick.x&&!joystick.y&&surfacePointer===null)stopPath();});
+window.addEventListener('blur',stopMovement);
 function joyMove(e) { const r = joy.getBoundingClientRect(), x = e.clientX-r.left-r.width/2, y = e.clientY-r.top-r.height/2, d = Math.max(1,Math.hypot(x,y)/34); joystick.x=x/d/34; joystick.y=y/d/34; knob.style.transform=`translate(${x/d}px,${y/d}px)`; target=null; }
-joy.addEventListener('pointerdown', e => { joyPointer=e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); sound.unlock(); });
+joy.addEventListener('pointerdown', e => { if(joyPointer!==null)return;stopMovement();joyPointer=e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); sound.unlock(); });
 joy.addEventListener('pointermove', e => { if(e.pointerId===joyPointer) joyMove(e); });
-const releaseJoy = () => { joyPointer=null; joystick.x=joystick.y=0; knob.style.transform=''; };
-joy.addEventListener('pointerup',releaseJoy); joy.addEventListener('pointercancel',releaseJoy); joy.addEventListener('lostpointercapture',releaseJoy);
-document.addEventListener('visibilitychange', () => { paused=document.hidden; last=0; accumulator=0; keys.clear(); releaseJoy(); save(); });
+for(const type of ['pointerup','pointercancel','lostpointercapture'])window.addEventListener(type,e=>{if(e.pointerId===joyPointer){releaseJoy();stopPath();}});
+document.addEventListener('visibilitychange', () => { paused=document.hidden; last=0; accumulator=0; stopMovement(); save(); });
 window.addEventListener('pagehide',save);
 function frame(timestamp) {
   const delta = last ? Math.min((timestamp-last)/1000,0.2) : 0; last=timestamp;

@@ -6,7 +6,8 @@ The current implementation includes real 3D presentation, all four floors, physi
 
 | Check | Result |
 | --- | --- |
-| `npm test` | 50 passed, 0 failed |
+| `npm test` | 54 passed, 0 failed |
+| `node tests/controls-browser.mjs` | 9 control/interface scenarios passed, 0 uncaught errors |
 | `npm run test:browser` | 18 browser scenarios passed, 0 uncaught browser errors |
 | `node tests/seating-browser.mjs` | 4 floor scenarios passed, including phone touch, 0 uncaught browser errors |
 | `node tests/visual-3d.mjs` | 3D, outfits, preferences, offline rendering and context recovery passed |
@@ -33,10 +34,14 @@ The browser suite runs in a separate headless Microsoft Edge/Chromium profile. I
 - Active off-screen worker earnings and no closed-app catch-up.
 - Save validation, checksums, v1/v2/v3-to-v4 migration, counter migration, previous product ownership preservation, grandfathered dining tables, already-delivered food preservation, backup recovery, unavailable storage, future-version preservation, and interrupted payments/purchases.
 - Animation leaves simulation state unchanged; crowd presentation and reduced-motion behavior have direct coverage.
+- Travel heading persists between simulation ticks on every floor; a stopped player's displayed position stays fixed when crowds overlap.
+- The 20% earnings boost accumulates on $1 sales, survives reloads, rejects invalid bonus remainders and cannot replay paid receipts.
 
 ## Actual playable interface coverage
 
 - Keyboard motion and stopping after release.
+- Hold-to-move floor input stops on release; the stop button, focus loss and menus cancel movement. Actual phone touch release and cancellation stop both position and walking animation.
+- Stations and order bubbles use icons with accessible names; floating words and gameplay instructions are hidden while menus remain usable. The first-floor pickup station uses a low open tray with small rear warming lamps and neatly arranged food.
 - First product unlock, then a full takeout order using clicks on rendered station labels; verified the actual $1 payment.
 - Hiring, visible worker service, upgrade and floor reassignment through the interface.
 - Purchases of every food, drink, merchandise item, arcade cabinet and VR offering through Unlock items.

@@ -50,3 +50,10 @@
 ## 8. Authorized GitHub Pages publication
 - [x] 8.1 Support /DFP/ assets, manifest and scoped offline caches while preserving root-path localhost development; verify a real paid order, table ownership, offline reload and phone input against the Pages build.
 - [x] 8.2 Publish the reviewed game to the public lucaessey/DFP repository using a tested GitHub Actions workflow; enable Pages and confirm the public HTTPS response. Attempt isolated live-browser verification and record device restrictions. Deployment and HTTP 200 succeeded; Microsoft Family Safety blocked live Edge verification, as documented in DEPLOYMENT.md. Both local production paths passed browser checks.
+
+## 9. Post-publication gameplay fixes
+- [x] 9.1 Keep walking characters facing travel direction between fixed ticks, face seated characters/chairs toward tables, and anchor the stopped player against crowd offsets.
+- [x] 9.2 Increase earned payouts by 20%, carrying saved fractional bonuses into whole dollars without replay or changes to unlock costs.
+- [x] 9.3 Stop manual movement on release/cancellation, clear movement on focus loss and menus, and add explicit cancellation for station/area trips.
+- [x] 9.4 Rebuild the first-floor pickup station as an open warming tray; replace floating words with accessible action and order icons while retaining useful UI.
+- [ ] 9.5 Verify controls, animation, earnings, all-floor gameplay and offline updates, then publish the fixes through the existing GitHub Pages workflow.

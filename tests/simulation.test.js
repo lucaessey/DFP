@@ -70,8 +70,8 @@ test('employee cap is three per category and independent of player allowance',()
 });
 test('profit bonuses add against the base and receipts cannot pay twice',()=>{
   const s=rich();s.floors[0].upgrades.profit=1;const actor={x:4,y:4,upgrades:{profit:2}},receipt={paid:false};const before=s.money;
-  assert.equal(collectPayment(s,0,actor,100,receipt),150);assert.equal(collectPayment(s,0,actor,100,receipt),0);assert.equal(s.money-before,150);
-  assert.equal(collectPayment(s,0,s.player,100,{paid:false}),120);
+  assert.equal(collectPayment(s,0,actor,100,receipt),180);assert.equal(collectPayment(s,0,actor,100,receipt),0);assert.equal(s.money-before,180);
+  assert.equal(collectPayment(s,0,s.player,100,{paid:false}),144);
 });
 test('outfits unlock only on eligible floors and persist equipped selection',()=>{
   const s=newGame();s.money=1000;assert.equal(command(s,{type:'outfit',id:'formal'}).ok,false);assert.ok(command(s,{type:'outfit',id:'chef'}).ok);assert.equal(decode(encode(s)).outfit,'chef');const cash=s.money;command(s,{type:'outfit',id:'chef'});assert.equal(s.money,cash);
@@ -114,5 +114,5 @@ test('storage errors are reported and checksum detects tampered snapshots',()=>{
   const broken={getItem(){throw Error('blocked')},setItem(){throw Error('full')}};assert.equal(saveGame(broken,s).ok,false);assert.equal(loadGame(broken).writable,false);
 });
 test('interrupted saved payments and purchases do not replay after reload',()=>{
-  const storage=memory(),s=newGame();const receipt={paid:false};collectPayment(s,0,s.player,100,receipt);command(s,{type:'hire',id:0,token:'hire-0'});saveGame(storage,s);const resumed=loadGame(storage).state;assert.equal(resumed.money,120);assert.equal(resumed.employees.length,1);assert.equal(command(resumed,{type:'hire',id:0,token:'hire-0'}).ok,false);
+  const storage=memory(),s=newGame();const receipt={paid:false};collectPayment(s,0,s.player,100,receipt);command(s,{type:'hire',id:0,token:'hire-0'});saveGame(storage,s);const resumed=loadGame(storage).state;assert.equal(resumed.money,140);assert.equal(resumed.employees.length,1);assert.equal(command(resumed,{type:'hire',id:0,token:'hire-0'}).ok,false);
 });

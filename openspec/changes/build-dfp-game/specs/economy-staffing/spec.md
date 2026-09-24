@@ -5,6 +5,13 @@ Provide understandable paid progression with bounded staffing, predictable upgra
 
 ## ADDED Requirements
 
+### Requirement: Modest earnings increase
+All collected earnings SHALL receive a 20% increase after the existing additive profit-upgrade calculation. Fractional bonus dollars SHALL carry forward independently per floor and persist across saves, without changing existing money or unlock costs. Already-paid receipts SHALL not add another payout or bonus remainder.
+
+#### Scenario: Small controller sales
+- **WHEN** five $1 controller sales complete without upgrades, including a reload between sales
+- **THEN** total earnings are $6, with no lost fractional bonus and no duplicate payment.
+
 ### Requirement: Purchased tables and snack menus
 Each floor SHALL offer six independent one-time table purchases outside player upgrade allowances. First-table costs SHALL be $60/$100/$140/$180 by floor, with $55 added per table index. New games SHALL start without purchased tables. Existing dining-floor tables SHALL remain owned after migration. Gift-shop and arcade snacks SHALL require their own unlocks and pay $3/$4 respectively before bonuses. Existing merchandise, arcade, food, drink and upgrade prices SHALL remain unchanged.
 
@@ -68,11 +75,11 @@ Each employee SHALL allow three purchases per category in speed, capacity, and p
 - **THEN** another speed purchase is refused but capacity and profit upgrades remain available below their caps.
 
 ### Requirement: Exactly-once earnings
-Each payment SHALL credit round(base value × (1 + 0.20 × floor-player-profit-level + 0.15 × collecting-employee-profit-level)), where the employee term is zero for player collection. Bonuses SHALL be applied once at payment collection, never at production or delivery. Arcade quarters and VR rewards SHALL use the same payment rule; VR uses the player only.
+Each payment SHALL first calculate round(base value × (1 + 0.20 × floor-player-profit-level + 0.15 × collecting-employee-profit-level)), where the employee term is zero for player collection, then apply the 20% earnings increase with saved fractional carry. Bonuses SHALL be applied once at payment collection, never at production or delivery. Arcade quarters and VR rewards SHALL use the same payment rule; VR uses the player only.
 
 #### Scenario: Combined bonuses
 - **WHEN** a $100 base payment is collected by an employee with two profit upgrades on a floor with one player profit upgrade
-- **THEN** exactly $150 is credited, and a repeated collection of that payment credits zero.
+- **THEN** the upgraded subtotal is $150 and exactly $180 is credited with the 20% earnings increase; a repeated collection credits zero and does not change the fractional carry.
 
 ### Requirement: Cosmetic outfits
 The game SHALL offer DFP uniform, chef, formal server, retro gamer, and neon arcade outfits, with previews, gameplay unlock requirements, in-game prices, visible equipped appearance, and persistent selection. Cosmetics SHALL have no real-money purchases.

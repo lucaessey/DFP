@@ -22,7 +22,7 @@ export function crowdTargets(entries,floor) {
   for(const entry of entries) {
     const a=entry.actor;let chosen={x:a.x,y:a.y},best=Infinity;
     const valid=(x,y)=>visualWalkable(floor,x,y,a)&&placed.every(p=>Math.hypot(p.x-x,p.y-y)>.61);
-    if(!valid(a.x,a.y)) {
+    if(entry.role!=='player'&&!valid(a.x,a.y)) {
       for(let r=.16;r<=2.01;r+=.16)for(let i=0;i<20;i++) {
         const angle=i*Math.PI/10+(entry.order%3)*.21,x=a.x+Math.cos(angle)*r,y=a.y+Math.sin(angle)*r;
         if(!valid(x,y))continue;
@@ -39,8 +39,8 @@ export function separateCrowd(entries,floor) {
   for(let pass=0;pass<4;pass++)for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++) {
     const a=entries[i],b=entries[j],p=a.rig.root.position,q=b.rig.root.position;
     const dx=q.x-p.x,dz=q.z-p.z,d=Math.hypot(dx,dz);if(d>=.56)continue;
-    const ux=d>.001?dx/d:Math.cos(i+j),uz=d>.001?dz/d:Math.sin(i+j),amount=(.565-d)/2;
-    for(const [entry,pos,sign] of [[a,p,-1],[b,q,1]]) {if(entry.rig.sit>.7)continue;const x=pos.x+ux*amount*sign,y=pos.z+uz*amount*sign;if(visualWalkable(floor,x,y,entry.actor)){pos.x=x;pos.z=y;}}
+    const ux=d>.001?dx/d:Math.cos(i+j),uz=d>.001?dz/d:Math.sin(i+j),anchored=e=>e.role==='player'||e.rig.sit>.7,amount=(.565-d)/(anchored(a)||anchored(b)?1:2);
+    for(const [entry,pos,sign] of [[a,p,-1],[b,q,1]]) {if(anchored(entry))continue;const x=pos.x+ux*amount*sign,y=pos.z+uz*amount*sign;if(visualWalkable(floor,x,y,entry.actor)){pos.x=x;pos.z=y;}}
   }
 }
 
@@ -48,15 +48,18 @@ export function animateCharacter(model,a,target,state,dt,time) {
   const reduced=state.settings.reducedMotion,floor=state.floor;
   if(!model.previous){model.root.position.set(target.x,0,target.y);model.previous={x:a.x,y:a.y,state:a.state,delivered:a.delivered?.filter(Boolean).length||0,bag:a.bag?.length||0};}
   const previous=model.previous,dx=a.x-previous.x,dz=a.y-previous.y,moved=Math.hypot(dx,dz);
-  model.walk=damp(model.walk,Math.min(5,moved/Math.max(dt,.001)),10,dt);model.phase+=model.walk*dt*6.6;
-  let x=damp(model.root.position.x,target.x,17,dt),z=damp(model.root.position.z,target.y,17,dt);
+  model.walk=model.role==='player'&&!a.moving?0:damp(model.walk,Math.min(5,moved/Math.max(dt,.001)),10,dt);model.phase+=model.walk*dt*6.6;
+  let x=model.role==='player'?target.x:damp(model.root.position.x,target.x,17,dt),z=model.role==='player'?target.y:damp(model.root.position.z,target.y,17,dt);
   if(!visualWalkable(floor,x,z,a)){x=target.x;z=target.y;}
   model.root.position.set(x,0,z);
-  const st=LAYOUTS[floor].find(s=>s.id===a.action),working=!!st&&model.walk<.7;
+  const st=LAYOUTS[floor].find(s=>s.id===a.action),working=!!st&&!a.moving&&model.walk<.7;
+  if(moved>.0001)model.heading=Math.atan2(dx,dz);
   let facing=model.angle;
-  if(moved>.005)facing=Math.atan2(dx,dz);
+  // Simulation runs at 20 Hz. Keep its last travel heading between render frames.
+  if(a.moving||moved>.005||model.walk>.35)facing=model.heading??model.angle;
   else if(working)facing=Math.atan2(st.x+st.w/2-x,st.y+st.d/2-z);
-  else if(a.state==='playing'||(floor===0&&a.state==='waiting'))facing=Math.PI;
+  else if(a.purpose==='food'&&['waiting','payment'].includes(a.state))facing=Math.atan2(4.8-x,7.6-z);
+  else if(a.state==='playing'||a.state==='checkout')facing=Math.PI;
   else if(a.state==='browsing')facing=0;
   const sitting=a.purpose==='food'&&a.table!==null&&a.table!==undefined&&a.state==='dining';
   if(sitting)facing=Math.PI/2;

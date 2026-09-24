@@ -110,9 +110,9 @@ export function room(state,floor) {
     if(st.auxiliary) {box(base,'#c07942',3.0,1.115,7.58,1.1,.04,.73);lettering(base,'STACK',3,1.14,8.125,.8,'#fff4d8','#bc753d');continue;}
     if(st.kind==='trash') {box(base,'#52786c',x,.38,z,.62,.74,.62);box(base,'#b6c9b7',x,.79,z,.68,.12,.68);box(base,'#284e47',x,.853,z,.39,.02,.35);lettering(base,'BIN',x,.42,z+.321,.42);continue;}
     if(st.kind==='table') {
-      if(!open){box(base,'#cbbf9f',x,.04,z,st.w+.8,.04,st.d+.5);box(base,'#eee4c8',x,.07,z,st.w+.68,.035,st.d+.38);lettering(base,'TABLE '+(Number(st.id.slice(5))+1),x,.25,z+.2,1.3,'#7a765d','#eee4c8');continue;}
+      if(!open){box(base,'#cbbf9f',x,.04,z,st.w+.8,.04,st.d+.5);box(base,'#eee4c8',x,.07,z,st.w+.68,.035,st.d+.38);box(base,'#c4b38d',x,.1,z,.5,.025,.09);box(base,'#c4b38d',x,.1,z,.09,.025,.5);continue;}
       legs(base,x,z,st.w,st.d,.87,'#88684e');box(base,'#ab805b',x,.91,z,st.w,.14,st.d);box(base,'#fff5df',x,1.0,z,st.w+.015,.07,st.d+.015);
-      box(base,'#9bab80',x,1.043,z,.26,.015,st.d);chair(base,st.x-.6,z,-Math.PI/2);chair(base,st.x+st.w+.52,z,Math.PI/2);
+      box(base,'#9bab80',x,1.043,z,.26,.015,st.d);chair(base,st.x-.6,z,Math.PI/2);chair(base,st.x+st.w+.52,z,-Math.PI/2);
       plate(base,x-.36,1.06,z);plate(base,x+.43,1.06,z);cylinder(base,'#d4a460',x,1.17,z-.44,.12,.28);ball(base,'#ffda8b',x,1.35,z-.44,.075,.14,.075);
       const glass=food('wine');glass.position.set(x+.42,1.08,z-.47);glass.scale.setScalar(.65);base.add(glass);continue;
     }
@@ -143,14 +143,25 @@ export function room(state,floor) {
       box(base,'#8da49d',x,1.2,z,1.55,.24,.95,true);for(const dx of [-.4,.4]){box(base,'#626c48',x+dx,1.329,z,.59,.025,.61);box(base,'#e7bd57',x+dx,1.348,z,.48,.018,.5);box(base,'#465f58',x+dx,1.38,z+.5,.12,.08,.48);}
       for(let i=0;i<5;i++){const puff=ball(detail,'#fff6dc',x+(i%2?-.36:.36),1.55+i*.15,z,.12);puff.castShadow=false;data.steam.push(puff);}
     }
-    if(st.kind==='pickup') {box(base,'#557870',x,1.14,z,1.7,.12,.85);box(base,'#edc473',x,1.205,z,1.56,.025,.72);for(const dx of [-.8,.8])box(base,'#e6b768',x+dx,1.55,z-.4,.045,.7,.045);box(base,'#e4b062',x,1.91,z-.15,1.86,.13,.65);}
+    if(st.kind==='pickup') {
+      // Open warming tray: low rim and two rear lamps leave the food visible.
+      box(base,'#b5c4bb',x,1.13,z,1.72,.075,.86,true);
+      box(base,'#fff0d1',x,1.178,z,1.54,.026,.69);
+      for(const dx of [-.84,.84])box(base,'#7e9a90',x+dx,1.19,z,.045,.13,.86,true);
+      box(base,'#7e9a90',x,1.19,z-.42,1.72,.13,.045,true);
+      for(const dx of [-.43,.43]) {
+        cylinder(base,'#52786e',x+dx,1.45,z-.44,.07,.68,.07,true);
+        box(base,'#52786e',x+dx,1.79,z-.23,.07,.07,.48,true);
+        ball(base,'#52786e',x+dx,1.70,z-.03,.34,.17,.32);
+        cylinder(base,'#ffe9ac',x+dx,1.62,z-.03,.30,.026,.30);
+      }
+    }
     if(st.kind==='drinks'||st.kind==='wine') {box(base,st.kind==='wine'?'#7b5964':'#f5c76c',x,1.43,z,.8,.75,.8);box(base,'#fff3d6',x,1.56,z+.41,.64,.24,.035);for(const dx of [-.22,.22]){box(base,'#386b62',x+dx,1.31,z+.49,.085,.15,.14);cylinder(base,'#c9d9cd',x+dx,1.09,z+.5,.2,.04);}if(st.kind==='wine')for(const dx of [-.45,0,.45])cylinder(base,'#536e4b',x+dx,1.5,z-.2,.15,.7);}
     if(st.kind==='tower'||st.kind==='handheld') {plate(base,x,1.11,z);const meal=food(st.kind);meal.position.set(x,1.15,z);base.add(meal);box(base,'#566e5b',x+.7,1.31,z-.3,.25,.44,.22);}
     if(st.kind==='snack'){box(base,'#b98044',x,1.12,z,1,.07,.7);const snack=food(st.id);snack.position.set(x,1.17,z);base.add(snack);lettering(base,'CRUNCH',x,1.56,z-.38,1.12,'#fff2ce',c);}
     if(['counter','checkout','host'].includes(st.kind))register(base,st.kind==='counter'?x+1.55:x,z);
     if(st.kind==='counter') {lettering(base,'DFP',x, .6,z+st.d/2+.04,1.15,'#fff3d7','#f47b45');box(base,'#b8d5bf',4.8,1.11,7.55,1.1,.035,.7);}
     if(['stock','keyStock'].includes(st.kind)){for(let i=0;i<3;i++){const item=food(st.kind==='stock'?'souvenir':'keychain');item.position.set(x-.7+i*.7,1.12,z);base.add(item);}lettering(base,'DFP / STOCK',x,.63,z+st.d/2+.03,1.35,'#fff6df','#6295b0');}
-    if(!open) {const badge=lettering(base,'LOCKED',x,1.38,z+.5,Math.min(st.w,1.4),'#f8f4df','#6d8077');badge.rotation.y=0;}
   }
   const merged=mergeStatic(base);root.add(merged,dynamic);root.userData={stations,merged};return root;
 }
