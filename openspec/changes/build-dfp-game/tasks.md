@@ -49,4 +49,4 @@
 
 ## 8. Authorized GitHub Pages publication
 - [x] 8.1 Support /DFP/ assets, manifest and scoped offline caches while preserving root-path localhost development; verify a real paid order, table ownership, offline reload and phone input against the Pages build.
-- [ ] 8.2 Publish the reviewed game to the public lucaessey/DFP repository using a tested GitHub Actions workflow; enable Pages and verify the live HTTPS site in an isolated browser.
+- [x] 8.2 Publish the reviewed game to the public lucaessey/DFP repository using a tested GitHub Actions workflow; enable Pages and confirm the public HTTPS response. Attempt isolated live-browser verification and record device restrictions. Deployment and HTTP 200 succeeded; Microsoft Family Safety blocked live Edge verification, as documented in DEPLOYMENT.md. Both local production paths passed browser checks.
