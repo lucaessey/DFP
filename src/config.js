@@ -10,7 +10,7 @@ export const BALANCE = Object.freeze({
   playerProfitBonus: 0.2, employeeProfitBonus: 0.15,
   earningsBoostPercent: 20,
   actionTime: 0.65, fryTime: 2.4, diningTime: 6, arcadeTime: 6,
-  arrivalTime: 4.8, maxCustomers: 6, batch: 3, stockCap: 18, drinkOrderChance: 0.8,
+  arrivalTime: 4.8, maxCustomers: 6, maxOrderItems: 3, batch: 3, stockCap: 18, drinkOrderChance: 0.8,
   prices: { controller: 1, drink: 3, tower: 6, handheld: 6, wine: 4, souvenir: 5, keychain: 3, snack2:3, snack3:4 },
   quarters: 3, vrTime: 25, vrBaseReward: 3, vrDodgeReward: 1,
 });
@@ -25,7 +25,7 @@ export const PRODUCTS = [
   {id:'drink',floor:0,name:'Pixel Pop',cost:180,description:'Open the drinks bar. 80% of guests add a drink.',icon:'wine',section:true},
   {id:'tower',floor:1,name:'Pixel Tower',cost:140,description:'An edible green console, plated to perfection.',icon:'controller'},
   {id:'handheld',floor:1,name:'Pocket Crunch',cost:180,description:'A red-and-blue handheld meal.',icon:'controller'},
-  {id:'wine',floor:1,name:'House wine',cost:220,description:'A glass to go with every console meal.',icon:'wine',section:true},
+  {id:'wine',floor:1,name:'House wine',cost:220,description:'A popular pairing for console meals.',icon:'wine',section:true},
   {id:'souvenir',floor:2,name:'DFP souvenirs',cost:180,description:'Chicken buckets and controller keepsakes.',icon:'gift'},
   {id:'keychain',floor:2,name:'Mini keychains',cost:500,description:'Tiny, crispy souvenirs for every set of keys.',icon:'gift',section:true},
   {id:'machine0',floor:3,name:'Pixel Rush',cost:180,description:'Open your first quarter-earning cabinet.',icon:'arcade'},

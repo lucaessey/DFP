@@ -57,3 +57,9 @@
 - [x] 9.3 Stop manual movement on release/cancellation, clear movement on focus loss and menus, and add explicit cancellation for station/area trips.
 - [x] 9.4 Rebuild the first-floor pickup station as an open warming tray; replace floating words with accessible action and order icons while retaining useful UI.
 - [x] 9.5 Verify controls, animation, earnings, all-floor gameplay and offline updates, then publish the fixes through the existing GitHub Pages workflow. All 54 unit tests, 18 gameplay browser checks, 9 control checks and 5 Pages-build checks passed; deployment 35946360379 succeeded.
+
+## 10. Orders of one to three items
+- [x] 10.1 Generate one to three unlocked items, including repeats and drinks within the limit, while preserving partial orders on unlock and reload.
+- [x] 10.2 Support complete multi-item shop baskets, summed checkout payments and employee carrying trips on every floor.
+- [x] 10.3 Verify partial fulfillment, repeated units, all-floor employees, browser service and offline persistence. 66 unit tests, 18 gameplay browser checks and 5 Pages-build checks passed.
+- [ ] 10.4 Publish the update through the existing GitHub Pages workflow.

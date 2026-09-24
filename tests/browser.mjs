@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { newGame, command } from '../src/simulation.js';
+import { newGame, command, step } from '../src/simulation.js';
 import { encode } from '../src/storage.js';
 import { LAYOUTS, PRODUCTS } from '../src/config.js';
 
@@ -29,10 +29,10 @@ try{
   await launch();
   const initial=await snapshot();await page.keyboard.down('d');await page.clock.runFor(700);await page.keyboard.up('d');await page.clock.runFor(2200);const moved=await snapshot();assert.ok(moved.player.x>initial.player.x);const stopped={x:moved.player.x,y:moved.player.y};await page.clock.runFor(2200);assert.deepEqual({x:(await snapshot()).player.x,y:(await snapshot()).player.y},stopped);pass('Keyboard movement and release');
   await page.locator('#menu-button').click();await page.locator('[data-action="product"][data-id="controller"]').click();await page.locator('[data-action="close"]').click();assert.equal((await snapshot()).money,70);pass('First product unlock through menu costs $50');
-  await walk(0,'prep',s=>s.tutorial>=1);await walk(0,'fry',s=>s.tutorial>=2);await walk(0,'pickup',s=>s.player.bag.includes('controller'));
+  await walk(0,'prep',s=>s.tutorial>=1);await until(s=>s.floors[0].customers.length>0,'first customer');const takeoutCount=(await snapshot()).floors[0].customers[0].needs.length;await walk(0,'fry',s=>s.floors[0].stock.controller>=takeoutCount);await walk(0,'pickup',s=>s.player.bag.length>=takeoutCount);
   await clickStation(0,'counter');await page.clock.runFor(8500);assert.equal((await snapshot()).served,0);
-  await walk(0,'stack',s=>s.floors[0].counter.controller>0);assert.equal((await snapshot()).served,0);
-  await walk(0,'counter',s=>s.served>=1);assert.equal((await snapshot()).money,71);await shot('desktop-takeout');pass('Takeout played through prep, fry, pickup, counter stacking and middle-circle service at $1');
+  await walk(0,'stack',s=>s.floors[0].counter.controller>=takeoutCount);assert.equal((await snapshot()).served,0);
+  await walk(0,'counter',s=>s.served>=1);assert.equal((await snapshot()).money,70+takeoutCount);await shot('desktop-takeout');pass('Takeout played through prep, fry, pickup, counter stacking and middle-circle service for the whole order');
   await launch(openAll());
   await page.locator('[data-tab="employees"]').click();await page.locator('[data-action="hire"][data-id="0"]').click();await until(s=>s.employees.length===1,'hire');await page.locator('[data-tab="home"]').click();const before=(await snapshot()).earned;await until(s=>s.earned>before,'visible employee service',180);pass('Employee hired through UI and automatically serves');
   await page.reload();await page.clock.runFor(1000);assert.equal((await snapshot()).employees.length,1);pass('Interrupted-session reload preserves purchases');
@@ -44,17 +44,20 @@ try{
   await page.locator('[data-tab="outfits"]').click();await page.locator('[data-action="outfit"][data-id="chef"]').click();await page.reload();await page.clock.runFor(500);assert.equal((await snapshot()).outfit,'chef');await page.locator('[data-tab="outfits"]').click();await shot('outfits');pass('Outfit purchase, visible preview and reload persistence');
   await page.locator('[data-tab="employees"]').click();await page.locator('[data-action="hire"][data-id="0"]').click();await page.locator('[data-action="employee-upgrade"][data-id="0"][data-category="speed"]').click();await page.locator('[data-assign="0"]').selectOption('1');await until(s=>s.employees[0]?.floor===1,'transfer');assert.equal((await snapshot()).employees[0].upgrades.speed,1);await shot('employees');pass('Employee upgrade and reassignment through the UI');
 
-  const dining=openAll();command(dining,{type:'visit',floor:1});await launch(dining);
+  const dining=openAll();command(dining,{type:'visit',floor:1});for(let i=0;i<380;i++)step(dining,.05,{pausedPlayer:true});dining.floors[1].customers=dining.floors[1].customers.slice(0,1);Object.assign(dining.floors[1].customers[0],{needs:['tower','handheld','wine'],delivered:[false,false,false]});dining.floors[1].arrival=100;await launch(dining);
   await page.locator('#tables-button').click();await page.locator('[data-action="buy-table"][data-id="0"]').click();await page.locator('[data-action="close"]').click();await page.clock.runFor(18000);
-  const diner=(await snapshot()).floors[1].customers.find(c=>c.purpose==='food'),meal=diner.needs[0];
-  await walk(1,meal,s=>s.player.bag.includes(meal));await walk(1,'wine',s=>s.player.bag.includes('wine'));
-  await clickStation(1,'counter');await page.clock.runFor(8000);assert.equal((await snapshot()).floors[1].served,0);
-  await walk(1,'stack',s=>s.floors[1].counter[meal]>0&&s.floors[1].counter.wine>0);await walk(1,'counter',s=>s.floors[1].served>=1);
+  const diner=(await snapshot()).floors[1].customers.find(c=>c.purpose==='food');
+  for(const item of new Set(diner.needs)){
+    await walk(1,item,s=>s.player.bag.filter(v=>v===item).length>=diner.needs.filter(v=>v===item).length);
+    if(item===diner.needs[0]){await clickStation(1,'counter');await page.clock.runFor(8000);assert.equal((await snapshot()).floors[1].served,0);}
+    await walk(1,'stack',s=>s.player.bag.length===0);
+  }
+  assert.equal((await snapshot()).floors[1].served,0);await walk(1,'counter',s=>s.floors[1].served>=1);
   await until(s=>s.floors[1].customers.find(c=>c.id===diner.id)?.state==='dining','paid diner sitting');await page.locator('#area-button').click();await page.clock.runFor(3000);await shot('desktop-dining');
-  await until(s=>s.floors[1].tables[0].state==='dirty','meal finished');await walk(1,'table0',s=>s.floors[1].tables[0].state==='free');pass('Dining table purchased; food and wine stacked, served, paid before eating, then table cleaned');
+  await until(s=>s.floors[1].tables[0].state==='dirty','meal finished');await walk(1,'table0',s=>s.floors[1].tables[0].state==='free');pass('Dining table purchased; three-item order stacked, served, paid before eating, then table cleaned');
 
-  const shop=openAll();command(shop,{type:'visit',floor:2});command(shop,{type:'section',floor:2});await launch(shop);await page.clock.runFor(12000);const customer=(await snapshot()).floors[2].customers.find(c=>c.purpose==='shop'),item=customer.needs[0];
-  await walk(2,item==='keychain'?'keyStock':'stock',s=>s.player.bag.includes(item));await walk(2,item==='keychain'?'keyShelf':'shelf',s=>s.floors[2].shelves[item]>0);await until(s=>s.floors[2].customers.some(c=>c.state==='checkout'),'customer browsing');await walk(2,'checkout',s=>s.floors[2].served>0);await shot('desktop-shop');pass('Gift shop played through stock, carrying, shelf restock, browsing and checkout');
+  const shop=openAll(false);command(shop,{type:'visit',floor:2});for(const id of ['souvenir','keychain'])command(shop,{type:'product',id});for(let i=0;i<380;i++)step(shop,.05,{pausedPlayer:true});shop.floors[2].customers=shop.floors[2].customers.slice(0,1);Object.assign(shop.floors[2].customers[0],{needs:['souvenir','keychain','souvenir'],delivered:[false,false,false]});shop.floors[2].arrival=100;await launch(shop);const customer=(await snapshot()).floors[2].customers[0];
+  for(const item of new Set(customer.needs)){const count=customer.needs.filter(v=>v===item).length;await walk(2,item==='keychain'?'keyStock':'stock',s=>s.player.bag.filter(v=>v===item).length>=count);await walk(2,item==='keychain'?'keyShelf':'shelf',s=>!s.player.bag.includes(item));}await until(s=>s.floors[2].customers.some(c=>c.state==='checkout'),'customer browsing');await walk(2,'checkout',s=>s.floors[2].served>0);await shot('desktop-shop');pass('Gift shop completes a three-item mixed basket through stock, restock, browsing and checkout');
 
   const arcade=openAll();command(arcade,{type:'visit',floor:3});command(arcade,{type:'section',floor:3});await launch(arcade);await until(s=>s.floors[3].machines.some(m=>m.quarters>0),'quarters from play');let index=(await snapshot()).floors[3].machines.findIndex(m=>m.quarters>0);await walk(3,`machine${index}`,s=>s.floors[3].revenue>0);await shot('desktop-arcade');
   await walk(3,'vr',s=>s.player.action==='vr');await page.locator('#vr-start').click();await page.keyboard.press('ArrowLeft');await page.clock.runFor(100);assert.equal(await page.locator('#vr-runner').evaluate(e=>e.style.left),'16.6667%');await page.locator('[data-action="vr-right"]').click();await page.clock.runFor(100);assert.equal(await page.locator('#vr-runner').evaluate(e=>e.style.left),'50%');await shot('vr-minigame');await page.clock.runFor(26000);assert.ok((await snapshot()).vr.done);const reward=(await snapshot()).vr.reward;assert.ok(reward>=3);await page.reload();await page.clock.runFor(500);assert.ok((await snapshot()).vr.paid);assert.equal((await snapshot()).vr.reward,reward);pass('Arcade quarters, VR keyboard/touch buttons, reward and reload');

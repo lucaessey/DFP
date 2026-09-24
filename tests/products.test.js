@@ -19,7 +19,7 @@ test('optional spending cannot trap a fresh player without the first product',()
 });
 test('guests order only unlocked meals and use only unlocked cabinets',()=>{
   const s=newGame();s.money=10000;for(let f=1;f<4;f++)command(s,{type:'floor',floor:f});command(s,{type:'product',floor:1,id:'handheld'});command(s,{type:'product',floor:3,id:'machine1'});tick(s,40);
-  assert.ok(s.floors[1].customers.every(c=>c.needs.length===1&&c.needs[0]==='handheld'));assert.equal(s.floors[3].machines[0].quarters,0);assert.equal(s.floors[3].machines[2].quarters,0);assert.ok(s.floors[3].machines[1].quarters>0);
+  assert.ok(s.floors[1].customers.every(c=>c.needs.length>=1&&c.needs.length<=3&&c.needs.every(item=>item==='handheld')));assert.equal(s.floors[3].machines[0].quarters,0);assert.equal(s.floors[3].machines[2].quarters,0);assert.ok(s.floors[3].machines[1].quarters>0);
 });
 test('version-two migration preserves previously available products and all balances',()=>{
   const s=newGame();s.version=2;s.money=678;s.floors[1].unlocked=true;s.floors[1].section=true;s.floors[0].section=true;s.floors.forEach(f=>delete f.products);const restored=decode(JSON.stringify(s));assert.equal(restored.version,4);assert.equal(restored.money,678);for(const id of ['controller','drink'])assert.ok(restored.floors[0].products[id]);for(const id of ['tower','handheld','wine'])assert.ok(restored.floors[1].products[id]);assert.equal(restored.floors[2].products.souvenir,false);

@@ -102,3 +102,18 @@ Unlocked floors SHALL continue deterministic simulation and assigned employee wo
 #### Scenario: Other floor work
 - **WHEN** a player visits floor two while floor-one employees are assigned
 - **THEN** floor-one employees continue useful service and can add earnings during the active session.
+
+### Requirement: Orders of one to three items
+Food customers on every floor and merchandise shoppers SHALL request one to three unlocked items per order, with repeated items allowed. Drinks SHALL count toward the limit. Workers SHALL fulfill every requested unit even when multiple carrying trips are needed. Payment SHALL occur once for the sum of all requested products after the full order is delivered. Existing queued orders and partial deliveries SHALL survive reloads.
+
+#### Scenario: Repeated food and a drink
+- **WHEN** a customer requests two controller meals and one drink
+- **THEN** one stacked controller fills only one requested meal, remaining needs stay visible, and the bill is collected only after both meals and the drink have been served.
+
+#### Scenario: Mixed shopping basket
+- **WHEN** a shopper requests two souvenirs and one keychain
+- **THEN** they collect all three units from their respective shelves before checkout and pay their combined price once.
+
+#### Scenario: Drinks unlocked for a full order
+- **WHEN** the drinks unlock refreshes an untouched three-item waiting order
+- **THEN** a drink replaces one requested item instead of expanding the order beyond three, while partially served orders stay unchanged.

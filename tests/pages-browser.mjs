@@ -60,11 +60,13 @@ try {
   await page.locator('[data-action="close"]').click();
   assert.equal((await snapshot()).money, 10);
   await work('prep', state => state.tutorial >= 1);
-  await work('fry', state => state.tutorial >= 2);
-  await work('pickup', state => state.player.bag.includes('controller'));
-  await work('stack', state => state.floors[0].counter.controller > 0);
+  await until(state=>state.floors[0].customers.length>0,'first customer');
+  const orderCount=(await snapshot()).floors[0].customers[0].needs.length;
+  await work('fry', state => state.floors[0].stock.controller >= orderCount);
+  await work('pickup', state => state.player.bag.length >= orderCount);
+  await work('stack', state => state.floors[0].counter.controller >= orderCount);
   await work('counter', state => state.served === 1);
-  assert.equal((await snapshot()).money, 11);
+  assert.equal((await snapshot()).money, 10+orderCount);
   checks.push('Fresh game unlocks food, buys a table and completes a paid order');
 
   await page.reload();
@@ -73,7 +75,7 @@ try {
   await context.setOffline(true);
   await page.reload();
   await page.locator('[data-station="prep"]').waitFor();
-  assert.equal((await snapshot()).money, 11);
+  assert.equal((await snapshot()).money, 10+orderCount);
   assert.equal((await snapshot()).floors[0].tables[0].owned, true);
   await page.screenshot({ path: 'test-results/pages-desktop.png' });
   checks.push('Offline reload renders 3D and preserves earned money and table ownership');

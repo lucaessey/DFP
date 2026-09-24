@@ -13,8 +13,8 @@ function until(s,fn,limit=60){for(let i=0;i<limit*20;i++){if(fn())return;step(s,
 for(let f=0;f<4;f++)test(`floor ${f+1}: stack, serve, pay, seat, eat, then manual cleanup`,()=>{
   const s=setup(f);assert.ok(command(s,{type:'table',id:0}).ok);tick(s,19);const fs=s.floors[f],c=fs.customers[0];s.player.bag=[...c.needs];const cash=s.money;
   at(s,'counter',2);assert.equal(s.money,cash);assert.ok(c.delivered.every(v=>!v));
-  at(s,'stack');assert.equal(s.money,cash);assert.ok(c.delivered.every(v=>!v));assert.equal(fs.counter[c.needs[0]],1);
-  at(s,'counter',1.4);assert.ok(c.paid);assert.equal(c.state,'toTable');assert.equal(s.money,cash+[1,7,3,4][f]);assert.equal(fs.tables[0].state,'reserved');
+  at(s,'stack',B.actionTime*c.needs.length+.1);assert.equal(s.money,cash);assert.ok(c.delivered.every(v=>!v));assert.equal(fs.counter[c.needs[0]],c.needs.length);
+  at(s,'counter',1.4);assert.ok(c.paid);assert.equal(c.state,'toTable');assert.equal(s.money,cash+Math.floor(c.needs.reduce((sum,item)=>sum+B.prices[item],0)*1.2));assert.equal(fs.tables[0].state,'reserved');
   until(s,()=>c.state==='dining');assert.equal(fs.tables[0].state,'occupied');assert.deepEqual({x:c.x,y:c.y},tableSeat(0));
   const timer=c.timer;at(s,'table0',.7);assert.equal(fs.tables[0].state,'occupied');assert.ok(c.timer<timer&&c.timer>0);assert.equal(fs.tables[0].customer,c.id);
   until(s,()=>fs.tables[0].state==='dirty');assert.equal(c.state,'leaving');const paid=s.money;tick(s,3);assert.equal(fs.tables[0].state,'dirty');assert.equal(s.money,paid);

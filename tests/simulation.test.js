@@ -83,7 +83,7 @@ test('dining exposes every lifecycle state and tables require cleaning',()=>{
   assert.ok(tableStates.has('dirty'));assert.ok(tableStates.has('free'));assert.ok(meals.has('tower')&&meals.has('handheld'));assert.ok(s.floors[1].served>10);assert.ok(validateSave(s));
 });
 test('shop restocks, browses and checks out both souvenir and keychains with no drinks',()=>{
-  const s=rich();command(s,{type:'section',floor:2});command(s,{type:'hire',id:10,floor:2});const items=new Set();for(let i=0;i<8000;i++){step(s,.05,{pausedPlayer:true});s.floors[2].customers.forEach(c=>{if(c.paid)items.add(c.needs[0]);});}
+  const s=rich();command(s,{type:'section',floor:2});command(s,{type:'hire',id:10,floor:2});const items=new Set();for(let i=0;i<8000;i++){step(s,.05,{pausedPlayer:true});s.floors[2].customers.forEach(c=>{if(c.paid)c.needs.forEach(item=>items.add(item));});}
   assert.ok(items.has('souvenir')&&items.has('keychain'));assert.ok(s.floors[2].served>10);assert.ok(!LAYOUTS[2].some(st=>['wine','drinks','drink'].includes(st.kind)));assert.ok(validateSave(s));
 });
 test('arcade accumulates quarters before collection and workers collect them',()=>{

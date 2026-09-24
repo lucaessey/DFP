@@ -74,7 +74,7 @@ Base payouts follow the requested harder economy:
 | Arcade play | 3 quarters = $3 |
 | VR run | $3 + $1 per dodge |
 
-Customers pay for their combined order once. Product unlock prices and every payout are configurable in `src/config.js`. Existing opened items are preserved when older saves migrate to the new product-unlock system.
+Customers order 1–3 items at a time from unlocked products, including repeated items. Drinks count toward the three-item limit. Fill every item before collecting one payment for the combined order. Gift shoppers collect their whole basket before checkout, and employees handle larger orders across multiple trips. Product unlock prices and every payout are configurable in `src/config.js`. Existing opened items are preserved when older saves migrate to the new product-unlock system.
 
 **20% earnings boost:** all earned payouts receive an extra 20% after profit upgrades. Fractional bonuses accumulate into whole dollars and survive reloads: five $1 controller sales earn $6 total. Money is still collected once, and spending/unlock costs are unchanged.
 

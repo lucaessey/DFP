@@ -16,9 +16,9 @@ try{
     async function until(test,label,max=120){for(let i=0;i<max;i++){const state=await snapshot();if(test(state))return state;await p.clock.runFor(250);}throw Error(`Floor ${floor+1}: ${label}`);}
     async function go(id,test,label=id){await p.locator(`[data-station="${id}"]`).click();return until(test,label);}
     const balance=(await snapshot()).money;await p.locator('#tables-button').click();await p.locator('[data-action="buy-table"][data-id="0"]').click();assert.equal((await snapshot()).money,balance-tableCost(floor,0));await p.locator('[data-action="close"]').click();
-    await go(floor===0?'pickup':food,s=>s.player.bag.includes(food));const cash=(await snapshot()).money;
+    const orderCount=s.floors[floor].customers[0].needs.length;await go(floor===0?'pickup':food,s=>s.player.bag.filter(v=>v===food).length>=orderCount);const cash=(await snapshot()).money;
     await go('counter',s=>s.player.action==='counter');await p.clock.runFor(1200);assert.equal((await snapshot()).money,cash);assert.equal((await snapshot()).floors[floor].served,0);
-    await go('stack',s=>s.floors[floor].counter[food]>0);assert.equal((await snapshot()).money,cash);await go('counter',s=>s.floors[floor].served===1);
+    await go('stack',s=>s.floors[floor].counter[food]>=orderCount);assert.equal((await snapshot()).money,cash);await go('counter',s=>s.floors[floor].served===1);
     const paid=await snapshot();assert.ok(paid.floors[floor].customers[0].paid);assert.equal(paid.floors[floor].tables[0].state,'reserved');
     await p.locator('#tables-button').click();await p.locator('[data-action="walk-table"][data-id="0"]').click();await until(s=>s.player.action==='table0','walk to dining wing');
     await until(s=>s.floors[floor].tables[0].state==='occupied','guest eats');await p.clock.runFor(750);assert.equal((await snapshot()).floors[floor].tables[0].state,'occupied');await p.screenshot({path:`${out}/seating-floor-${floor+1}.png`});

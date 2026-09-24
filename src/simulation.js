@@ -52,7 +52,7 @@ export function command(s, c) {
       if(product.id==='wine'&&!fs.products.tower&&!fs.products.handheld)return fail('Unlock a console meal first');
       if(product.id==='drink'&&!fs.products.controller)return fail('Unlock Crispy Controller first');
       cost=product.cost;apply=()=>{fs.products[product.id]=true;if(product.section)fs.section=true;
-        if(product.id==='drink')for(const customer of fs.customers)if(customer.state==='waiting'&&customer.delivered.every(v=>!v)&&!customer.needs.includes('drink')&&random(s)<B.drinkOrderChance){customer.needs.push('drink');customer.delivered.push(false);}
+        if(product.id==='drink')for(const customer of fs.customers)if(customer.state==='waiting'&&customer.delivered.every(v=>!v)&&!customer.needs.includes('drink')&&random(s)<B.drinkOrderChance){if(customer.needs.length<B.maxOrderItems){customer.needs.push('drink');customer.delivered.push(false);}else customer.needs[customer.needs.length-1]='drink';}
       };break;
     }
     case 'hire': {
@@ -111,13 +111,22 @@ function collectItem(s, f, a, item, limited = false) {
   a.bag.push(item); if (a.id === undefined && item === 'controller') s.tutorial = Math.max(s.tutorial, 3);
   changed(s);
 }
+function customerOrder(s, items, drink = null) {
+  const needs=[items[Math.floor(random(s)*items.length)]];
+  const withDrink=drink&&random(s)<B.drinkOrderChance;
+  const count=withDrink?2+Math.floor(random(s)*(B.maxOrderItems-1)):1+Math.floor(random(s)*B.maxOrderItems);
+  if(withDrink)needs.push(drink);
+  const extras=withDrink?[...items,drink]:items;
+  while(needs.length<count)needs.push(extras[Math.floor(random(s)*extras.length)]);
+  return needs;
+}
 function spawnCustomer(s, f) {
   const fs = s.floors[f];let needs,purpose='food';
-  if(f===0){if(!fs.products.controller)return;needs=fs.products.drink&&random(s)<B.drinkOrderChance?['controller','drink']:['controller'];}
-  if(f===1){const meals=['tower','handheld'].filter(id=>fs.products[id]);if(!meals.length)return;needs=[meals[Math.floor(random(s)*meals.length)]];if(fs.products.wine)needs.push('wine');}
+  if(f===0){if(!fs.products.controller)return;needs=customerOrder(s,['controller'],fs.products.drink?'drink':null);}
+  if(f===1){const meals=['tower','handheld'].filter(id=>fs.products[id]);if(!meals.length)return;needs=customerOrder(s,meals,fs.products.wine?'wine':null);}
   if(f>=2){const activities=f===2?['souvenir','keychain'].filter(id=>fs.products[id]):['machine0','machine1','machine2'].filter(id=>fs.products[id]);
-    if(fs.products[`snack${f}`]&&(!activities.length||random(s)<.45))needs=[`snack${f}`];
-    else{if(!activities.length)return;purpose=f===2?'shop':'arcade';needs=f===2?[activities[Math.floor(random(s)*activities.length)]]:[];}}
+    if(fs.products[`snack${f}`]&&(!activities.length||random(s)<.45))needs=customerOrder(s,[`snack${f}`]);
+    else{if(!activities.length)return;purpose=f===2?'shop':'arcade';needs=f===2?customerOrder(s,activities):[];}}
   fs.customers.push({id:s.nextId++,state:'waiting',purpose,needs,delivered:needs.map(()=>false),paid:false,counted:false,timer:0,...WORLD.entrance,color:Math.floor(random(s)*6),table:null,machine:null,path:[],pathKey:'',moving:false,facing:1,bag:[]});
 }
 export function stationStatus(s, f, st) {
@@ -175,7 +184,7 @@ function interact(s, f, a, st) {
     }
     if (st.id === 'checkout') {
       const c = fs.customers.find(c => c.state === 'checkout');
-      if (c && distance(c, { x: 9.7, y: 9.1 }) < 0.7) { pay(s, f, a, B.prices[c.needs[0]], c); leave(s, f, c); }
+      if (c && !missing(c).length && distance(c, { x: 9.7, y: 9.1 }) < 0.7) { pay(s, f, a, c.needs.reduce((total,item)=>total+B.prices[item],0), c); leave(s, f, c); }
     }
   }
   if (f === 3) {
@@ -187,11 +196,13 @@ function interact(s, f, a, st) {
 }
 export function workerGoal(s, f, a) {
   const fs = s.floors[f];
+  const shopDemand=f===2?fs.customers.find(c=>c.purpose==='shop'&&c.state==='browsing'&&fs.shelves[missing(c)[0]]===0):null;
   const dirty=fs.tables.findIndex(t=>t.owned&&t.state==='dirty');if(dirty>=0)return `table${dirty}`;
   if(f===2&&fs.customers.some(c=>c.state==='checkout'))return 'checkout';
   if(f===3){const richest=fs.machines.reduce((best,m,i)=>m.quarters>fs.machines[best].quarters?i:best,0);if(fs.machines[richest].quarters>0)return `machine${richest}`;}
   if(f>0){
-    const c=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
+    const food=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
+    const c=shopDemand&&food&&shopDemand.id<food.id?null:food;
     if(c?.state==='payment'||c&&missing(c).some(id=>fs.counter[id]>0))return 'counter';
     if(a.bag.some(id=>FLOOR_FOODS[f].includes(id)&&fs.counter[id]<B.stockCap))return 'stack';
     if(c){if(a.bag.length>=capacity(s,a,f))returnBag(s,a,f);return missing(c)[0]||'counter';}
@@ -211,8 +222,8 @@ export function workerGoal(s, f, a) {
     if (fs.customers.some(c => c.state === 'checkout')) return 'checkout';
     if (a.bag.includes('souvenir') && fs.shelves.souvenir < B.stockCap) return 'shelf';
     if (a.bag.includes('keychain') && fs.shelves.keychain < B.stockCap) return 'keyShelf';
-    const demand = fs.customers.find(c => c.state === 'browsing' && fs.shelves[c.needs[0]] === 0);
-    if (demand && !a.bag.includes(demand.needs[0])) return demand.needs[0] === 'keychain' ? 'keyStock' : 'stock';
+    const item=shopDemand&&missing(shopDemand)[0];
+    if (item && !a.bag.includes(item)) return item === 'keychain' ? 'keyStock' : 'stock';
     if (fs.section && fs.shelves.keychain < 2 && !a.bag.includes('keychain')) return 'keyStock';
     if (fs.products.souvenir && fs.shelves.souvenir < 3 && !a.bag.includes('souvenir')) return 'stock';
     return null;
@@ -258,12 +269,14 @@ function customersTick(s, f, dt) {
       continue;
     }
     if (f === 2) {
-      const type = c.needs[0], index = fs.customers.filter(v => ['waiting','browsing'].includes(v.state) && v.needs[0] === type).indexOf(c);
-      const shelf = { x: type === 'souvenir' ? 4.2 : 9, y: 3.3 - Math.min(index, 3) * 0.65 };
       if (c.state === 'waiting') c.state = 'browsing';
       if (c.state === 'browsing') {
+        const next=c.delivered.findIndex(delivered=>!delivered),type=c.needs[next];
+        if(!type){c.state='checkout';c.timer=0;changed(s);continue;}
+        const index=fs.customers.filter(v=>v.purpose==='shop'&&['waiting','browsing'].includes(v.state)&&missing(v)[0]===type).indexOf(c);
+        const shelf={x:type==='souvenir'?4.2:9,y:3.3-Math.min(index,3)*.65};
         followPath(c, f, shelf, dt, 2.2);
-        if (index === 0 && distance(c, shelf) < 0.35 && fs.shelves[type] > 0) { c.timer += dt; if (c.timer > 1.5) { fs.shelves[type]--; c.bag = [type]; c.delivered[0] = true; c.state = 'checkout'; c.timer = 0; changed(s); } }
+        if (index === 0 && distance(c, shelf) < 0.35 && fs.shelves[type] > 0) { c.timer += dt; if (c.timer > 1.5) { fs.shelves[type]--; c.bag.push(type); c.delivered[next] = true; if(!missing(c).length)c.state='checkout'; c.timer = 0; changed(s); } }
       } else if (c.state === 'checkout') {
         const index = fs.customers.filter(c => c.state === 'checkout').indexOf(c);
         followPath(c, f, { x: 9.7 + index * 1.25, y: 9.1 }, dt, 2.2);

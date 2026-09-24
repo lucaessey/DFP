@@ -64,7 +64,7 @@ export function animateCharacter(model,a,target,state,dt,time) {
   const sitting=a.purpose==='food'&&a.table!==null&&a.table!==undefined&&a.state==='dining';
   if(sitting)facing=Math.PI/2;
   model.angle=reduced?facing:angleTowards(model.angle,facing,dt);model.rig.rotation.y=model.angle;model.sit=damp(model.sit,sitting?1:0,10,dt);
-  const carryItems=a.purpose==='food'&&['toTable','waitingTable'].includes(a.state)?a.needs:a.state==='checkout'||(a.state==='leaving'&&a.purpose==='shop')?['souvenir']:a.bag||[],key=carryItems.join(',');
+  const carryItems=a.purpose==='food'&&['toTable','waitingTable'].includes(a.state)?a.needs:a.bag||[],key=carryItems.join(',');
   if(key!==model.bagKey){for(const mesh of model.bagModels)model.carry.remove(mesh);const columns=carryItems.length>4?2:1,heights=[0,0];model.bagModels=carryItems.map((kind,i)=>{const column=i%columns,mesh=food(kind),height=['drink','tower','wine','souvenir'].includes(kind)?.59:.22;mesh.position.set(columns===2?(column? .29:-.29):0,heights[column],0);heights[column]+=height*.85;mesh.scale.setScalar(.85);model.carry.add(mesh);return mesh;});model.carry.userData.height=Math.max(...heights);model.tray.scale.x=columns===2?1.25:.76;model.bagKey=key;}
   model.tray.visible=carryItems.length>0;
   const received=(a.delivered?.filter(Boolean).length||0)>previous.delivered,interaction=carryItems.length!==previous.bag||received||a.state!==previous.state;

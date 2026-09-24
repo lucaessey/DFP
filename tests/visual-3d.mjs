@@ -33,7 +33,7 @@ try{
     const s=newGame();s.money=600;command(s,{type:'product',id:'controller'});await launch(s,{width:1280,height:800},true);
     await page.locator('#tables-button').click();await page.locator('[data-action="buy-table"][data-id="0"]').click();await page.locator('[data-action="close"]').click();
     const go=async(id,test)=>{await page.locator(`[data-station="${id}"]`).click();await until(test,id);};
-    await go('prep',s=>s.tutorial>=1);await go('fry',s=>s.tutorial>=2);await go('pickup',s=>s.player.bag.length>0);await go('stack',s=>s.floors[0].counter.controller>0);await go('counter',s=>s.served>0);
+    await go('prep',s=>s.tutorial>=1);await until(s=>s.floors[0].customers.length>0,'first customer');const orderCount=(await snapshot()).floors[0].customers[0].needs.length;await go('fry',s=>s.floors[0].stock.controller>=orderCount);await go('pickup',s=>s.player.bag.length>=orderCount);await go('stack',s=>s.floors[0].counter.controller>=orderCount);await go('counter',s=>s.served>0);
     await page.locator('#tables-button').click();await page.locator('[data-action="walk-table"][data-id="0"]').click();await until(s=>s.player.action==='table0','walk to the table');await until(s=>s.floors[0].tables[0].state==='free','eat and clean');
     await page.locator('[data-tab="employees"]').click();await page.locator('[data-action="hire"][data-id="0"]').click();await page.locator('[data-tab="home"]').click();await page.keyboard.down('d');await page.waitForTimeout(700);await page.keyboard.up('d');
     await page.locator('#area-button').click();const served=(await snapshot()).served;await until(s=>s.served>served,'employee order',60000);await page.waitForTimeout(1800);

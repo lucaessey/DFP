@@ -8,7 +8,7 @@ The user explicitly requested public GitHub Pages publication. The existing repo
 
 ## Deployment
 
-`.github/workflows/pages.yml` runs on pushes to `main` or manual dispatch. It installs locked dependencies, runs 50 simulation tests, builds with `/DFP/` as the Vite base, uploads the compiled site and publishes it through GitHub Pages. The build job has read-only repository access; the deployment job has Pages and deployment-identity permissions.
+`.github/workflows/pages.yml` runs on pushes to `main` or manual dispatch. It installs locked dependencies, runs the unit/simulation test suite, builds with `/DFP/` as the Vite base, uploads the compiled site and publishes it through GitHub Pages. The build job has read-only repository access; the deployment job has Pages and deployment-identity permissions.
 
 The manifest uses relative installation URLs. The service worker and every precache URL use the resolved build base. Root-path local builds continue to work, and the public worker is confined to `/DFP/`. Third-party runtime license notices are included in the deployed files.
 
@@ -27,3 +27,9 @@ Public-site saves are separate from localhost because they use a different brows
 [Deployment 35946360379](https://github.com/lucaessey/DFP/actions/runs/35946360379) successfully published commit `7831cec` with stable character facing, immediate stopping for direct controls, a 20% earnings increase with saved fractional carry, an open first-floor pickup tray and icon-based gameplay overlays. Money, buttons, menus and accessible station names remain available.
 
 Validation passed: 54 unit/simulation tests, 18 main browser checks including an actual save-preserving update, 9 control/interface checks including real touch release/cancellation, and 5 checks against the local `/DFP/` production build. Desktop and phone screenshots were inspected. The previously documented Family Safety restriction remains unchanged; no live browser bypass was attempted. Existing players can use Settings → Save & update DFP when the new version is offered.
+
+## Orders of one to three items
+
+Customers now request one to three unlocked products, including repeated units. Drinks count toward the limit; unfinished orders retain per-item delivery progress across reloads. Every floor's employees can fulfill larger food orders across multiple trips. Gift shoppers collect their complete mixed basket before a single checkout payment, and shelf restocking prioritizes older waiting shoppers alongside snack service.
+
+Validation passed: 66 unit/simulation tests, 18 main browser checks (including mixed three-item food and shopping orders and a real save-preserving service-worker update), 5 local Pages-build checks, both production builds and strict OpenSpec validation. Current dining and shop screenshots were inspected. Existing base prices and the 20% earnings boost are retained. Live browser access remains subject to the previously documented Family Safety restriction.
