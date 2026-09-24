@@ -56,4 +56,4 @@
 - [x] 9.2 Increase earned payouts by 20%, carrying saved fractional bonuses into whole dollars without replay or changes to unlock costs.
 - [x] 9.3 Stop manual movement on release/cancellation, clear movement on focus loss and menus, and add explicit cancellation for station/area trips.
 - [x] 9.4 Rebuild the first-floor pickup station as an open warming tray; replace floating words with accessible action and order icons while retaining useful UI.
-- [ ] 9.5 Verify controls, animation, earnings, all-floor gameplay and offline updates, then publish the fixes through the existing GitHub Pages workflow.
+- [x] 9.5 Verify controls, animation, earnings, all-floor gameplay and offline updates, then publish the fixes through the existing GitHub Pages workflow. All 54 unit tests, 18 gameplay browser checks, 9 control checks and 5 Pages-build checks passed; deployment 35946360379 succeeded.

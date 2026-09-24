@@ -21,3 +21,9 @@ The manifest uses relative installation URLs. The service worker and every preca
 - Live browser verification was attempted but Microsoft Family Safety on the available computer redirected Edge to its restricted-site page, asking for family-organizer approval. This restriction was left intact. Live browser gameplay is therefore not claimed as verified; the same production build passed local browser gameplay and offline checks at both `/DFP/` and `/`.
 
 Public-site saves are separate from localhost because they use a different browser origin. Everyone can play without a GitHub account; progress stays in their own browser. No cloud save service or multiplayer server is involved.
+
+## Gameplay fixes
+
+[Deployment 35946360379](https://github.com/lucaessey/DFP/actions/runs/35946360379) successfully published commit `7831cec` with stable character facing, immediate stopping for direct controls, a 20% earnings increase with saved fractional carry, an open first-floor pickup tray and icon-based gameplay overlays. Money, buttons, menus and accessible station names remain available.
+
+Validation passed: 54 unit/simulation tests, 18 main browser checks including an actual save-preserving update, 9 control/interface checks including real touch release/cancellation, and 5 checks against the local `/DFP/` production build. Desktop and phone screenshots were inspected. The previously documented Family Safety restriction remains unchanged; no live browser bypass was attempted. Existing players can use Settings → Save & update DFP when the new version is offered.
