@@ -1,0 +1,23 @@
+const shapes = {
+  controller: '<path d="M7 7h10c3 0 5 8 3 10-1 2-4-2-5-2H9c-1 0-4 4-5 2C2 15 4 7 7 7Z"/><path d="M8 9v5m-2.5-2.5h5"/><circle cx="16" cy="10" r=".7"/><circle cx="18" cy="13" r=".7"/>',
+  home: '<path d="m3 10 9-7 9 7v10h-6v-7H9v7H3Z"/>',
+  elevator: '<rect x="4" y="2" width="16" height="20" rx="3"/><path d="M12 5v14m-5-9 2-2 2 2m2 4 2 2 2-2"/>',
+  shirt: '<path d="m8 3-5 3-2 5 5 2v8h12v-8l5-2-2-5-5-3c0 4-8 4-8 0Z"/>',
+  people: '<circle cx="10" cy="5" r="3"/><path d="M10 8v8m-5-4 5-3 5 3m-5 4-4 6m4-6 4 6m3-18a3 3 0 0 1 0 6m1 1 4 3m-4-3v7l3 4"/>',
+  gear: '<path d="m9 3 1-2h4l1 2 3 2 3 1v4l-2 2 2 2v4l-3 1-3 2-1 2h-4l-1-2-3-2-3-1v-4l2-2-2-2V6l3-1Z" transform="translate(1 1) scale(.9)"/><circle cx="12" cy="12" r="3"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="M15 8h-4a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4H9m3-10v12"/>',
+  arrow: '<path d="M4 12h15m-6-6 6 6-6 6"/>',
+  up: '<path d="m5 12 7-7 7 7m-7-7v16"/>',
+  lock: '<rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/>',
+  check: '<path d="m5 12 4 4L20 5"/>',
+  bag: '<rect x="4" y="7" width="16" height="15" rx="3"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/>',
+  bolt: '<path d="m13 2-9 12h7l-1 8 10-13h-8Z"/>',
+  star: '<path d="m12 2 3 6 7 1-5 5 1 8-6-4-6 4 1-8-5-5 7-1Z"/>',
+  wine: '<path d="M7 2h10l1 7c0 7-12 7-12 0l1-7Zm5 13v7m-4 0h8M6 8h12"/>',
+  gift: '<rect x="3" y="9" width="18" height="5" rx="1"/><path d="M5 14v8h14v-8M12 9v13M12 9c-9 0-9-9-3-6l3 6Zm0 0c9 0 9-9 3-6l-3 6Z"/>',
+  arcade: '<path d="M6 2h12l-1 9 3 5v6H4v-6l3-5-1-9Z"/><path d="M8 5h8v5H8Zm-1 11h10m-6 0v-3"/>',
+  sound: '<path d="M3 9h4l5-5v16l-5-5H3Zm13-2c3 3 3 7 0 10m3-13c5 5 5 11 0 16"/>',
+  close: '<path d="m5 5 14 14M19 5 5 19"/>',
+  download: '<path d="M12 2v13m-5-5 5 5 5-5M4 16v5h16v-5"/>',
+};
+export const icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[name] || shapes.star}</svg>`;

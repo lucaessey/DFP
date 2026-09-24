@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-pages/
+test-results/
+.agents/
+.codex/
+.env
+.env.*
+artifacts/*
+!artifacts/3d-upgrade/
+artifacts/3d-upgrade/*
+!artifacts/3d-upgrade/comparison-state.json
+.DS_Store
+*.log
