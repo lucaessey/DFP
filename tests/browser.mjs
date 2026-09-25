@@ -20,7 +20,17 @@ async function launch(state=newGame(),viewport={width:1440,height:900},touch=fal
 }
 const snapshot=()=>page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('dfp.save')).data));
 async function until(predicate,label,max=80){for(let i=0;i<max;i++){const s=await snapshot();if(predicate(s))return s;await page.clock.runFor(500);}throw Error(`Timed out: ${label}. ${JSON.stringify(await snapshot())}`);}
-async function clickStation(floor,id){if(id.startsWith('table')){await page.locator('#tables-button').click();await page.locator(`[data-action="walk-table"][data-id="${id.slice(5)}"]`).click();}else await page.locator(`[data-station="${id}"]`).click();}
+async function clickStation(floor,id){
+  if(id.startsWith('table')){await page.locator('#tables-button').click();await page.locator(`[data-action="walk-table"][data-id="${id.slice(5)}"]`).click();return;}
+  const station=page.locator(`[data-station="${id}"]`);
+  // Cross the larger shop using normal controls until checkout comes into view.
+  if(floor===2&&id==='checkout'&&!await station.isVisible()){
+    await page.keyboard.down('a');
+    for(let i=0;i<16&&!await station.isVisible();i++)await page.clock.runFor(250);
+    await page.keyboard.up('a');await page.clock.runFor(350);
+  }
+  await station.click();
+}
 async function walk(floor,id,predicate,label=id){await clickStation(floor,id);return until(predicate,label);}
 async function shot(name){await page.screenshot({path:`test-results/${name}.png`,fullPage:true});}
 const pass=name=>{report.push({test:name,result:'pass'});console.log('PASS',name);};
@@ -32,7 +42,7 @@ try{
   await walk(0,'prep',s=>s.tutorial>=1);await until(s=>s.floors[0].customers.length>0,'first customer');const takeoutCount=(await snapshot()).floors[0].customers[0].needs.length;await walk(0,'fry',s=>s.floors[0].stock.controller>=takeoutCount);await walk(0,'pickup',s=>s.player.bag.length>=takeoutCount);
   await clickStation(0,'counter');await page.clock.runFor(8500);assert.equal((await snapshot()).served,0);
   await walk(0,'stack',s=>s.floors[0].counter.controller>=takeoutCount);assert.equal((await snapshot()).served,0);
-  await walk(0,'counter',s=>s.served>=1);assert.equal((await snapshot()).money,70+takeoutCount);await shot('desktop-takeout');pass('Takeout played through prep, fry, pickup, counter stacking and middle-circle service for the whole order');
+  await walk(0,'counter',s=>s.served>=1);assert.equal((await snapshot()).money,70+5*takeoutCount);await shot('desktop-takeout');pass('Takeout played through prep, fry, pickup, counter stacking and middle-circle service for the whole order');
   await launch(openAll());
   await page.locator('[data-tab="employees"]').click();await page.locator('[data-action="hire"][data-id="0"]').click();await until(s=>s.employees.length===1,'hire');await page.locator('[data-tab="home"]').click();const before=(await snapshot()).earned;await until(s=>s.earned>before,'visible employee service',180);pass('Employee hired through UI and automatically serves');
   await page.reload();await page.clock.runFor(1000);assert.equal((await snapshot()).employees.length,1);pass('Interrupted-session reload preserves purchases');

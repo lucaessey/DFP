@@ -15,6 +15,8 @@ npm run dev
 
 Open **http://127.0.0.1:5173/**. Keep the terminal running. Development mode reloads automatically when files change. Device-local saves are retained across code updates.
 
+For **http://localhost:8000/**, run `npm run dev -- --port 8000 --strictPort`. Each hostname and port has separate browser saves.
+
 ## Production and offline mode
 
 ```powershell
@@ -50,8 +52,10 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 - **Takeout:** PREP → FRY → PICK UP → **STACK FOOD**. Unload onto the marked counter spot, then stand in the separate middle **SERVE** circle to give the waiting customer food from that stack and collect payment. Unlock the drinks bar to add drinks to about 80% of orders. Drinks use the same stack-and-serve flow.
 - **Fine dining:** collect the requested Pixel Tower or Pocket Crunch meal and wine, unload at **STACK FOOD**, then stand in the middle **SERVE** circle. Guests pay there before taking their food to a purchased table.
 - **Gift shop:** carry stock from the stockroom to shelves; guests browse and take items; work at CHECKOUT to collect payment. Unlock the miniature-keychain shop for another product. The separately unlocked Shop Crunch snack counter uses STACK FOOD → SERVE → tables.
-- **Arcade:** guests play the three machines. Collect the visible quarters from their rings. One quarter is worth one spending dollar before profit upgrades. Unlock VR, walk into its ring, and start Pixel Run. Use left/right arrows, A/D, or its touch buttons to dodge for up to 25 seconds. Leaving early forfeits the run's reward. No headset or tickets. Arcade Crunch snacks use the separate STACK FOOD and SERVE circles.
+- **Arcade:** guests play the three machines. Collect the visible quarters from their rings. Quarters use the same fivefold collection rule as sales. Unlock VR, walk into its ring, and start Pixel Run. Use left/right arrows, A/D, or its touch buttons to dodge for up to 25 seconds. Leaving early forfeits the run's reward. No headset or tickets. Arcade Crunch snacks use the separate STACK FOOD and SERVE circles.
 - **Trash:** every floor has a TRASH can. Stand in its ring to discard carried items one at a time. Discarding pays nothing. Leave the ring to stop. “Return carried stock” safely puts it back in the floor's stock instead.
+
+**Spacious floors:** each room is now 28×18 units, about 64% larger, with wider workstation aisles, separate shop and food queues, and table spacing of 6 units across and 4.5 units between rows. Character size and walking speed stay readable and familiar. Old saves move obstructed characters to nearby clear ground, align seated guests with relocated tables and discard obsolete walking targets while keeping progress.
 
 **Tables on every floor:** use **Tables** to buy up to six tables, or choose an owned table to walk there. First tables cost $60/$100/$140/$180 by floor; each later table costs $55 more. **Dining area →** walks to the expanded seating wing; **← Kitchen** returns. Paid food guests reserve a clean table, sit and eat, then leave it dirty. Stand at its ring to clean, or let an employee do it. Occupied tables cannot be cleaned. If all owned tables are busy or dirty, paid guests wait; if no tables are owned, food is takeaway. Table purchases do not use player upgrade allowances.
 
@@ -59,24 +63,24 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 
 You start with $120. The first helper costs $100. Floor unlocks cost $650, $1,600, and $3,000, in order. Employees continue working on other unlocked floors while the application is active. There are no closed-app or background catch-up earnings.
 
-Base payouts follow the requested harder economy:
+Example single-item payouts with no upgrades and no carried fractional bonus:
 
-| Sale | Base payout |
+| Sale | Collected payout |
 | --- | ---: |
-| Fried controller | $1 |
-| Takeout drink | $3 |
-| Either console meal | $6 |
-| Wine | $4 |
-| DFP souvenir | $5 |
-| Mini keychain | $3 |
-| Shop Crunch snack | $3 |
-| Arcade Crunch snack | $4 |
-| Arcade play | 3 quarters = $3 |
-| VR run | $3 + $1 per dodge |
+| Fried controller | $5 |
+| Takeout drink | $15 |
+| Either console meal | $35 |
+| Wine | $20 |
+| DFP souvenir | $30 |
+| Mini keychain | $15 |
+| Shop Crunch snack | $15 |
+| Arcade Crunch snack | $20 |
+| Arcade play | 3 quarters → $15 |
+| VR run | Starts at $15; grows with dodges |
 
 Customers order 1–3 items at a time from unlocked products, including repeated items. Drinks count toward the three-item limit. Fill every item before collecting one payment for the combined order. Gift shoppers collect their whole basket before checkout, and employees handle larger orders across multiple trips. Product unlock prices and every payout are configurable in `src/config.js`. Existing opened items are preserved when older saves migrate to the new product-unlock system.
 
-**20% earnings boost:** all earned payouts receive an extra 20% after profit upgrades. Fractional bonuses accumulate into whole dollars and survive reloads: five $1 controller sales earn $6 total. Money is still collected once, and spending/unlock costs are unchanged.
+**Fivefold earnings:** all gameplay payments are exactly five times their previous amount, after existing upgrade rounding and the 20% bonus with saved fractional carry. For example, five separate controller sales now pay $30 total ($5, $5, $5, $5, $10). The menu previews the next player collection using the current floor bonus. Combined orders are calculated as one bill. Money already owned, hiring, upgrades and all purchases keep their previous values.
 
 Each floor supplies five unique hires to a shared 20-person roster. Transfer employees to any unlocked floor, up to 12 working on one floor. Transfers preserve upgrades and return undelivered cargo safely to the previous floor.
 
@@ -89,7 +93,7 @@ round(base payment × (1 + 0.20 × floor player profit level
 
 The employee term is zero when the player collects. Bonuses are applied once, at collection. Outfits are cosmetic and bought with earned game money.
 
-The 20% earnings boost is applied to that upgraded payout; fractional bonus dollars carry forward per floor. Floating station names and instruction overlays are replaced by small action icons, while money, order icons, buttons and menus remain visible. Screen readers retain station names and statuses.
+The existing 20% boost and saved fractional carry produce the previous whole-dollar payout; that final amount is multiplied by five once. Floating station names and instruction overlays are replaced by small action icons, while money, order icons, buttons and menus remain visible. Screen readers retain station names and statuses.
 
 ## Saves and updates
 
@@ -113,6 +117,8 @@ npm run spec:validate
 npm run test:browser
 node tests/seating-browser.mjs
 node tests/controls-browser.mjs
+node tests/expanded-browser.mjs
+node tests/camera-browser.mjs
 node tests/visual-3d.mjs
 # Optional: record the real player/employee loop
 node tests/visual-3d.mjs --record

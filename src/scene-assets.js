@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {DECOR} from './config.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FLOORS, LAYOUTS, WORLD, stationOpen } from './config.js';
@@ -87,19 +88,19 @@ export function room(state,floor) {
   const palette=[['#f8edd7','#f1e3c5','#73a497'],['#eedec5','#e4cfac','#647e65'],['#ebedf0','#dfe6e9','#71a3be'],['#e2dced','#d4cce2','#61567f']][floor];
   const W=WORLD.width,D=WORLD.depth;
   box(base,'#96ac98',W/2,-.22,D/2,W+.35,.42,D+.35);
-  for(let x=0;x<W;x++)for(let z=0;z<D;z++)shape(base,'block',x>=12?((x+z)%2?'#e7d5b3':'#f7e8c9'):palette[(x+z)%2],x+.5,.005,z+.5,.98,.04,.98);
+  for(let x=0;x<W;x++)for(let z=0;z<D;z++)shape(base,'block',x>=WORLD.diningStart?((x+z)%2?'#e7d5b3':'#f7e8c9'):palette[(x+z)%2],x+.5,.005,z+.5,.98,.04,.98);
   box(base,palette[2],W/2,.4,-.08,W+.3,.8,.18);box(base,palette[2],-.08,.4,D/2,.18,.8,D+.3);
   box(base,'#bad0b5',W/2,.84,-.08,W+.4,.085,.23);box(base,'#bad0b5',-.08,.84,D/2,.23,.085,D+.35);
-  box(base,accent,12,.04,D/2,.12,.04,D);lettering(base,'THE DINING ROOM',16.7,1.25,.05,4,'#426451','#fff0d1');
+  box(base,accent,WORLD.diningStart,.04,D/2,.12,.04,D);lettering(base,'THE DINING ROOM',21,1.25,.05,4,'#426451','#fff0d1');
   // Open entrance in the near wall: no tall walls between camera and jobs.
-  box(base,palette[2],10,.14,D+.05,20,.28,.14);box(base,palette[2],21.8,.14,D+.05,.6,.28,.14);
-  box(base,'#4b6e60',20.75,.055,D-.25,1.25,.05,.45);
-  for(const x of [20.05,21.45])box(base,'#fff4db',x,.68,D+.08,.11,1.36,.11);
-  box(base,accent,20.75,1.39,D+.08,1.6,.2,.15);lettering(base,'WELCOME',20.75,1.4,D+.17,1.37);
+  box(base,palette[2],(WORLD.entrance.x-.8)/2,.14,D+.05,WORLD.entrance.x-.8,.28,.14);box(base,palette[2],W-.3,.14,D+.05,.6,.28,.14);
+  box(base,'#4b6e60',WORLD.entrance.x,.055,D-.25,1.25,.05,.45);
+  for(const x of [WORLD.entrance.x-.7,WORLD.entrance.x+.7])box(base,'#fff4db',x,.68,D+.08,.11,1.36,.11);
+  box(base,accent,WORLD.entrance.x,1.39,D+.08,1.6,.2,.15);lettering(base,'WELCOME',WORLD.entrance.x,1.4,D+.17,1.37);
   // Wall menu and broad awnings are intentionally behind the workstations.
   box(base,'#fff2d7',5.8,1.6,-.05,3.4,.72,.16);lettering(base,floor===0?'DEEP FRIED PIXELS':FLOORS[floor].name.toUpperCase(),5.8,1.6,.05,3.2,'#355951','#fff2d7');
-  plant(base,.55,8.85);plant(base,11.25,.65);plant(base,11.5,6.2);
-  if(floor===0)for(const x of [2,5,8]) {for(let i=0;i<6;i++){const aw=box(base,i%2?'#fff1ce':'#f39461',x-.94+i*.38,1.78,.12,.39,.09,.78);aw.rotation.x=.13;} }
+  for(const p of DECOR)plant(base,p.x,p.y);
+  if(floor===0)for(const x of [2,6,10]) {for(let i=0;i<6;i++){const aw=box(base,i%2?'#fff1ce':'#f39461',x-.94+i*.38,1.78,.12,.39,.09,.78);aw.rotation.x=.13;} }
   if(floor===1){for(let x=1;x<12;x+=2)box(base,'#c8a771',x,.46,.026,.035,.6,.025);}
   const stations=new Map();
   for(const st of LAYOUTS[floor]) {
@@ -107,7 +108,7 @@ export function room(state,floor) {
     const detail=group(dynamic),goods=group(detail);const pad=ring(detail,open?(st.id==='counter'?'#f08b47':'#78af95'):'#b8beb3',st.pad.x,.055,st.pad.y,st.id==='counter'?1.25:1);
     stations.set(st.id,{st,detail,goods,pad,open,inventoryKey:'',screens:[],steam:[]});
     const data=stations.get(st.id);
-    if(st.auxiliary) {box(base,'#c07942',3.0,1.115,7.58,1.1,.04,.73);lettering(base,'STACK',3,1.14,8.125,.8,'#fff4d8','#bc753d');continue;}
+    if(st.auxiliary) {box(base,'#c07942',x,1.115,z,1.1,.04,.73);lettering(base,'STACK',x,1.14,st.y+st.d+.025,.8,'#fff4d8','#bc753d');continue;}
     if(st.kind==='trash') {box(base,'#52786c',x,.38,z,.62,.74,.62);box(base,'#b6c9b7',x,.79,z,.68,.12,.68);box(base,'#284e47',x,.853,z,.39,.02,.35);lettering(base,'BIN',x,.42,z+.321,.42);continue;}
     if(st.kind==='table') {
       if(!open){box(base,'#cbbf9f',x,.04,z,st.w+.8,.04,st.d+.5);box(base,'#eee4c8',x,.07,z,st.w+.68,.035,st.d+.38);box(base,'#c4b38d',x,.1,z,.5,.025,.09);box(base,'#c4b38d',x,.1,z,.09,.025,.5);continue;}
@@ -160,7 +161,7 @@ export function room(state,floor) {
     if(st.kind==='tower'||st.kind==='handheld') {plate(base,x,1.11,z);const meal=food(st.kind);meal.position.set(x,1.15,z);base.add(meal);box(base,'#566e5b',x+.7,1.31,z-.3,.25,.44,.22);}
     if(st.kind==='snack'){box(base,'#b98044',x,1.12,z,1,.07,.7);const snack=food(st.id);snack.position.set(x,1.17,z);base.add(snack);lettering(base,'CRUNCH',x,1.56,z-.38,1.12,'#fff2ce',c);}
     if(['counter','checkout','host'].includes(st.kind))register(base,st.kind==='counter'?x+1.55:x,z);
-    if(st.kind==='counter') {lettering(base,'DFP',x, .6,z+st.d/2+.04,1.15,'#fff3d7','#f47b45');box(base,'#b8d5bf',4.8,1.11,7.55,1.1,.035,.7);}
+    if(st.kind==='counter') {lettering(base,'DFP',x, .6,z+st.d/2+.04,1.15,'#fff3d7','#f47b45');box(base,'#b8d5bf',x,1.11,z,1.1,.035,.7);}
     if(['stock','keyStock'].includes(st.kind)){for(let i=0;i<3;i++){const item=food(st.kind==='stock'?'souvenir':'keychain');item.position.set(x-.7+i*.7,1.12,z);base.add(item);}lettering(base,'DFP / STOCK',x,.63,z+st.d/2+.03,1.35,'#fff6df','#6295b0');}
   }
   const merged=mergeStatic(base);root.add(merged,dynamic);root.userData={stations,merged};return root;

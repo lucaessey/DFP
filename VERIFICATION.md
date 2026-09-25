@@ -1,4 +1,24 @@
-# Verification — 23 September 2026
+# Verification
+
+## Fivefold earnings and expanded rooms — 24 September 2026
+
+Every floor is now 28×18 units instead of 22×14, approximately 64% more playable area. All collected gameplay payouts are exactly five times the previous receipt after the existing upgrade rounding and fractional bonus carry. Purchase costs, saved balances, employee assignments and upgrades, outfits, inventory, timers and paid flags are preserved. Old layouts migrate obstructed characters and clear obsolete paths once. There are no closed-app earnings.
+
+| Check | Actual result |
+| --- | --- |
+| `npm test` | 75 passed, 0 failed; includes 936 previous-version payout comparisons, duplicate collection, arcade/VR, migration and all station-to-station/customer routes |
+| `npm run test:browser` | 18 passed; complete player and employee gameplay, mixed three-item orders, touch, offline reload and a real save-preserving service-worker update |
+| `node tests/expanded-browser.mjs` | 16 passed across all four floors at 1440×900, 390×844 and 844×390; earnings previews, six tables, eight employees, room navigation, touch release and reload |
+| `node tests/camera-browser.mjs` | 24 boundary-position checks passed in portrait/landscape, including reduced-motion area views |
+| `node tests/controls-browser.mjs` | 9 passed; input release/cancellation, accessible station icons and useful UI retained |
+| `npm run test:pages` | 5 local production `/DFP/` checks passed, including service, offline save retention and phone touch |
+| Production root and Pages builds; strict OpenSpec validation | Passed |
+
+Inspected rendered screenshots of all four floors, including kitchen stations, shop shelves and checkout, restaurant seating, arcade/VR, phone frames and camera edges. Expanded-layout screenshots cover work, dining and the farthest table on all twelve floor/viewport combinations. Measured projected character height remains 23–55 pixels. Work routes in the tested frequent-station set are at most 18 world units, and all station pairs and customer destinations are reachable under actual collision-aware movement. Chairs and plants now share simulation collision boundaries; guests approach a chair before sitting and step out before leaving.
+
+Results and screenshots are stored locally under ignored `test-results/`. Browser tests used isolated Edge profiles and synthetic saves; the user's own saves were not altered. Touch/orientation checks are browser emulation, not physical-phone testing. Public browser access remains restricted by the computer's Family Safety configuration; publication is recorded in [DEPLOYMENT.md](DEPLOYMENT.md). The original verification below is historical.
+
+## Original release — 23 September 2026
 
 The current implementation includes real 3D presentation, all four floors, physical trash cans, separate counter stacking and middle-circle food service on every floor, six purchasable tables per floor, cleanup after eating, 80% takeout drink demand, paid unlocks for all thirteen offerings, and the $1 controller / $3 drink economy.
 
@@ -68,7 +88,7 @@ The offline test found and fixed an actual cache-matching problem: Vite varies a
 - No physical iPhone, iPad or Android device was available. Touch and rotation were tested in Chromium emulation; native Safari/Android installation prompts, standalone chrome/safe-area behavior, battery use and low-end hardware performance still need device testing.
 - Browser reload/closing and versioned recovery were exercised. Abrupt operating-system process termination during a storage write was not physically reproduced. Purchases/payments use a single synchronous validated snapshot write; unfinished movement may roll back by up to the two-second autosave interval.
 - Audio synthesis is included and browser execution produced no errors; physical speaker playback was not auditioned.
-- No end-to-end human balance study was performed. The very low payouts and expensive progression reflect the user's requested harder economy and remain configurable.
+- No end-to-end human balance study was performed. The later fivefold earnings update changes progression speed; all economy values remain configurable.
 - Device-local saves have no cloud synchronization. Clearing the browser's origin data removes them. Save export is available; an import interface was not part of this version.
 
 The initial verification was local. The subsequent user request authorizes publication to https://lucaessey.github.io/DFP/. The Pages build passed fresh-game service, table purchases, manifest/icon paths, scoped service-worker installation, offline reload with retained progress and phone touch checks. Publication results are recorded separately in [DEPLOYMENT.md](DEPLOYMENT.md). `build-dfp-game` remains unarchived.

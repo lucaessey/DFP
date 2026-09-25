@@ -16,19 +16,19 @@ test('fresh game and every station path are valid and accessible',()=>{
 });
 test('keyboard direction moves screen-right and collision prevents crossing furniture',()=>{
   const s=newGame();const old={...s.player};tick(s,1,{x:1});assert.ok(s.player.x>old.x&&s.player.y<old.y);
-  Object.assign(s.player,{x:2,y:2.2});tick(s,4,{x:1,y:-1});assert.ok(walkable(0,s.player.x,s.player.y));
+  Object.assign(s.player,LAYOUTS[0].find(st=>st.id==='prep').pad);tick(s,4,{x:1,y:-1});assert.ok(walkable(0,s.player.x,s.player.y));
 });
 test('fixed-step simulation is deterministic and rejects unbounded time',()=>{
   const a=newGame(),b=newGame();tick(a,60);tick(b,60);assert.deepEqual(a,b);assert.throws(()=>step(a,4000));
 });
 test('player completes takeout production, pickup, service, and one payment',()=>{
   const s=newGame();command(s,{type:'product',id:'controller'});at(s,0,'prep');assert.ok(s.floors[0].stock.raw>0);at(s,0,'fry');tick(s,3);at(s,0,'pickup');assert.ok(s.player.bag.includes('controller'));
-  tick(s,10);at(s,0,'counter',2);assert.equal(s.served,0);assert.ok(s.player.bag.includes('controller'));at(s,0,'stack');assert.equal(s.served,0);assert.equal(s.floors[0].counter.controller,1);at(s,0,'counter',3);assert.equal(s.served,1);assert.equal(s.money,71);assert.equal(s.tutorial,5);assert.ok(validateSave(s));
+  tick(s,10);at(s,0,'counter',2);assert.equal(s.served,0);assert.ok(s.player.bag.includes('controller'));at(s,0,'stack');assert.equal(s.served,0);assert.equal(s.floors[0].counter.controller,1);at(s,0,'counter',3);assert.equal(s.served,1);assert.equal(s.money,75);assert.equal(s.tutorial,5);assert.ok(validateSave(s));
 });
 test('drink orders require both goods and pay their sum once',()=>{
   const s=rich();command(s,{type:'section',floor:0});tick(s,20);const c=s.floors[0].customers[0];c.needs=['controller','drink'];c.delivered=[false,false];
   s.player.bag=['controller'];at(s,0,'stack');at(s,0,'counter');assert.equal(c.state,'waiting');assert.deepEqual(c.delivered,[true,false]);
-  s.player.bag=['drink'];at(s,0,'stack');const before=s.money;at(s,0,'counter',2);assert.equal(s.money-before,4);assert.ok(c.paid);assert.equal(c.state,'leaving');
+  s.player.bag=['drink'];at(s,0,'stack');const before=s.money;at(s,0,'counter',2);assert.equal(s.money-before,20);assert.ok(c.paid);assert.equal(c.state,'leaving');
 });
 test('drinks occur near 80 percent and unlocking refreshes only untouched orders',()=>{
   const s=rich(false);command(s,{type:'product',id:'controller'});tick(s,20);const started=s.floors[0].customers[0];started.delivered[0]=true;command(s,{type:'section',floor:0});assert.deepEqual(started.needs,['controller']);assert.ok(s.floors[0].customers.slice(1).some(c=>c.needs.includes('drink')));
@@ -70,8 +70,8 @@ test('employee cap is three per category and independent of player allowance',()
 });
 test('profit bonuses add against the base and receipts cannot pay twice',()=>{
   const s=rich();s.floors[0].upgrades.profit=1;const actor={x:4,y:4,upgrades:{profit:2}},receipt={paid:false};const before=s.money;
-  assert.equal(collectPayment(s,0,actor,100,receipt),180);assert.equal(collectPayment(s,0,actor,100,receipt),0);assert.equal(s.money-before,180);
-  assert.equal(collectPayment(s,0,s.player,100,{paid:false}),144);
+  assert.equal(collectPayment(s,0,actor,100,receipt),900);assert.equal(collectPayment(s,0,actor,100,receipt),0);assert.equal(s.money-before,900);
+  assert.equal(collectPayment(s,0,s.player,100,{paid:false}),720);
 });
 test('outfits unlock only on eligible floors and persist equipped selection',()=>{
   const s=newGame();s.money=1000;assert.equal(command(s,{type:'outfit',id:'formal'}).ok,false);assert.ok(command(s,{type:'outfit',id:'chef'}).ok);assert.equal(decode(encode(s)).outfit,'chef');const cash=s.money;command(s,{type:'outfit',id:'chef'});assert.equal(s.money,cash);
@@ -105,6 +105,7 @@ test('save validation rejects impossible balances, rosters, states and upgrades'
 test('version-one migration adds defaults and unknown future saves are preserved',()=>{
   const s=newGame();s.version=1;delete s.settings;delete s.outfits;delete s.outfit;const migrated=decode(JSON.stringify(s));assert.equal(migrated.version,4);assert.equal(migrated.outfit,'uniform');
   const storage=memory();const future=JSON.stringify({version:99});storage.setItem(SAVE_KEY,future);const result=loadGame(storage);assert.equal(result.writable,false);assert.equal(storage.getItem(SAVE_KEY),future);
+  const futureLayout=JSON.stringify({...newGame(),layoutVersion:99});storage.setItem(SAVE_KEY,futureLayout);assert.equal(loadGame(storage).writable,false);assert.equal(storage.getItem(SAVE_KEY),futureLayout);
 });
 test('corrupt primary recovers valid backup without overwriting it',()=>{
   const storage=memory(),s=newGame();saveGame(storage,s);s.money=150;saveGame(storage,s);storage.setItem(SAVE_KEY,'invalid');const loaded=loadGame(storage);assert.equal(loaded.state.money,120);assert.match(loaded.warning,/backup/);assert.ok(saveGame(storage,loaded.state).ok);assert.ok(decode(storage.getItem(BACKUP_KEY)));
@@ -114,5 +115,5 @@ test('storage errors are reported and checksum detects tampered snapshots',()=>{
   const broken={getItem(){throw Error('blocked')},setItem(){throw Error('full')}};assert.equal(saveGame(broken,s).ok,false);assert.equal(loadGame(broken).writable,false);
 });
 test('interrupted saved payments and purchases do not replay after reload',()=>{
-  const storage=memory(),s=newGame();const receipt={paid:false};collectPayment(s,0,s.player,100,receipt);command(s,{type:'hire',id:0,token:'hire-0'});saveGame(storage,s);const resumed=loadGame(storage).state;assert.equal(resumed.money,140);assert.equal(resumed.employees.length,1);assert.equal(command(resumed,{type:'hire',id:0,token:'hire-0'}).ok,false);
+  const storage=memory(),s=newGame();const receipt={paid:false};collectPayment(s,0,s.player,100,receipt);command(s,{type:'hire',id:0,token:'hire-0'});saveGame(storage,s);const resumed=loadGame(storage).state;assert.equal(resumed.money,620);assert.equal(resumed.employees.length,1);assert.equal(command(resumed,{type:'hire',id:0,token:'hire-0'}).ok,false);
 });

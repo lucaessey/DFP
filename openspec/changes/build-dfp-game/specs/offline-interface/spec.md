@@ -50,3 +50,10 @@ The game SHALL be publicly playable at https://lucaessey.github.io/DFP/ without 
 #### Scenario: Public game and offline return
 - **WHEN** a new visitor opens the public game, completes a purchase and waits for the offline download
 - **THEN** the 3D game runs, and a subsequent offline reload preserves that visitor's progress without requesting assets from the domain root.
+
+### Requirement: Safe layout update
+Layout migration SHALL preserve balances, paid flags, partial orders, inventories, employees and assignments, outfits, purchases, upgrades, tables and gameplay timers. Old path targets SHALL be cleared. Saved actors obstructed by changed furniture SHALL move to nearby clear space; seated and playing customers SHALL align with their assigned furniture. Already-valid positions SHALL remain valid and a repeated reload SHALL not replay migration, income or purchases. Offline update and controls SHALL remain functional.
+
+#### Scenario: Old position inside a moved station
+- **WHEN** a saved player or employee position conflicts with the expanded layout
+- **THEN** the actor resumes on a nearby reachable tile with unchanged cargo and progress, and no money is credited by migration.

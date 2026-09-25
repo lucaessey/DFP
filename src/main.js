@@ -2,6 +2,8 @@ import './style.css';
 import './vr.css';
 import './world.css';
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, tableCost, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
+import {paymentQuote} from './economy.js';
+import {WORLD} from './config.js';
 import { step, command, capacity, stationStatus, startVR, vrInput } from './simulation.js';
 import { loadGame, saveGame, SAVE_KEY, BACKUP_KEY } from './storage.js';
 import { Renderer, drawPortrait } from './renderer.js';
@@ -91,7 +93,7 @@ function refreshHome() {
   let tablesButton=document.querySelector('#tables-button');if(!tablesButton){tablesButton=document.createElement('button');tablesButton.id='tables-button';tablesButton.dataset.action='tables';tablesButton.className='small-button';document.querySelector('.play-area').append(tablesButton);}
   tablesButton.innerHTML=`${icon('people')} Tables <b>${fs.tables.filter(t=>t.owned).length}/6</b>`;
   let areaButton=document.querySelector('#area-button');if(!areaButton){areaButton=document.createElement('button');areaButton.id='area-button';areaButton.dataset.action='area';areaButton.className='small-button';document.querySelector('.play-area').append(areaButton);}
-  areaButton.textContent=state.player.x>11?'← Kitchen':'Dining area →';
+  areaButton.textContent=state.player.x>WORLD.diningStart?'← Kitchen':'Dining area →';
   let stopButton=document.querySelector('#stop-movement');if(!stopButton){stopButton=document.createElement('button');stopButton.id='stop-movement';stopButton.dataset.action='stop';stopButton.setAttribute('aria-label','Stop walking');stopButton.innerHTML=icon('stop');document.querySelector('.play-area').append(stopButton);}stopButton.hidden=!target||surfacePointer!==null;
 }
 function selectTab(tab) {
@@ -127,7 +129,7 @@ function settingsDialog() {
 }
 function menuDialog() {
   const f=state.floor,fs=state.floors[f];
-  showDialog(`<span class="eyebrow">BUILD YOUR MENU, ONE ITEM AT A TIME</span><h2>Something worth unlocking.</h2><p>Every product starts here. ${FLOORS[f].name}.</p><div class="product-list">${PRODUCTS.filter(p=>p.floor===f).map(p=>`<article><span class="product-symbol">${icon(p.icon)}</span><div><h3>${p.name}</h3><p>${p.description}</p><small>${B.prices[p.id]?`Earn $${B.prices[p.id]} per sale before upgrades`:p.id==='vr'?`Earn $${B.vrBaseReward} + $${B.vrDodgeReward} per dodge`:`Earn $${B.quarters} per completed play`}</small></div><button class="${fs.products[p.id]?'outline-button':'dark-button'}" data-action="product" data-id="${p.id}" ${fs.products[p.id]?'disabled':''}>${fs.products[p.id]?'Open':money(p.cost)}</button></article>`).join('')}</div><p class="fine-print">All earnings get a 20% boost. Small bonuses build up into extra dollars. Guests only order items you have opened.</p>`);
+  showDialog(`<span class="eyebrow">BUILD YOUR MENU, ONE ITEM AT A TIME</span><h2>Something worth unlocking.</h2><p>Every product starts here. ${FLOORS[f].name}.</p><div class="product-list">${PRODUCTS.filter(p=>p.floor===f).map(p=>`<article><span class="product-symbol">${icon(p.icon)}</span><div><h3>${p.name}</h3><p>${p.description}</p><small>${B.prices[p.id]?`Next single-item sale: ${money(paymentQuote(state,f,state.player,B.prices[p.id]).amount)}`:p.id==='vr'?`Reward starts at ${money(paymentQuote(state,f,state.player,B.vrBaseReward).amount)}; grows with dodges`:`Next play collection: ${money(paymentQuote(state,f,state.player,B.quarters).amount)}`}</small></div><button class="${fs.products[p.id]?'outline-button':'dark-button'}" data-action="product" data-id="${p.id}" ${fs.products[p.id]?'disabled':''}>${fs.products[p.id]?'Open':money(p.cost)}</button></article>`).join('')}</div><p class="fine-print">Player previews include upgrades and fivefold earnings. The full order is paid once; small bonuses carry into later payments. Guests only order unlocked items.</p>`);
 }
 function tablesDialog(){
   const fs=state.floors[state.floor];
@@ -135,7 +137,7 @@ function tablesDialog(){
 }
 function vrDialog(resume = false) {
   if (!resume && !startVR(state)) return toast('Walk to the VR playground first.');
-  showDialog(`<div class="vr-header"><span class="eyebrow">THE VR PLAYGROUND</span><h2>Pixel Run</h2><p>Pick a lane. Dodge the pixels. Keep your three lives.</p></div><div class="vr-stats"><span id="vr-lives"></span><b id="vr-time"></b><span id="vr-score"></span></div><div class="vr-field" id="vr-field"><div class="vr-horizon">DFP / VIRTUAL PLAYGROUND</div><div class="vr-runner" id="vr-runner">${icon('controller')}</div><div id="vr-obstacles"></div></div><div class="vr-controls"><button data-action="vr-left" aria-label="Move left in Pixel Run">←</button><span>← → or A / D<br>Touch a button to switch lanes</span><button data-action="vr-right" aria-label="Move right in Pixel Run">→</button></div><div id="vr-result" hidden></div><p class="fine-print">${B.vrTime} seconds · $${B.vrBaseReward} + $${B.vrDodgeReward} per dodge, before your floor profit bonus.<br>Leaving a run forfeits its reward. No headset needed.</p>`);
+  showDialog(`<div class="vr-header"><span class="eyebrow">THE VR PLAYGROUND</span><h2>Pixel Run</h2><p>Pick a lane. Dodge the pixels. Keep your three lives.</p></div><div class="vr-stats"><span id="vr-lives"></span><b id="vr-time"></b><span id="vr-score"></span></div><div class="vr-field" id="vr-field"><div class="vr-horizon">DFP / VIRTUAL PLAYGROUND</div><div class="vr-runner" id="vr-runner">${icon('controller')}</div><div id="vr-obstacles"></div></div><div class="vr-controls"><button data-action="vr-left" aria-label="Move left in Pixel Run">←</button><span>← → or A / D<br>Touch a button to switch lanes</span><button data-action="vr-right" aria-label="Move right in Pixel Run">→</button></div><div id="vr-result" hidden></div><p class="fine-print">${B.vrTime} seconds · Reward starts at ${money(paymentQuote(state,3,state.player,B.vrBaseReward).amount)} and grows with each dodge. Includes your floor bonus and fivefold earnings.<br>Leaving a run forfeits its reward. No headset needed.</p>`);
   dialog.classList.add('vr-dialog'); save();
 }
 function refreshVR() {
@@ -159,7 +161,7 @@ app.addEventListener('click', event => {
   if(action==='tables')tablesDialog();
   if(action==='buy-table'){act({type:'table',id:Number(id)});dialog.close();tablesDialog();}
   if(action==='walk-table'){dialog.close();target={...LAYOUTS[state.floor].find(st=>st.id===`table${id}`).pad};}
-  if(action==='area')target=state.player.x>11?{x:6,y:5}:{x:16,y:7.4};
+  if(action==='area')target=state.player.x>WORLD.diningStart?{...WORLD.kitchen}:{...WORLD.dining};
   if(action==='stop')stopMovement();
   if (action === 'product') { act({type:'product',id});dialog.close();menuDialog(); }
   if (action === 'close') dialog.close();

@@ -1,4 +1,4 @@
-import { LAYOUTS, TABLE_COUNT, tableSeat } from './config.js';
+import { LAYOUTS, tableSeat } from './config.js';
 import { walkable } from './navigation.js';
 import { food } from './scene-assets.js';
 
@@ -6,13 +6,8 @@ export const damp = (a,b,rate,dt) => a+(b-a)*(1-Math.exp(-rate*dt));
 export function angleTowards(a,b,dt) {return a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*(1-Math.exp(-12*dt));}
 
 export function visualWalkable(floor,x,y,actor) {
-  if(!walkable(floor,x,y,.3))return false;
-  if([[.55,8.85],[11.25,.65],[11.5,6.2]].some(([px,py])=>Math.hypot(px-x,py-y)<.52))return false;
-  for(let i=0;i<TABLE_COUNT;i++){const seat=tableSeat(i);for(const cx of [seat.x,seat.x+2.92]){
-    const ownSeat=actor?.table===i&&cx===seat.x&&['toTable','dining','leaving'].includes(actor.state);
-    if(!ownSeat&&Math.abs(x-cx)<.5&&Math.abs(y-seat.y)<.53)return false;
-  }}
-  return true;
+  if(actor?.state==='dining'&&actor.table!==null){const seat=tableSeat(actor.table);if(Math.hypot(x-seat.x,y-seat.y)<.12)return true;}
+  return walkable(floor,x,y,.3);
 }
 
 // Offsets belong exclusively to presentation. They never mutate saved actors or
@@ -58,7 +53,7 @@ export function animateCharacter(model,a,target,state,dt,time) {
   // Simulation runs at 20 Hz. Keep its last travel heading between render frames.
   if(a.moving||moved>.005||model.walk>.35)facing=model.heading??model.angle;
   else if(working)facing=Math.atan2(st.x+st.w/2-x,st.y+st.d/2-z);
-  else if(a.purpose==='food'&&['waiting','payment'].includes(a.state))facing=Math.atan2(4.8-x,7.6-z);
+  else if(a.purpose==='food'&&['waiting','payment'].includes(a.state))facing=Math.atan2(5-x,9-z);
   else if(a.state==='playing'||a.state==='checkout')facing=Math.PI;
   else if(a.state==='browsing')facing=0;
   const sitting=a.purpose==='food'&&a.table!==null&&a.table!==undefined&&a.state==='dining';

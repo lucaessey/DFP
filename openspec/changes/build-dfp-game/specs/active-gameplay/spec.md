@@ -86,7 +86,7 @@ Floor three SHALL include DFP chicken/controller souvenirs, stock pickup, carryi
 - **THEN** a browsing customer takes stocked merchandise and pays once at checkout.
 
 ### Requirement: Arcade and VR
-Floor four SHALL include at least three arcade machines, waiting customers, animated play, accumulated quarters, and collection at each machine. One quarter SHALL equal one spending dollar before applicable profit bonuses. There SHALL be no ticket economy. An unlockable VR section SHALL offer a repeatable three-lane dodge game using touch buttons or arrow keys, without a headset.
+Floor four SHALL include at least three arcade machines, waiting customers, animated play, accumulated quarters, and collection at each machine. One quarter SHALL retain an internal base value of one dollar, with actual collection applying the existing upgrades and 20% carry rule followed by the fivefold multiplier. There SHALL be no ticket economy. An unlockable VR section SHALL offer a repeatable three-lane dodge game using touch buttons or arrow keys, without a headset.
 
 #### Scenario: Machine revenue
 - **WHEN** a customer finishes an arcade session
@@ -117,3 +117,14 @@ Food customers on every floor and merchandise shoppers SHALL request one to thre
 #### Scenario: Drinks unlocked for a full order
 - **WHEN** the drinks unlock refreshes an untouched three-item waiting order
 - **THEN** a drink replaces one requested item instead of expanding the order beyond three, while partially served orders stay unchanged.
+
+### Requirement: Spacious floors and complete navigation
+All four floors SHALL expand to 28×18 playable units without scaling down characters or furniture. Wider production aisles, six more widely spaced tables, separate food/service/seating paths, clear gift shelves and separate shop waiting/checkout lanes, spaced arcade machines and VR SHALL preserve themes, existing sections and unlock progression. Collision boundaries, paths, interaction pads, customer queues, indicators and camera limits SHALL use the expanded layout. Frequently used workstation routes SHALL remain compact and all stations, unlocked sections and Elevator controls SHALL remain reachable.
+
+#### Scenario: Full floor operation
+- **WHEN** customers and employees operate on any expanded floor
+- **THEN** they reach stations, queues, shelves, machines and seats without furniture collisions or blocked paths, while player and employee passing space remains available.
+
+#### Scenario: Mobile framing
+- **WHEN** the player walks between production and dining in portrait or landscape
+- **THEN** the camera retains readable character scale and keeps the player and reachable controls visible across the expanded boundaries.

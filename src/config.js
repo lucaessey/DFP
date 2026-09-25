@@ -1,14 +1,16 @@
-export const WORLD = Object.freeze({width:22,depth:14,entrance:{x:20.8,y:13.3}});
+export const LAYOUT_VERSION=2;
+export const WORLD = Object.freeze({width:28,depth:18,entrance:{x:26.5,y:16.5},diningStart:14.5,kitchen:{x:6.5,y:5.5},dining:{x:20,y:7},camera:{minX:5,maxX:23,minY:4,maxY:14}});
+export const DECOR=[{x:.55,y:10.5,r:.35},{x:14,y:.6,r:.35},{x:27,y:9,r:.35}];
 export const TABLE_COUNT=6;
 export const tableCost=(floor,index)=>60+floor*40+index*55;
-export const tableSeat=index=>({x:12.8+(index%2)*4.2,y:3.45+Math.floor(index/2)*3.4});
+export const tableSeat=index=>({x:15.5+(index%2)*6,y:4+Math.floor(index/2)*4.5});
 export const FLOOR_FOODS=[['controller','drink'],['tower','handheld','wine'],['snack2'],['snack3']];
 export const BALANCE = Object.freeze({
   startCash: 120, step: 0.05, speed: 2.9, employeeSpeed: 2.3,
   capacity: 3, employeeCapacity: 2, playerCap: 5, employeeCap: 3,
   floorStaffCap: 12, playerSpeedBonus: 0.15, employeeSpeedBonus: 0.2,
   playerProfitBonus: 0.2, employeeProfitBonus: 0.15,
-  earningsBoostPercent: 20,
+  earningsBoostPercent: 20, earningsMultiplier: 5,
   actionTime: 0.65, fryTime: 2.4, diningTime: 6, arcadeTime: 6,
   arrivalTime: 4.8, maxCustomers: 6, maxOrderItems: 3, batch: 3, stockCap: 18, drinkOrderChance: 0.8,
   prices: { controller: 1, drink: 3, tower: 6, handheld: 6, wine: 4, souvenir: 5, keychain: 3, snack2:3, snack3:4 },
@@ -40,10 +42,10 @@ export const stationOpen = (s,f,st) => st.kind==='table'?!!s.floors[f].tables[Nu
 export const stationPrice = st => st.tableCost??PRODUCTS.find(p=>p.id===st.product)?.cost??0;
 const station = (id, name, x, y, w, d, kind, px = x + w / 2, py = y + d + 0.7, extra = {}) => ({ id, name, x, y, w, d, kind, pad: { x: px, y: py }, ...extra });
 export const LAYOUTS = [
-  [station('prep', 'PREP', 1, 0.7, 2, 1.2, 'prep'), station('fry', 'FRY', 4, 0.7, 2, 1.2, 'fryer'), station('pickup', 'PICK UP', 7, 0.7, 2, 1.2, 'pickup'), station('drink', 'DRINKS', 10, 2.5, 1.3, 1.7, 'drinks', 9.3, 3.4, { section: true }), station('counter', 'SERVE', 2.3, 7.1, 5, 1, 'counter', 4.8, 6.4)],
-  [station('tower', 'PIXEL TOWER', 1, 0.7, 2, 1.2, 'tower'), station('handheld', 'POCKET CRUNCH', 4, 0.7, 2, 1.2, 'handheld'), station('wine', 'WINE', 8, 0.7, 2, 1.2, 'wine'), station('greet', 'GREET', 1, 7.2, 1.2, 1.1, 'host', 2.9, 7.5), station('table0', 'TABLE 01', 4, 4, 1.6, 1.4, 'table', 4.8, 6.1), station('table1', 'TABLE 02', 8, 4, 1.6, 1.4, 'table', 8.8, 6.1)],
-  [station('stock', 'STOCKROOM', 1, 0.7, 2.5, 1.2, 'stock'), station('keyStock', 'KEYCHAINS', 7.5, 0.7, 2, 1.2, 'keyStock', 8.5, 2.6, { section: true }), station('shelf', 'DFP GOODS', 3, 4, 2.5, 1.2, 'shelf', 4.2, 5.9), station('keyShelf', 'MINI SHOP', 8, 4, 2, 1.2, 'keyShelf', 9, 5.9, { section: true }), station('checkout', 'CHECKOUT', 2, 7.6, 2.5, 1, 'checkout', 3.2, 6.9)],
-  [station('machine0', 'PIXEL RUSH', 1, 1, 1.7, 1.5, 'arcade', 1.8, 3.2), station('machine1', 'COSMIC FRY', 4.1, 1, 1.7, 1.5, 'arcade', 4.9, 3.2), station('machine2', 'BYTE FIGHT', 7.2, 1, 1.7, 1.5, 'arcade', 8, 3.2), station('vr', 'VR PLAYGROUND', 7.6, 5.5, 2.6, 2.1, 'vr', 6.8, 6.5, { section: true })],
+  [station('prep','PREP',1,1,2,1.2,'prep',2,3.5),station('fry','FRY',5,1,2,1.2,'fryer',6,3.5),station('pickup','PICK UP',9,1,2,1.2,'pickup',10,3.5),station('drink','DRINKS',12,4,1.3,1.7,'drinks',11,5,{section:true})],
+  [station('tower','PIXEL TOWER',1,1,2,1.2,'tower',2,3.5),station('handheld','POCKET CRUNCH',5,1,2,1.2,'handheld',6,3.5),station('wine','WINE',9,1,2,1.2,'wine',10,3.5)],
+  [station('stock','STOCKROOM',1,1,2.5,1.2,'stock',2.5,3.5),station('keyStock','KEYCHAINS',8.5,1,2,1.2,'keyStock',9.5,3.5,{section:true}),station('shelf','DFP GOODS',3,5,2.5,1.2,'shelf',6.5,5.5),station('keyShelf','MINI SHOP',9,5,2,1.2,'keyShelf',12,5.5,{section:true}),station('checkout','CHECKOUT',1,12,2.5,1,'checkout',2.5,11)],
+  [station('machine0','PIXEL RUSH',1,1,1.7,1.5,'arcade',2,3.5),station('machine1','COSMIC FRY',5,1,1.7,1.5,'arcade',6,3.5),station('machine2','BYTE FIGHT',9,1,1.7,1.5,'arcade',10,3.5),station('vr','VR PLAYGROUND',9,6,2.6,2.1,'vr',8,7,{section:true})],
 ];
 export const OUTFITS = [
   { id: 'uniform', name: 'The original', subtitle: 'DFP uniform', color: '#f57d46', hat: '#f57d46', pants: '#37595a', price: 0, floor: 0 },
@@ -53,19 +55,21 @@ export const OUTFITS = [
   { id: 'neon', name: 'After hours', subtitle: 'Neon arcade', color: '#615186', hat: '#bafd72', pants: '#383553', price: 400, floor: 3 },
 ];
 const NAMES = ['Milo', 'Poppy', 'Jules', 'Remy', 'Bea', 'Olive', 'Felix', 'Cleo', 'Theo', 'Ivy', 'Kit', 'Sunny', 'Max', 'Lou', 'Coco', 'Nova', 'Ash', 'Juno', 'Lex', 'Ziggy'];
-LAYOUTS[0].push(station('stack', 'STACK FOOD', 2.4, 7.1, 1.2, 1, 'stack', 2.9, 6.4, { auxiliary: true }));
-for (const layout of LAYOUTS) layout.push(station('trash', 'TRASH', 0.7, 4.1, 0.7, 0.7, 'trash', 1.2, 5.55));
-const stationProducts = [{prep:'controller',fry:'controller',pickup:'controller',drink:'drink'},{tower:'tower',handheld:'handheld',wine:'wine'},{stock:'souvenir',shelf:'souvenir',keyStock:'keychain',keyShelf:'keychain'},{machine0:'machine0',machine1:'machine1',machine2:'machine2',vr:'vr'}];
-LAYOUTS.forEach((layout,f)=>layout.forEach(st=>{st.product=stationProducts[f][st.id];}));
+const stationProducts=[{prep:'controller',fry:'controller',pickup:'controller',drink:'drink'},{tower:'tower',handheld:'handheld',wine:'wine'},{stock:'souvenir',shelf:'souvenir',keyStock:'keychain',keyShelf:'keychain'},{machine0:'machine0',machine1:'machine1',machine2:'machine2',vr:'vr'}];
 for(let f=0;f<4;f++){
-  LAYOUTS[f]=LAYOUTS[f].filter(st=>st.kind!=='table'&&st.id!=='greet');
-  if(f>0){
-    if(f===2){const checkout=LAYOUTS[f].find(st=>st.id==='checkout');Object.assign(checkout,{x:8.5,y:7.6,pad:{x:9.7,y:6.9}});}
-    LAYOUTS[f].push(station('counter','SERVE',2.3,7.1,5,1,'counter',4.8,6.4),station('stack','STACK FOOD',2.4,7.1,1.2,1,'stack',2.9,6.4,{auxiliary:true}));
-  }
-  if(f>=2)LAYOUTS[f].push(station(`snack${f}`,'SNACKS',10.25,.7,1.3,1.2,'snack',10.9,2.6,{product:`snack${f}`}));
-  for(let i=0;i<TABLE_COUNT;i++){const seat=tableSeat(i);LAYOUTS[f].push(station(`table${i}`,`TABLE ${String(i+1).padStart(2,'0')}`,seat.x+.6,seat.y-.75,1.8,1.5,'table',seat.x+1.5,seat.y+1.55,{tableCost:tableCost(f,i)}));}
+  LAYOUTS[f].forEach(st=>{st.product=stationProducts[f][st.id];});
+  LAYOUTS[f].push(station('counter','SERVE',2.5,8.5,5,1,'counter',5,7.5),station('stack','STACK FOOD',2.6,8.5,1.2,1,'stack',3,7.5,{auxiliary:true}),station('trash','TRASH',.7,5.2,.7,.7,'trash',1,6.5));
+  if(f>=2)LAYOUTS[f].push(station('snack'+f,'SNACKS',12,1,1.3,1.2,'snack',13,3.5,{product:'snack'+f}));
+  for(let i=0;i<TABLE_COUNT;i++){const seat=tableSeat(i);LAYOUTS[f].push(station('table'+i,'TABLE '+String(i+1).padStart(2,'0'),seat.x+.6,seat.y-.75,1.8,1.5,'table',seat.x+1.5,seat.y+1.5,{tableCost:tableCost(f,i)}));}
 }
+export const serviceQueue=(index=0)=>({x:5+index*1.4,y:10.5});
+export const checkoutQueue=(index=0)=>({x:2.5+index*1.4,y:14});
+export const shopWaiting=index=>({x:5+index*1.4,y:16});
+export const shelfApproach=item=>({x:item==='souvenir'?4.5:10,y:4});
+export const tableApproach=index=>{const seat=tableSeat(index);return {x:seat.x-.8,y:seat.y};};
+export const tableWaiting=index=>({x:15.5+index*1.4,y:16});
+export const arcadeSeat=index=>({...LAYOUTS[3].find(st=>st.id==='machine'+index).pad});
+export const arcadeWaiting=index=>({x:2+index*1.5,y:5});
 export const ROSTER = NAMES.map((name, id) => ({ id, name, origin: Math.floor(id / 5), cost: 100 + Math.floor(id / 5) * 85 + (id % 5) * 65, color: ['#72a599', '#d68aaf', '#e9b950', '#729ec3', '#b98dce'][id % 5] }));
 export const UPGRADE_TYPES = ['speed', 'capacity', 'profit'];
 export const ITEMS = ['controller', 'drink', 'tower', 'handheld', 'wine', 'souvenir', 'keychain','snack2','snack3'];

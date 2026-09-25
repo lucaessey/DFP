@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newGame,command,step} from '../src/simulation.js';
-import {BALANCE as B,LAYOUTS} from '../src/config.js';
+import {BALANCE as B,LAYOUTS,serviceQueue,checkoutQueue} from '../src/config.js';
 import {encode,decode,validateSave} from '../src/storage.js';
 
 const tick=(s,seconds,pausedPlayer=true)=>{for(let i=0;i<Math.ceil(seconds/B.step);i++)step(s,B.step,{pausedPlayer});};
@@ -17,11 +17,11 @@ for(const [f,items] of [[0,['controller']],[1,['handheld']],[2,['snack2']],[3,['
 });
 
 test('three-item food order consumes duplicates separately, resumes partial service and pays once',()=>{
-  let s=setup(0,['controller','drink']);let c=order(s,['controller','controller','drink']);Object.assign(c,{x:4.8,y:8.7,path:[],pathKey:''});const cash=s.money;
+  let s=setup(0,['controller','drink']);let c=order(s,['controller','controller','drink']);Object.assign(c,{...serviceQueue(),path:[],pathKey:''});const cash=s.money;
   s.floors[0].counter.controller=1;at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,false,false]);assert.equal(s.money,cash);assert.equal(s.floors[0].counter.controller,0);
   s=decode(encode(s));c=s.floors[0].customers[0];s.player.bag=['controller','drink'];at(s,'counter');assert.deepEqual(c.delivered,[true,false,false]);
-  at(s,'stack',1.4);assert.equal(s.money,cash);at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,true,true]);assert.equal(s.money,cash+6);assert.equal(s.floors[0].served,1);assert.ok(c.paid);
-  s=decode(encode(s));at(s,'counter',2);assert.equal(s.money,cash+6);assert.equal(s.floors[0].served,1);
+  at(s,'stack',1.4);assert.equal(s.money,cash);at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,true,true]);assert.equal(s.money,cash+30);assert.equal(s.floors[0].served,1);assert.ok(c.paid);
+  s=decode(encode(s));at(s,'counter',2);assert.equal(s.money,cash+30);assert.equal(s.floors[0].served,1);
 });
 
 test('unlocking drinks keeps untouched triple orders within the three-item limit',()=>{
@@ -32,13 +32,13 @@ test('unlocking drinks keeps untouched triple orders within the three-item limit
 
 for(const [f,items] of [[0,['controller','drink','drink']],[1,['tower','handheld','wine']],[2,['snack2','snack2','snack2']],[3,['snack3','snack3','snack3']]])test(`floor ${f+1}: an employee fulfills all three items across carrying trips`,()=>{
   const s=setup(f,[...new Set(items)]),c=order(s,items);command(s,{type:'hire',id:f*5,floor:f});const cash=s.money,subtotal=items.reduce((sum,item)=>sum+B.prices[item],0);
-  until(s,()=>c.paid);assert.ok(c.delivered.every(Boolean));assert.equal(s.money,cash+subtotal+Math.floor(subtotal*.2));assert.equal(s.floors[f].served,1);assert.ok(validateSave(s));
+  until(s,()=>c.paid);assert.ok(c.delivered.every(Boolean));assert.equal(s.money,cash+5*(subtotal+Math.floor(subtotal*.2)));assert.equal(s.floors[f].served,1);assert.ok(validateSave(s));
 });
 
 test('mixed three-item shopping waits for each shelf and bills the whole basket once',()=>{
   let s=setup(2,['souvenir','keychain']);let c=order(s,['souvenir','keychain','souvenir']);s.floors[2].shelves.souvenir=1;const cash=s.money;
   until(s,()=>c.delivered[0]);tick(s,8);assert.deepEqual(c.delivered,[true,false,false]);assert.deepEqual(c.bag,['souvenir']);assert.equal(c.state,'browsing');assert.equal(s.money,cash);
   s=decode(encode(s));c=s.floors[2].customers[0];s.floors[2].shelves.keychain=1;s.floors[2].shelves.souvenir=1;
-  until(s,()=>c.state==='checkout'&&Math.hypot(c.x-9.7,c.y-9.1)<.5);assert.deepEqual(c.bag,['souvenir','keychain','souvenir']);assert.ok(c.delivered.every(Boolean));assert.equal(s.money,cash);
-  at(s,'checkout',.7);assert.ok(c.paid);assert.equal(s.money,cash+15);assert.equal(s.floors[2].served,1);s=decode(encode(s));at(s,'checkout',2);assert.equal(s.money,cash+15);
+  until(s,()=>c.state==='checkout'&&Math.hypot(c.x-checkoutQueue().x,c.y-checkoutQueue().y)<.5);assert.deepEqual(c.bag,['souvenir','keychain','souvenir']);assert.ok(c.delivered.every(Boolean));assert.equal(s.money,cash);
+  at(s,'checkout',.7);assert.ok(c.paid);assert.equal(s.money,cash+75);assert.equal(s.floors[2].served,1);s=decode(encode(s));at(s,'checkout',2);assert.equal(s.money,cash+75);
 });

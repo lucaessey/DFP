@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newGame,command,step} from '../src/simulation.js';
 import {encode,decode} from '../src/storage.js';
-import {OUTFITS} from '../src/config.js';
+import {OUTFITS,tableSeat} from '../src/config.js';
 import {character} from '../src/scene-assets.js';
 import {animateCharacter,crowdTargets,separateCrowd,visualWalkable,angleTowards} from '../src/animation.js';
 
@@ -68,4 +68,12 @@ test('a stopped player stays anchored while nearby people separate',()=>{
   separateCrowd([{role:'player',actor,rig:player},{role:'customer',actor:{x:actor.x,y:actor.y},rig:guest}],0);
   assert.equal(player.root.position.x,actor.x);assert.equal(player.root.position.z,actor.y);
   assert.ok(guest.root.position.distanceTo(player.root.position)>.55);
+});
+
+test('expanded dining seats stay anchored on their own chairs despite chair collision footprints',()=>{
+  for(let floor=0;floor<4;floor++){
+    const state=newGame();state.floor=floor;const actor={...tableSeat(0),purpose:'food',state:'dining',table:0,needs:['controller'],delivered:[true],bag:[],moving:false};
+    const rig=character(OUTFITS[0],0,'customer'),entries=[{order:0,role:'customer',actor,rig}];crowdTargets(entries,floor);
+    assert.deepEqual(entries[0].target,tableSeat(0));animateCharacter(rig,actor,entries[0].target,state,.1,0);assert.equal(rig.root.position.x,actor.x);assert.equal(rig.root.position.z,actor.y);
+  }
 });

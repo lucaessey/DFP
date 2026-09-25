@@ -35,3 +35,9 @@ Customers now request one to three unlocked products, including repeated units. 
 Validation passed: 66 unit/simulation tests, 18 main browser checks (including mixed three-item food and shopping orders and a real save-preserving service-worker update), 5 local Pages-build checks, both production builds and strict OpenSpec validation. Current dining and shop screenshots were inspected. Existing base prices and the 20% earnings boost are retained. Live browser access remains subject to the previously documented Family Safety restriction.
 
 [Deployment 35950309271](https://github.com/lucaessey/DFP/actions/runs/35950309271) successfully built and published commit `6d5487a` on September 23, 2026 (Pacific time). Existing players can use Settings → Save & update DFP when offered.
+
+## Fivefold earnings and expanded floors
+
+Gameplay payouts now equal five times the previous collected amount, including player and employee upgrades and the saved fractional bonus. The multiplier applies once at payment; displayed previews and money effects use the same result. Costs and existing balances remain unchanged. All four rooms expand from 22×14 to 28×18, with wider work aisles, separated service and shopping queues, larger table gaps, and updated collision, paths, camera limits and reduced-motion views. Existing saves migrate character positions and paths without replaying paid orders or changing progress.
+
+Local validation passed: 75 unit tests (including 936 comparisons against previous-version receipts), 18 full gameplay browser checks, 16 expanded-floor checks, 24 phone camera-boundary checks, 9 input/interface checks and 5 Pages-build checks. Both builds and strict OpenSpec validation passed. All four rendered floors were inspected. The actual results and test commands are recorded in [VERIFICATION.md](VERIFICATION.md). Phone checks use browser emulation; the previously documented live-browser Family Safety restriction remains intact.

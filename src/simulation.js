@@ -1,10 +1,12 @@
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, ITEMS, WORLD, TABLE_COUNT, FLOOR_FOODS, tableCost, tableSeat, stationOpen, stationPrice, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
+import { paymentQuote } from './economy.js';
+import { LAYOUT_VERSION, serviceQueue, checkoutQueue, shopWaiting, shelfApproach, tableApproach, tableWaiting, arcadeSeat, arcadeWaiting } from './config.js';
 import { distance, move, followPath } from './navigation.js';
 
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
-export const newActor = () => ({ x: 6, y: 4.6, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
+export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 4, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 4, layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
     floors: FLOORS.map((f, i) => ({ unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
@@ -17,10 +19,8 @@ export function emit(s, text, kind = 'info', pos) { s.events.push({ text, kind, 
 function changed(s) { s.revision++; }
 function pay(s, floor, actor, base, receipt) {
   if (receipt.paid) return 0;
-  const fs=s.floors[floor],subtotal=Math.round(base * (1 + B.playerProfitBonus * fs.upgrades.profit + (actor.upgrades?.profit || 0) * B.employeeProfitBonus));
-  // Carry fractional bonus dollars across receipts so even $1 sales earn 20% more.
-  const cents=(fs.bonusCents??0)+subtotal*B.earningsBoostPercent;
-  const amount=subtotal+Math.floor(cents/100);fs.bonusCents=cents%100;
+  const quote=paymentQuote(s,floor,actor,base),amount=quote.amount;
+  s.floors[floor].bonusCents=quote.bonusCents;
   receipt.paid = true; s.money += amount; s.earned += amount; s.floors[floor].revenue += amount;
   changed(s); emit(s, `+$${amount}`, 'money', { x: actor.x, y: actor.y, floor }); return amount;
 }
@@ -139,7 +139,7 @@ export function stationStatus(s, f, st) {
   if (st.id === 'stack') return `${FLOOR_FOODS[f].reduce((n,id)=>n+fs.counter[id],0)} items stacked`;
   if (st.id === 'counter') return 'Serve from the counter stack';
   if (st.kind === 'table') { const t = fs.tables[Number(st.id.slice(5))]; return ({ free: 'Clean · ready to seat',reserved:'Guest on the way',dirty:'Finished eating · clean here',occupied:'Eating · cannot clean yet' })[t.state]; }
-  if (st.kind === 'arcade') return `${fs.machines[Number(st.id.slice(-1))].quarters} quarters`;
+  if (st.kind === 'arcade') {const quarters=fs.machines[Number(st.id.slice(-1))].quarters;return `${quarters} quarters · ${paymentQuote(s,f,s.player,quarters).amount} to collect`;}
   if (st.id === 'shelf') return `${fs.shelves.souvenir} on display`;
   if (st.id === 'keyShelf') return `${fs.shelves.keychain} on display`;
   if (st.kind === 'vr') return 'Walk here to play';
@@ -161,7 +161,7 @@ function interact(s, f, a, st) {
   }
   if(st.id==='counter'){
     const c=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
-    if(c&&distance(c,{x:4.8,y:8.7})<.6){
+    if(c&&distance(c,serviceQueue())<.6){
       if(c.state==='payment'){pay(s,f,a,c.needs.reduce((n,v)=>n+B.prices[v],0),c);recordSale(s,f,c);seatAfterPurchase(s,f,c);if(f===0&&a.id===undefined)s.tutorial=Math.max(s.tutorial,5);}
       else{for(let i=0;i<c.needs.length;i++)if(!c.delivered[i]&&fs.counter[c.needs[i]]>0){fs.counter[c.needs[i]]--;c.delivered[i]=true;changed(s);}if(!missing(c).length){c.state='payment';changed(s);}}
     }return;
@@ -184,7 +184,7 @@ function interact(s, f, a, st) {
     }
     if (st.id === 'checkout') {
       const c = fs.customers.find(c => c.state === 'checkout');
-      if (c && !missing(c).length && distance(c, { x: 9.7, y: 9.1 }) < 0.7) { pay(s, f, a, c.needs.reduce((total,item)=>total+B.prices[item],0), c); leave(s, f, c); }
+      if (c && !missing(c).length && distance(c,checkoutQueue()) < 0.7) { pay(s, f, a, c.needs.reduce((total,item)=>total+B.prices[item],0), c); leave(s, f, c); }
     }
   }
   if (f === 3) {
@@ -255,16 +255,16 @@ function customersTick(s, f, dt) {
     if(c.purpose==='food'){
       if(['waiting','payment'].includes(c.state)){
         const queue=fs.customers.filter(v=>v.purpose==='food'&&['waiting','payment'].includes(v.state)),index=queue.indexOf(c);
-        followPath(c,f,{x:4.8+index*1.15,y:8.7},dt,2.2);
+        followPath(c,f,serviceQueue(index),dt,2.2);
       }else if(c.state==='waitingTable'){
         seatAfterPurchase(s,f,c);
-        if(c.state==='waitingTable'){const i=fs.customers.filter(v=>v.state==='waitingTable').indexOf(c);followPath(c,f,{x:12+i*.75,y:12.6},dt,2.2);}
+        if(c.state==='waitingTable'){const i=fs.customers.filter(v=>v.state==='waitingTable').indexOf(c);followPath(c,f,tableWaiting(i),dt,2.2);}
       }else if(c.state==='toTable'){
-        const destination=tableSeat(c.table);followPath(c,f,destination,dt,2.2);
-        if(distance(c,destination)<.2){c.x=destination.x;c.y=destination.y;c.state='dining';c.timer=B.diningTime;c.moving=false;c.path=[];fs.tables[c.table].state='occupied';changed(s);}
+        const destination=tableApproach(c.table);followPath(c,f,destination,dt,2.2);
+        if(distance(c,destination)<.2){Object.assign(c,tableSeat(c.table));c.state='dining';c.timer=B.diningTime;c.moving=false;c.path=[];fs.tables[c.table].state='occupied';changed(s);}
       }else if(c.state==='dining'){
         c.moving=false;c.timer=Math.max(0,c.timer-dt);
-        if(c.timer<=0){const t=fs.tables[c.table];t.state='dirty';t.customer=null;leave(s,f,c);}
+        if(c.timer<=0){const t=fs.tables[c.table];t.state='dirty';t.customer=null;Object.assign(c,tableApproach(c.table));leave(s,f,c);}
       }
       continue;
     }
@@ -274,22 +274,22 @@ function customersTick(s, f, dt) {
         const next=c.delivered.findIndex(delivered=>!delivered),type=c.needs[next];
         if(!type){c.state='checkout';c.timer=0;changed(s);continue;}
         const index=fs.customers.filter(v=>v.purpose==='shop'&&['waiting','browsing'].includes(v.state)&&missing(v)[0]===type).indexOf(c);
-        const shelf={x:type==='souvenir'?4.2:9,y:3.3-Math.min(index,3)*.65};
+        const shelf=index===0?shelfApproach(type):shopWaiting(fs.customers.filter(v=>v.purpose==='shop'&&['waiting','browsing'].includes(v.state)).indexOf(c));
         followPath(c, f, shelf, dt, 2.2);
         if (index === 0 && distance(c, shelf) < 0.35 && fs.shelves[type] > 0) { c.timer += dt; if (c.timer > 1.5) { fs.shelves[type]--; c.bag.push(type); c.delivered[next] = true; if(!missing(c).length)c.state='checkout'; c.timer = 0; changed(s); } }
       } else if (c.state === 'checkout') {
         const index = fs.customers.filter(c => c.state === 'checkout').indexOf(c);
-        followPath(c, f, { x: 9.7 + index * 1.25, y: 9.1 }, dt, 2.2);
+        followPath(c, f, checkoutQueue(index), dt, 2.2);
       }
     }
     if (f === 3) {
       if (c.state === 'waiting') {
         const index = fs.machines.findIndex((m,i) => m.customer === null && fs.products[`machine${i}`]);
         if (index >= 0) { fs.machines[index].customer = c.id; c.machine = index; c.state = 'seating'; }
-        else { const q = fs.customers.filter(c => c.state === 'waiting').indexOf(c); followPath(c, f, { x: 2 + q * 1.2, y: 8.5 }, dt, 2.2); }
+        else { const q = fs.customers.filter(c => c.state === 'waiting').indexOf(c); followPath(c, f, arcadeWaiting(q), dt, 2.2); }
       }
       if (c.state === 'seating') {
-        const destination = { x: LAYOUTS[3][c.machine].pad.x, y: 3.8 };
+        const destination = arcadeSeat(c.machine);
         followPath(c, f, destination, dt, 2.2);
         if (distance(c, destination) < 0.2) { c.state = 'playing'; c.timer = B.arcadeTime; c.moving = false; }
       } else if (c.state === 'playing') {
