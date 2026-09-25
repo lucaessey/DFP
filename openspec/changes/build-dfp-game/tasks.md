@@ -68,4 +68,4 @@
 - [x] 11.1 Apply exactly five times current collected payouts across all sources and actors; synchronize previews and effects while preserving costs and saved money.
 - [x] 11.2 Expand all four floor layouts and space stations, tables, queues, shelves and attractions; update collision, navigation, indicators and cameras.
 - [x] 11.3 Migrate saved actor positions and paths safely without changing progress or replaying earnings.
-- [ ] 11.4 Verify equivalent payouts, upgrades, all-floor navigation and lifecycles, portrait/landscape touch, offline updates and all four rendered floors; record actual results and publish.
+- [x] 11.4 Verify equivalent payouts, upgrades, all-floor navigation and lifecycles, portrait/landscape touch, offline updates and all four rendered floors; record actual results and publish. 75 unit tests and 72 browser checks passed; deployment 36197104454 published commit 986ffa2.
