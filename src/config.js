@@ -2,7 +2,7 @@ export const LAYOUT_VERSION=2;
 export const WORLD = Object.freeze({width:28,depth:18,entrance:{x:26.5,y:16.5},diningStart:14.5,kitchen:{x:6.5,y:5.5},dining:{x:20,y:7},camera:{minX:5,maxX:23,minY:4,maxY:14}});
 export const DECOR=[{x:.55,y:10.5,r:.35},{x:14,y:.6,r:.35},{x:27,y:9,r:.35}];
 export const TABLE_COUNT=6;
-export const tableCost=(floor,index)=>60+floor*40+index*55;
+export const tableCost=(floor,index)=>Math.round((60+floor*40+index*55)/3);
 export const tableSeat=index=>({x:15.5+(index%2)*6,y:4+Math.floor(index/2)*4.5});
 export const FLOOR_FOODS=[['controller','drink'],['tower','handheld','wine'],['snack2'],['snack3']];
 export const BALANCE = Object.freeze({

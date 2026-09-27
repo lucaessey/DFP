@@ -69,3 +69,6 @@
 - [x] 11.2 Expand all four floor layouts and space stations, tables, queues, shelves and attractions; update collision, navigation, indicators and cameras.
 - [x] 11.3 Migrate saved actor positions and paths safely without changing progress or replaying earnings.
 - [x] 11.4 Verify equivalent payouts, upgrades, all-floor navigation and lifecycles, portrait/landscape touch, offline updates and all four rendered floors; record actual results and publish. 75 unit tests and 72 browser checks passed; deployment 36197104454 published commit 986ffa2.
+
+## 12. Lower table prices
+- [x] 12.1 Reduce all table prices to one-third, rounded to whole dollars; synchronize displays and purchases, retain saved ownership and balances, and verify all four floors. All 75 unit tests and all 24 browser table offers/purchases passed, including reload preservation; Pages build and strict OpenSpec validation passed. All 49 tasks are complete.

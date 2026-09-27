@@ -43,3 +43,7 @@ Gameplay payouts now equal five times the previous collected amount, including p
 Local validation passed: 75 unit tests (including 936 comparisons against previous-version receipts), 18 full gameplay browser checks, 16 expanded-floor checks, 24 phone camera-boundary checks, 9 input/interface checks and 5 Pages-build checks. Both builds and strict OpenSpec validation passed. All four rendered floors were inspected. The actual results and test commands are recorded in [VERIFICATION.md](VERIFICATION.md). Phone checks use browser emulation; the previously documented live-browser Family Safety restriction remains intact.
 
 [Deployment 36197104454](https://github.com/lucaessey/DFP/actions/runs/36197104454) successfully built and published commit `986ffa2`. GitHub's build also passed the 75-test suite. Existing installed players can select Settings → Save & update DFP when offered. The requested development server is available at `http://localhost:8000/` while its local process remains running.
+
+## Table price reduction
+
+All 24 table prices now equal one-third of their former costs, rounded to the nearest whole dollar. First tables cost $20/$33/$47/$60 across the four floors. Saved balances and owned tables are retained without refunds; other prices and earnings stay unchanged. Validation passed: 75 unit tests, all 24 displayed table offers and purchase deductions in an isolated browser at localhost:8080, reload preservation of balance and ownership, the Pages production build and strict OpenSpec validation.

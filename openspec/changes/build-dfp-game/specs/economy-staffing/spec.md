@@ -13,7 +13,7 @@ All collected earnings SHALL pay exactly five times the previous whole-dollar pa
 - **THEN** total earnings are $30, with no lost fractional bonus and no duplicate payment.
 
 ### Requirement: Purchased tables and snack menus
-Each floor SHALL offer six independent one-time table purchases outside player upgrade allowances. First-table costs SHALL be $60/$100/$140/$180 by floor, with $55 added per table index. New games SHALL start without purchased tables. Existing dining-floor tables SHALL remain owned after migration. Gift-shop and arcade snacks SHALL require their own unlocks and retain internal base values of $3/$4 before the collected-earnings rule. All purchase prices SHALL remain unchanged.
+Each floor SHALL offer six independent one-time table purchases outside player upgrade allowances. Each table SHALL cost one-third of its former price, rounded to the nearest whole dollar: round((60 + 40 × zero-based floor + 55 × zero-based table index) / 3). First-table costs SHALL be $20/$33/$47/$60 by floor. New games SHALL start without purchased tables. Existing table ownership and saved balances SHALL remain unchanged, without retroactive refunds. Gift-shop and arcade snacks SHALL require their own unlocks and retain internal base values of $3/$4 before the collected-earnings rule. All non-table purchase prices SHALL remain unchanged.
 
 #### Scenario: No duplicate table charge
 - **WHEN** an owned table purchase is requested again
@@ -83,7 +83,7 @@ Each payment SHALL first calculate round(base value × (1 + 0.20 × floor-player
 
 #### Scenario: Earnings previews and preserved costs
 - **WHEN** the player views a product, arcade collection or VR reward preview
-- **THEN** displayed earnings use the same payout calculation as collection, while purchase, hire, upgrade, outfit and unlock costs are unchanged. Existing saved balances and paid receipts are never multiplied or replayed.
+- **THEN** displayed earnings use the same payout calculation as collection, while purchase, hire, upgrade, outfit and unlock costs use their configured prices independently of the earnings multiplier. Existing saved balances and paid receipts are never multiplied or replayed.
 
 ### Requirement: Cosmetic outfits
 The game SHALL offer DFP uniform, chef, formal server, retro gamer, and neon arcade outfits, with previews, gameplay unlock requirements, in-game prices, visible equipped appearance, and persistent selection. Cosmetics SHALL have no real-money purchases.

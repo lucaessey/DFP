@@ -41,3 +41,5 @@ The post-publication feedback requests corrected character facing, a modest inco
 Only this project is affected. New application source, tests, static assets, localStorage keys prefixed `dfp.`, and a same-origin service worker are introduced. Project-pinned OpenSpec and Vite are development dependencies. No external runtime services, accounts, advertising, purchases, or cloud saves.
 
 The September 24 request adds exactly five times the previous collected payout across all gameplay, unchanged purchase costs, and four larger, more spacious floors. Expand actual geometry, collision/navigation, queues and camera bounds; preserve saves and safely relocate characters affected by moved furniture. Verify every floor, portrait/landscape touch and offline updates.
+
+The subsequent table-price request reduces every table purchase to one-third of its former cost, rounded to whole dollars. Keep all other prices, earnings, saved balances and owned tables intact; use the same reduced price for the menu, station offer and actual purchase.

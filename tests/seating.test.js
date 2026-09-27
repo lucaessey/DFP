@@ -22,7 +22,8 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: stack, serve, pay, seat, eat, then manua
 });
 
 test('table purchases are atomic, independent per floor, limited to six and persistent',()=>{
-  const s=setup(3);for(let f=0;f<4;f++)for(let i=0;i<6;i++){const cash=s.money;assert.ok(command(s,{type:'table',floor:f,id:i}).ok);assert.equal(s.money,cash-tableCost(f,i));assert.equal(command(s,{type:'table',floor:f,id:i}).ok,false);}
+  const prices=[[20,38,57,75,93,112],[33,52,70,88,107,125],[47,65,83,102,120,138],[60,78,97,115,133,152]];
+  const s=setup(3);for(let f=0;f<4;f++)for(let i=0;i<6;i++){const cash=s.money;assert.equal(tableCost(f,i),prices[f][i]);assert.ok(command(s,{type:'table',floor:f,id:i}).ok);assert.equal(s.money,cash-prices[f][i]);assert.equal(command(s,{type:'table',floor:f,id:i}).ok,false);}
   assert.equal(command(s,{type:'table',id:6}).ok,false);assert.ok(decode(encode(s)).floors.every(f=>f.tables.every(t=>t.owned)));assert.ok(s.floors.every(f=>Object.values(f.upgrades).every(n=>n===0)));
   const poor=setup(0);poor.money=0;const before=structuredClone(poor);assert.equal(command(poor,{type:'table',id:0}).ok,false);assert.deepEqual(poor,before);
 });
