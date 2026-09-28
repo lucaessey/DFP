@@ -5,10 +5,10 @@ import {newGame,command,step} from '../src/simulation.js';
 import {encode,decode} from '../src/storage.js';
 import {PRODUCTS} from '../src/config.js';
 
-const URL=process.env.DFP_TEST_URL||'http://127.0.0.1:4173',out='artifacts/3d-upgrade';
+const URL=process.env.DFP_TEST_URL||'http://127.0.0.1:4173',out=process.env.DFP_EVIDENCE_DIR||'artifacts/3d-upgrade';
 mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({channel:'msedge',headless:true});
-const comparison=decode(readFileSync(`${out}/comparison-state.json`,'utf8')),errors=[],checks=[],performance=[];
+const comparison=decode(readFileSync(process.env.DFP_COMPARISON||'artifacts/3d-upgrade/comparison-state.json','utf8')),errors=[],checks=[],performance=[];
 let context,page;
 async function launch(state,viewport={width:1440,height:900},record=false){
   if(context)await context.close();context=await browser.newContext({viewport,deviceScaleFactor:viewport.width<500?2:1,hasTouch:viewport.width<500,recordVideo:record?{dir:`${out}/video`,size:viewport}:undefined});

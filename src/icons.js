@@ -1,4 +1,5 @@
 const shapes = {
+  cash: '<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M5 18v3h15M9 6v12m6-12v12"/><circle cx="6" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
   prep: '<path d="M4 17h16v4H4zM6 14l10-11c4 3 2 7-2 9l-3-3m-5 5-3 3"/>',
   fry: '<path d="M4 12h13v8H4zM17 13l4-3M7 12V9m4 3V9M7 6c-2-2 2-2 0-4m5 4c-2-2 2-2 0-4"/>',
   pickup: '<path d="M3 17h18v4H3zM12 3v11m-4-4 4 4 4-4"/>',

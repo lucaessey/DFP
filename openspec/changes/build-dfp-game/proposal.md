@@ -1,5 +1,9 @@
 # Proposal
 
+The newest world request extends the approved black faceless character design across all four environments: a warm peach/cream miniature world, chunky purple furniture with yellow-orange accents, soft lighting, animated production/placement, green cash bundles, responsive equipment states, restrained construction effects and rounded mobile UI motion. Preserve all game rules, prices, progress and offline play. Use the Pizza Ready screenshots supplied through https://kotaku.com/games/pizza-ready as the visual reference. The inspected gallery image uses a high diagonal view, chunky equipment, dark faceless characters, bright cash and simple floor zones; DFP retains the requested peach, purple and orange palette and original assets.
+
+The latest visual request refines the original fully 3D shared character rig toward a large oval, featureless black head, compact body, thick rounded charcoal limbs, mitten hands, and rounded feet. The default uniform becomes a bright red short-sleeved collared shirt and curved baseball cap. Adapt all existing outfits, preserve role colors in clothing, and retain grounded blended movement, distinct job motions and brief celebrations. Preserve the complete gameplay/economy, lower table prices, expanded layouts, saves and offline installation; verify all floors and provide front/side/back previews, an in-game carrying view and gameplay footage. Compare the proportions and readable poses with the supplied Pizza Ready gallery, while retaining DFP's approved base.
+
 ## Why
 Create DFP — Deep Fried Pixels as a friendly, tactile restaurant-management game that can be played on a phone without a connection after installation. This is a new, independent project in an empty workspace; no other game's source or progress is involved.
 

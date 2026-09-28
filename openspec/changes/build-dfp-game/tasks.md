@@ -72,3 +72,19 @@
 
 ## 12. Lower table prices
 - [x] 12.1 Reduce all table prices to one-third, rounded to whole dollars; synchronize displays and purchases, retain saved ownership and balances, and verify all four floors. All 75 unit tests and all 24 browser table offers/purchases passed, including reload preservation; Pages build and strict OpenSpec validation passed. All 49 tasks are complete.
+
+## 13. Stickman characters and casual animation
+- [x] 13.1 Create an original shared 3D rig with a featureless oval charcoal head, thick black rounded limbs, mitten hands, red collared shirt/cap, role clothing colors and all five recognizable outfits/previews.
+- [x] 13.2 Blend grounded distance-driven walking, idle, turns, carrying, job-specific reaches, customer seating/eating/departure and purchase celebrations; respect reduced motion.
+- [x] 13.3 Keep visual transfers and interruptions independent of inventory, payment and customer state; prevent visible furniture intersections and reuse model resources.
+- [x] 13.4 Verify unchanged gameplay/saves, all-floor jobs, outfits, interruption, touch/orientation, offline assets and actual rendering performance. See CHARACTER_UPGRADE.md for 82 passing unit tests, browser results and desktop-GPU measurements.
+- [ ] 13.5 Inspect and capture all four floors and a gameplay clip, document actual results and publish the verified update. Reference comparison, local inspection, fresh 43.32-second recording, report and both builds are complete; deployment verification is pending.
+- [x] 13.6 Provide front/side/back base previews and in-game carrying evidence; compare proportions and materials against the supplied Pizza Ready gallery. The dark featureless head, compact bright shirt/cap, rounded limbs and carrying pose were inspected against the reference; preserve the approved DFP base and original assets.
+
+## 14. Cohesive casual world and event animation
+- [x] 14.1 Restyle all four floors with chunky peach/cream, purple and yellow-orange props, consistent lighting and unchanged clear layouts/characters.
+- [x] 14.2 Animate production, filling, pickup/delivery, bounded carried stacks and landing/settling using committed state only.
+- [x] 14.3 Add bright green payment bundles, pop/collection motion and clear immediate currency feedback without duplicate payouts or replay.
+- [x] 14.4 Distinguish equipment states; animate fryers, dispensers, checkout, arcade and VR; reveal purchased stations/tables with restrained construction and clear unlock progress.
+- [x] 14.5 Update rounded UI, selection, tap/panel transitions and success/failure feedback; preserve immediate controls, four tabs, safe areas and reduced motion.
+- [x] 14.6 Verify all-floor player/staff loops, interruptions, touch/camera, clipping, saves/recovery, offline updates and performance; deliver screenshots, gameplay recording and honest limitations. Completed: 89 unit tests, all listed browser suites, 43.32-second gameplay recording and measured performance; see WORLD_UPGRADE.md.

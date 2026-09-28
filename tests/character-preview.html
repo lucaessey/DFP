@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>DFP character study</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3efdf;color:#284a43;font:16px system-ui}main{width:1280px;margin:auto;padding:38px 40px}header{display:flex;justify-content:space-between;align-items:end;border-bottom:1px solid #cdd3bd;padding-bottom:20px}h1{margin:8px 0;font-size:32px;letter-spacing:-1px}p{margin:0;color:#62766b}small{letter-spacing:3px;font-weight:800}section{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}.view{height:390px;position:relative;border-radius:24px;background:#e4e7d6;overflow:hidden}.view span{position:absolute;bottom:19px;left:22px;font-weight:700}.outfits{grid-template-columns:repeat(5,1fr)}.outfits .view{height:300px;background:#e9e5d8}canvas{position:absolute;inset:0;pointer-events:none}footer{margin-top:22px;color:#6d7c6d;font-size:13px}
+</style><main><header><div><small>DFP / CHARACTER STUDY</small><h1>The original uniform</h1><p>Charcoal base · Red collared shirt · Rounded cap</p></div><p>Shared geometry. One rig.</p></header><section id="base"></section><section class="outfits" id="outfits"></section><footer>Original procedural 3D models rendered with the game's materials and animation rig.</footer></main>
+<script type="module">
+import * as T from 'three';
+import {character} from '../src/scene-assets.js';
+import {animateCharacter} from '../src/animation.js';
+import {newGame} from '../src/simulation.js';
+import {OUTFITS} from '../src/config.js';
+const views=[];
+function add(parent,title,outfit,angle=0,carry=false){
+ const el=document.createElement('div');el.className='view';el.innerHTML=`<span>${title}</span>`;document.querySelector(parent).append(el);
+ const scene=new T.Scene(),model=character(outfit),state=newGame();state.settings.reducedMotion=true;Object.assign(state.player,{x:18,y:6,bag:carry?['controller']:[]});
+ for(let i=0;i<60;i++)animateCharacter(model,state.player,state.player,state,1/60,i/60);
+ model.root.position.set(0,0,0);model.rig.rotation.y=angle;scene.add(model.root);scene.add(new T.HemisphereLight('#fff8e7','#98af97',2.4));
+ const sun=new T.DirectionalLight('#fff1d3',3.4);sun.position.set(-3,6,5);scene.add(sun);
+ const camera=new T.OrthographicCamera(-1,1,1.27,-1.27,.1,20);camera.position.set(0,1.5,5);camera.lookAt(0,1.08,0);
+ views.push({el,scene,camera,model});
+}
+add('#base','Front',OUTFITS[0]);add('#base','Side',OUTFITS[0],Math.PI/2);add('#base','Back',OUTFITS[0],Math.PI);add('#base','Carrying',OUTFITS[0],-.55,true);
+for(const outfit of OUTFITS)add('#outfits',outfit.name,outfit,.25);
+const renderer=new T.WebGLRenderer({alpha:true,antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(1.5);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.18;document.body.append(renderer.domElement);renderer.setSize(innerWidth,document.documentElement.scrollHeight);renderer.setScissorTest(true);
+for(const v of views){const r=v.el.getBoundingClientRect(),height=document.documentElement.scrollHeight,h=r.height-30;renderer.setViewport(r.left,height-r.bottom+30,r.width,h);renderer.setScissor(r.left,height-r.bottom+30,r.width,h);v.camera.left=-1.27*r.width/h;v.camera.right=-v.camera.left;v.camera.updateProjectionMatrix();renderer.render(v.scene,v.camera);}
+window.previewReady=true;
+</script></html>

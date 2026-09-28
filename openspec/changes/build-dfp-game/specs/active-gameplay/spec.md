@@ -5,8 +5,36 @@ Deliver readable, approachable restaurant work through a directly controlled cha
 
 ## ADDED Requirements
 
+### Requirement: Cohesive chunky world
+All four floors SHALL share warm peach/cream floors, purple furniture or trim, yellow-orange accents, bevelled chunky equipment, minimal surface detail, elevated diagonal framing and soft directional/contact shadows. Each floor SHALL retain its own atmosphere, theme, expanded layout and approved black featureless characters.
+
+#### Scenario: Stable readable environment
+- **WHEN** work proceeds normally on any floor
+- **THEN** silhouettes and aisles remain clear, and floors, walls and structural furniture remain stable while relevant goods and machine components animate.
+
+### Requirement: Transaction-driven world motion
+Products SHALL emerge, follow short pickup/delivery arcs and settle with small landing bounces. Drinks SHALL visibly fill while produced. Carried goods SHALL sway gently during movement and use bounded stack height with a quantity indicator when needed. Fryers SHALL bubble/steam during cooking, dispensers SHALL pour, checkout SHALL respond to collection, arcade screens and coin piles SHALL reflect use, and VR SHALL distinguish start, running and finished states. Idle, working, ready, blocked and locked stations SHALL be distinguishable.
+
+#### Scenario: Earnings animation without replay
+- **WHEN** an existing service, merchandise, arcade or VR transaction commits for a player or employee
+- **THEN** bright green money bundles pop/settle at the relevant collection point and travel to the collector or currency counter; the displayed total reflects the committed amount, and decorative animation cannot award money, change inventory or replay on reload.
+
+#### Scenario: Unlock construction
+- **WHEN** a product or table purchase succeeds
+- **THEN** only the affected object rises/scales into place and settles with a brief highlight, without changing its final footprint, price, unlock rule or interaction zone.
+
+#### Scenario: Interrupted presentation
+- **WHEN** animation is interrupted by movement, menus, floor changes, reduced motion or a reload
+- **THEN** goods, money and jobs remain governed by saved simulation state; obsolete visual effects clear and no pending payment is recreated by the renderer.
+
 ### Requirement: Original three-dimensional presentation
 The restaurant SHALL use real 3D characters, furniture, machines, food and carried objects, with consistent lighting, soft contact shadows, low walls, visible legs and doorways. An elevated three-quarter camera SHALL follow smoothly with restrained movement. All four floors SHALL have distinct original furniture and atmosphere, and all five outfits SHALL alter the player model and preview.
+
+Characters SHALL use an original shared 3D base with a large rounded slightly oval featureless charcoal-black head, a compact rounded body, thick smooth black arms and legs, mitten hands and rounded black feet. Soft material highlights SHALL reveal curvature without facial detail. The default uniform SHALL be a bright red short-sleeved collared shirt and curved red baseball cap with a visible brim. A common articulated rig SHALL support all five outfits and distinct player, employee and customer clothing colors/accessories. Clothing SHALL retain each existing outfit's identity. The expanded room layouts, fivefold earnings, reduced table prices, staffing limits, controls and saves SHALL remain unchanged.
+
+#### Scenario: Character design inspection
+- **WHEN** the updated shared base is reviewed
+- **THEN** front, side and back previews and an in-game carrying view are available, and the base is compared to the user's reference image once the image is accessible.
 
 #### Scenario: Full takeout presentation
 - **WHEN** a player and an employee complete a takeout service loop
@@ -14,6 +42,12 @@ The restaurant SHALL use real 3D characters, furniture, machines, food and carri
 
 ### Requirement: Independent blended animation
 Presentation SHALL blend idle, walking, stopping, working, pickup, carrying, placement, serving, greeting, seating, eating, departure, restocking and quarter collection. Characters SHALL remain grounded and avoid visible furniture penetration or overlapping crowds. Brief object motion, particles, readable money labels and mute-aware audio SHALL communicate successful interactions, purchases, hires and unlocks without hiding controls.
+
+Walking cadence SHALL follow actual distance traveled, with alternating grounded steps and small body bounce. Idle breathing, weight shifts and occasional head turns SHALL remain gentle. Carried stacks SHALL remain visible in front of the body; work poses SHALL distinguish frying, pouring, serving, restocking, cleaning and quarter collection. Reaches and transfers SHALL follow actual completed inventory changes. Greeting, sitting, eating, standing and leaving SHALL blend without blocking the customer's simulation. Purchases/unlocks/upgrades SHALL trigger brief visual celebrations without delaying controls. Decorative anticipation, squash/stretch and follow-through SHALL be small and suppressed by reduced motion.
+
+#### Scenario: Outfit and movement interruption
+- **WHEN** carrying or working is interrupted by movement, an outfit change, a floor change, reload or reduced motion
+- **THEN** controls respond immediately, the current inventory is represented accurately, stale visual transfers disappear, and no animation callback changes payments, goods, timers or customer progress.
 
 #### Scenario: Interrupted animation
 - **WHEN** a floor changes, the renderer restarts, or reduced motion is enabled during an interaction

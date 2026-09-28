@@ -5,8 +5,17 @@ Make the game usable on small touch screens and desktop, with recoverable device
 
 ## ADDED Requirements
 
+### Requirement: Approachable animated interface
+The interface SHALL use rounded buttons, readable icons/currency, clear selected navigation, unlock affordability progress, brief press/panel transitions and purchase success/failure feedback. Keep the four existing tabs and phone safe areas. Earnings labels SHALL avoid obscuring interactive controls. Closing a menu SHALL apply immediately to game rules regardless of its visual transition.
+
+#### Scenario: Reduced-motion world and interface
+- **WHEN** reduced motion is selected or inherited from the system on a new game
+- **THEN** decorative arcs, object bounce, construction motion, panel transitions and currency pulses are suppressed while essential poses, static equipment status, readable totals and all interactions remain available offline.
+
 ### Requirement: Efficient accessible 3D
 The game SHALL reuse geometry and materials, limit lighting and effects, and target 60 FPS where practical. Settings SHALL provide persistent reduced-effects and reduced-motion options. Reduced motion SHALL suppress camera follow and decorative movement while preserving readable actions. All models, materials, animations and UI SHALL load offline. Existing saves SHALL retain all progress. Verification SHALL report actual available-environment performance, comparable before-and-after screenshots and a gameplay recording when supported.
+
+Stickman meshes and poses SHALL use shared procedural geometry/materials and bounded transient visual state, without external asset downloads. Reduced motion SHALL suppress idle sway, head fidgets, body/stack bounce, celebrations and flying transfers while retaining essential walking, facing, work and sitting poses. Outfit recreation and context restoration SHALL dispose actor-owned resources while retaining shared assets.
 
 #### Scenario: Lower-cost rendering
 - **WHEN** reduced effects is enabled and the game reloads offline

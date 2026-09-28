@@ -2,6 +2,8 @@
 
 A mobile-first, original 3D restaurant management game. Four floors, visible autonomous employees, outfits, and a playable VR arcade. No accounts, ads, purchases, or external runtime services.
 
+Characters now share a rounded charcoal base with a featureless head, thick limbs and mitten hands. The original uniform has a red collared shirt and cap; all five outfits and role clothing use the same animated rig. All four floors now share chunky purple counters, cream and peach floors, orange accents, animated goods, green cash bundles and rounded mobile controls. See [world changes and verification](WORLD_UPGRADE.md) and the [character checkpoint](CHARACTER_UPGRADE.md).
+
 **[Play DFP](https://lucaessey.github.io/DFP/)** — free in your browser. Progress saves on your device. The public site and localhost have separate saves.
 
 ## Run locally
@@ -16,6 +18,8 @@ npm run dev
 Open **http://127.0.0.1:5173/**. Keep the terminal running. Development mode reloads automatically when files change. Device-local saves are retained across code updates.
 
 For **http://localhost:8000/**, run `npm run dev -- --port 8000 --strictPort`. Each hostname and port has separate browser saves.
+
+For **http://localhost:8080/**, run `npm run dev -- --port 8080 --strictPort`.
 
 ## Production and offline mode
 

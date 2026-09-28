@@ -48,7 +48,7 @@ export const LAYOUTS = [
   [station('machine0','PIXEL RUSH',1,1,1.7,1.5,'arcade',2,3.5),station('machine1','COSMIC FRY',5,1,1.7,1.5,'arcade',6,3.5),station('machine2','BYTE FIGHT',9,1,1.7,1.5,'arcade',10,3.5),station('vr','VR PLAYGROUND',9,6,2.6,2.1,'vr',8,7,{section:true})],
 ];
 export const OUTFITS = [
-  { id: 'uniform', name: 'The original', subtitle: 'DFP uniform', color: '#f57d46', hat: '#f57d46', pants: '#37595a', price: 0, floor: 0 },
+  { id: 'uniform', name: 'The original', subtitle: 'DFP uniform', color: '#ef3038', hat: '#ef3038', pants: '#15191f', price: 0, floor: 0 },
   { id: 'chef', name: 'Yes, chef!', subtitle: 'Chef outfit', color: '#fff7e7', hat: '#fff7e7', pants: '#46565c', price: 100, floor: 0 },
   { id: 'formal', name: 'At your service', subtitle: 'Formal server', color: '#273c3e', hat: null, pants: '#263d3f', price: 220, floor: 1 },
   { id: 'retro', name: 'Player one', subtitle: 'Retro gamer', color: '#bc799d', hat: '#62a69e', pants: '#4e6092', price: 300, floor: 2 },
