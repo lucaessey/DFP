@@ -1,5 +1,7 @@
 # Proposal
 
+Expand the fictional Email inbox to 40 reviews: 20 Good Comments and 20 Bad Reviews. Rename Funny Complaints to Bad Reviews in every visible screen, keep existing notes and purchases, and include the new messages offline at no additional cost.
+
 Add a $100 basement computer with an original chunky turquoise monitor, pale-blue desktop, Security, $50 fictional Email and a Game Store. Keep basement access at $200 as reconfirmed by the user. Move monitoring from the TV to the computer without charging existing security owners again. Keep the TV/couch/two-plants prerequisites and fixed security rules. Sell permanent $50 access to Boggle, Wordventure and Snake at the supplied URLs in a restricted embedded game window with persistent return controls, loading/retry/offline states and honest compatibility reporting. Use the written design; the user confirmed no image is needed.
 
 Add an independently purchasable $200 basement lounge to Elevator without changing the four bottom tabs. Offer a $50 TV, $100 couch and two separate $15 plants, then a $150 security system gated on all four furnishings. Render live security footage from the highest unlocked above-ground floor, with one stealing robber per encounter, random 1–30 second waits, a 10-second catch window, fixed $15 catches and $5 wrong-person/escape penalties. Preserve and pause the encounter when monitoring closes, the application backgrounds or reloads. Persist purchases and encounter transactions independently of decorative animation and existing earnings multipliers.

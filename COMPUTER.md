@@ -10,7 +10,7 @@ Basement access remains **$200**, as reconfirmed by the user. Buy the **$100 com
 | --- | ---: | --- |
 | Computer | $100 | Permanent desk/computer after the basement unlock |
 | Security | $150 | Requires computer, TV ($50), couch ($100), and both $15 plants |
-| Email | $50 | Permanent fictional inbox: 11 Good Comments and 11 Funny Complaints |
+| Email | $50 | Permanent fictional inbox: 20 Good Comments and 20 Bad Reviews |
 | Boggle | $50 | Permanent access to https://lucaessey.github.io/Boggle/ |
 | Wordventure | $50 | Permanent access to https://lucaessey.github.io/wordventure/ |
 | Snake | $50 | Permanent access to https://lucaessey.github.io/phaser-snake/ |
@@ -25,13 +25,13 @@ The three original external games appear inside a titled frame. Loading, timeout
 
 Schema six stores computer, email and three game ownership flags. Migration from schema five retains the complete security record, balance, floors, staff, upgrades, outfits, goods and remaining encounter time. Earlier migrations and future-version protection remain. Ownership and transaction checks reject repeat purchases and insufficient funds without mutation; presentation cannot charge or reward money.
 
-The physical lounge, desktop, all 22 emails and security remain bundled and cached for offline use. External game ownership survives offline reload; launches display a connection message when offline. DFP does not promise to cache those separately hosted games.
+The physical lounge, desktop, all 40 emails and security remain bundled and cached for offline use. External game ownership survives offline reload; launches display a connection message when offline. DFP does not promise to cache those separately hosted games.
 
 Only the three specified URLs can be launched. The iframe sandbox allows scripts, browser storage, forms and pointer lock, while excluding top-navigation, popups and fullscreen. Both cross-origin and same-origin fixture tests confirmed ordinary attempts to navigate the top-level DFP page are blocked. The games are trusted user-selected sites: scripts plus same-origin storage are necessary for Snake, so same-host Pages games are **not** an isolation boundary against intentionally hostile code. DFP exposes no purchase or payment API to embedded messages. Normal game use was verified to preserve DFP’s saved balance and ownership.
 
 An iframe load event cannot reliably distinguish every remote error page or framing refusal. The UI therefore says the window opened, retains a visible help control, and provides retry/back states for error, timeout, offline and user-reported blank/blocked content. It never labels an onload event as verified gameplay.
 
-## Actual verification
+## Original computer feature verification (September 27)
 
 | Check | Result |
 | --- | --- |
@@ -48,3 +48,9 @@ An iframe load event cannot reliably distinguish every remote error page or fram
 Tests use isolated Edge/Chromium profiles and emulated phone viewports/touch, without modifying the player’s browser saves. Snake’s built-in solo, slow-speed settings were used in the isolated input test to avoid random rival collisions; the shipped game is unmodified. Snake applies turns on a movement tick and can restart its own round when resizing; its native letterboxing is retained. Native iOS/Android installation and backgrounding were not physically tested. Audio verification covers frame disposal and accessible game controls, not a subjective listening test. Remote game behavior may change independently of DFP.
 
 Open the [local screenshot gallery](http://localhost:8080/artifacts/computer/index.html). Images and JSON reports are local ignored verification artifacts in `artifacts/computer/`, not deployed game assets.
+
+## Review expansion (September 28, 2026)
+
+Added 18 fictional reviews, for 20 Good Comments and 20 Bad Reviews. Renamed the former Funny Complaints category in the purchase preview, category card, inbox heading and return navigation. The preview derives its names and total from the catalog. Existing notes and category IDs remain intact; existing Email owners receive the additions without another purchase or save migration.
+
+Verification for this update: **115 unit tests and 12 computer browser checks passed**, with no uncaught browser errors. The browser opened every one of the 40 messages and returned to its inbox, checked the locked purchase preview and category names, and confirmed reading leaves money and the paused security encounter unchanged. New messages in both categories were opened after an offline reload. Portrait and landscape touch navigation reached the last new Bad Review; refreshed desktop and phone screenshots were inspected. Root and `/DFP/` production builds and strict OpenSpec validation passed. Phone checks use emulated Edge/Chromium viewports, not physical devices. The broader original feature results above were not all rerun for this content update.

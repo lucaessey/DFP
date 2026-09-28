@@ -24,7 +24,7 @@ The computer SHALL replace TV interaction as the security entry point. The TV SH
 - **THEN** money, furniture, security and remaining time are retained, new computer/apps begin unowned, and purchasing the computer exposes the already-owned security without a second security charge.
 
 ### Requirement: Fictional customer email
-Unlocked Email SHALL contain selectable Good Comments and Funny Complaints categories, each with at least ten original messages. A readable inbox SHALL open individual notes and provide return navigation to the inbox and categories. Messages SHALL be fictional, locally bundled and have no effect on money or progression.
+Unlocked Email SHALL contain selectable Good Comments and Bad Reviews categories, each with at least twenty original messages. The Email purchase preview SHALL show the current category names and total message count. A readable inbox SHALL open individual notes and provide return navigation to the inbox and categories. Messages SHALL be fictional, locally bundled and have no effect on money or progression. Existing Email owners SHALL receive the additional reviews without another purchase or changes to saved progress.
 
 #### Scenario: Read mail offline
 - **WHEN** an email owner reloads offline and opens either category
