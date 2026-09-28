@@ -6,7 +6,7 @@ Provide understandable paid progression with bounded staffing, predictable upgra
 ## ADDED Requirements
 
 ### Requirement: Fivefold current earnings
-All collected earnings SHALL pay exactly five times the previous whole-dollar payout, after the existing additive profit-upgrade calculation, 20% increase and fractional-carry calculation. Fractional bonus dollars SHALL carry forward independently per floor and persist across saves, without changing existing money or unlock costs. Already-paid receipts SHALL not add another payout or bonus remainder.
+Restaurant, shop, arcade and VR earnings SHALL pay exactly five times the previous whole-dollar payout, after the existing additive profit-upgrade calculation, 20% increase and fractional-carry calculation. Fractional bonus dollars SHALL carry forward independently per floor and persist across saves, without changing existing money or unlock costs. Already-paid receipts SHALL not add another payout or bonus remainder.
 
 #### Scenario: Small controller sales
 - **WHEN** five $1 controller sales complete without upgrades, including a reload between sales
@@ -54,7 +54,7 @@ Every food, drink, merchandise product, arcade cabinet, and VR offering SHALL re
 - **THEN** its unchanged internal base is $1, with a $3 drink base; arcade play generates three uncollected quarters. Higher-floor internal bases remain $6 per console meal, $4 wine, $5 souvenir and $3 keychain. Actual payouts use the fivefold current-earnings rule.
 
 ### Requirement: Safe spending and progression
-Prices, rewards, timers, arrival rates, and upgrade effects SHALL be configurable. Spending SHALL be atomic, reject insufficient funds, and never make money negative. Floors SHALL unlock sequentially for earned money; sections SHALL be purchased once. All floors SHALL offer player and employee upgrades.
+Prices, rewards, timers, arrival rates, and upgrade effects SHALL be configurable. Purchases SHALL be atomic, reject insufficient funds, and never make money negative. Security outcomes SHALL use their separate fixed amounts; a full $5 penalty may leave a negative balance, while free navigation remains available and paid purchases remain unaffordable until earnings cover the shortfall. Floors SHALL unlock sequentially for earned money; sections SHALL be purchased once. All floors SHALL offer player and employee upgrades.
 
 #### Scenario: Insufficient money
 - **WHEN** the balance is below a hire, upgrade, outfit, section, or floor price
@@ -90,7 +90,7 @@ Each employee SHALL allow three purchases per category in speed, capacity, and p
 - **THEN** another speed purchase is refused but capacity and profit upgrades remain available below their caps.
 
 ### Requirement: Exactly-once earnings
-Each payment SHALL first calculate round(base value × (1 + 0.20 × floor-player-profit-level + 0.15 × collecting-employee-profit-level)), where the employee term is zero for player collection, then apply the 20% earnings increase with saved fractional carry and multiply the resulting whole-dollar payout by five exactly once. Bonuses SHALL be applied once at payment collection, never at production or delivery. Arcade quarters and VR rewards SHALL use the same payment rule; VR uses the player only.
+Each restaurant, shop, arcade or VR payment SHALL first calculate round(base value × (1 + 0.20 × floor-player-profit-level + 0.15 × collecting-employee-profit-level)), where the employee term is zero for player collection, then apply the 20% earnings increase with saved fractional carry and multiply the resulting whole-dollar payout by five exactly once. Bonuses SHALL be applied once at payment collection, never at production or delivery. Arcade quarters and VR rewards SHALL use the same payment rule; VR uses the player only.
 
 #### Scenario: Combined bonuses
 - **WHEN** a $100 base payment is collected by an employee with two profit upgrades on a floor with one player profit upgrade

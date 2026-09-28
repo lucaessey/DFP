@@ -3,11 +3,12 @@ import { paymentQuote } from './economy.js';
 import { LAYOUT_VERSION, checkoutQueue, shopWaiting, shelfApproach, tableApproach, tableWaiting, arcadeSeat, arcadeWaiting } from './config.js';
 import { distance, move, followPath } from './navigation.js';
 import {isDrink,serviceItems,customerCounter,serviceCustomers,customerQueue} from './config.js';
+import {newBasement,BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,securityTick} from './security.js';
 
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 4, layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 5, basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
     floors: FLOORS.map((f, i) => ({ unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
@@ -33,6 +34,18 @@ export function command(s, c) {
   if (!Number.isInteger(f) || !s.floors[f]) return fail('Unknown floor');
   const fs = s.floors[f]; let cost = 0, apply;
   switch (c.type) {
+    case 'basement':
+      if(s.basement.unlocked)return fail('Basement already open');
+      cost=BASEMENT_PRICE;apply=()=>{s.basement.unlocked=true;};break;
+    case 'furniture': {
+      const item=FURNITURE.find(p=>p.id===c.id);
+      if(!s.basement.unlocked||!item||s.basement.furniture[item.id])return fail('Furniture unavailable or already owned');
+      cost=item.cost;apply=()=>{s.basement.furniture[item.id]=true;};break;
+    }
+    case 'security':
+      if(!s.basement.unlocked||s.basement.security.owned)return fail('Security unavailable or already owned');
+      if(!furnished(s))return fail('Buy the TV, couch and both plants first');
+      cost=SECURITY_PRICE;apply=()=>{s.basement.security.owned=true;};break;
     case 'table': {
       const index=Number(c.id),table=fs.tables[index];
       if(!fs.unlocked||!Number.isInteger(index)||!table||table.owned)return fail('Table unavailable or already owned');
@@ -87,8 +100,8 @@ export function command(s, c) {
     }
     default: return fail('Unknown action');
   }
-  if (s.money < cost) return fail(`Need $${cost - s.money} more`);
-  if(!s.floors[0].products.controller&&!(c.type==='product'&&c.id==='controller')&&cost>0&&s.money-cost<50)return fail('Keep $50 for your first Crispy Controller unlock');
+  if (cost > 0 && s.money < cost) return fail(`Need $${cost - s.money} more`);
+  if(!['basement','furniture','security'].includes(c.type)&&!s.floors[0].products.controller&&!(c.type==='product'&&c.id==='controller')&&cost>0&&s.money-cost<50)return fail('Keep $50 for your first Crispy Controller unlock');
   s.money -= cost; apply();
   if (c.token) { s.transactions.push(c.token); s.transactions = s.transactions.slice(-128); }
   changed(s); return { ok: true, cost };
@@ -320,6 +333,7 @@ export function stepVR(s, dt) {
 export function step(s, dt = B.step, input = {}) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.25) throw new Error('Simulation requires a bounded fixed step');
   s.time += dt;
+  securityTick(s,dt,!!input.monitoring);
   if (s.vr && !s.vr.done) stepVR(s, dt);
   const a = s.player;
   a.moving = false;

@@ -8,6 +8,8 @@ Characters now share a rounded charcoal base with a featureless head, thick limb
 
 Food and drinks now have separate sections, counters and queues. Drinks unlock for $180/$220, and table prices are halved once. See [changes and test results](DRINKS_SECTIONS.md).
 
+The Elevator also offers an independent **$500 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md).
+
 ## Run locally
 
 Requires Node.js 22.12+ (tested with Node 24) and npm.
@@ -52,6 +54,9 @@ npm run test:pages
 Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and offline cache use the `/DFP/` path. The worker is scoped to this game. Development at port 5173 continues to work at `/`.
 
 ## Play
+
+- **Basement:** available in Elevator from the start for $500, without upper-floor prerequisites. Buy a TV ($50), couch ($100) and two plants ($15 each), then install the $150 security system. The checklist tracks all four furnishings. Tap the TV to monitor upstairs; Home returns to your lounge until you visit a restaurant floor.
+- **Security:** the feed shows your highest unlocked floor with its actual employees, customers and activity. A robber appears after a random 1–30 seconds, with ten seconds to catch them. Look for reaching, stolen goods and a dark sack. A catch pays exactly $15; a wrong person or escape costs $5, unaffected by upgrades. Repeated selection of the same person in a round does not charge twice. Full penalties can put the balance below zero; free navigation and earning money still work. Use camera-zone buttons, zoom, or arrow keys to inspect the floor. Exit/Escape, menus, focus loss and backgrounding pause the encounter; returning to the TV resumes it, including after reload. No encounters occur while away.
 
 - **Move:** hold WASD/arrows, drag the phone joystick, or press and hold the floor. Release to stop. Tap a station icon or an area button to walk there automatically; the square stop button or Escape cancels that trip. Losing focus or opening a menu also stops movement. Stand inside a marked ring to work automatically.
 - **Unlock products:** use **Unlock items** on every floor. All food, drinks, merchandise, arcade cabinets, and VR start locked on a new game. Unlock Crispy Controller for $50 first. Guests only order products you have opened.
@@ -103,7 +108,7 @@ The existing 20% boost and saved fractional carry produce the previous whole-dol
 
 ## Saves and updates
 
-Saves are **device-local to this browser and origin**, not cloud-synced. Clearing browser data deletes progress. The app stores a versioned, validated snapshot and a backup, migrates earlier formats through schema 4, and preserves unknown future saves. Settings offers save export for safekeeping; this first version does not include a save-import UI.
+Saves are **device-local to this browser and origin**, not cloud-synced. Clearing browser data deletes progress. The app stores a versioned, validated snapshot and a backup, migrates earlier formats through schema 5 (adding an empty basement to older saves), and preserves unknown future saves. Settings offers save export for safekeeping; this first version does not include a save-import UI.
 
 Discrete purchases/payments save immediately; movement and unfinished work save at least every two simulated seconds and on page hiding. A storage error is reported in Settings. A second tab is blocked from writing to the same save. Invalid primary data can recover from its valid backup. A newer app download never clears localStorage. When an update is ready, use **Settings → Save & update DFP**.
 
@@ -124,6 +129,7 @@ npm run test:browser
 node tests/seating-browser.mjs
 node tests/controls-browser.mjs
 node tests/drinks-sections-browser.mjs
+node tests/security-browser.mjs
 node tests/expanded-browser.mjs
 node tests/camera-browser.mjs
 node tests/visual-3d.mjs

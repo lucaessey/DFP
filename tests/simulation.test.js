@@ -103,7 +103,7 @@ test('save validation rejects impossible balances, rosters, states and upgrades'
   for(const corrupt of [s=>s.money=-1,s=>s.money=Infinity,s=>s.floors[0].upgrades.speed=6,s=>s.floors[0].customers=[{id:1}],s=>s.player.bag=['unknown'],s=>s.floor=3,s=>s.floors[0].stock.raw=NaN]){const s=newGame();corrupt(s);assert.equal(validateSave(s),false);assert.throws(()=>encode(s));}
 });
 test('version-one migration adds defaults and unknown future saves are preserved',()=>{
-  const s=newGame();s.version=1;delete s.settings;delete s.outfits;delete s.outfit;const migrated=decode(JSON.stringify(s));assert.equal(migrated.version,4);assert.equal(migrated.outfit,'uniform');
+  const s=newGame();s.version=1;delete s.settings;delete s.outfits;delete s.outfit;const migrated=decode(JSON.stringify(s));assert.equal(migrated.version,5);assert.equal(migrated.outfit,'uniform');
   const storage=memory();const future=JSON.stringify({version:99});storage.setItem(SAVE_KEY,future);const result=loadGame(storage);assert.equal(result.writable,false);assert.equal(storage.getItem(SAVE_KEY),future);
   const futureLayout=JSON.stringify({...newGame(),layoutVersion:99});storage.setItem(SAVE_KEY,futureLayout);assert.equal(loadGame(storage).writable,false);assert.equal(storage.getItem(SAVE_KEY),futureLayout);
 });

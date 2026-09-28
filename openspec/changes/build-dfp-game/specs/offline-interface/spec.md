@@ -29,7 +29,7 @@ The game SHALL display exactly four persistent bottom tabs in order: Elevator, H
 - **THEN** its intended panel appears without losing the selected floor or hiding bottom navigation.
 
 ### Requirement: Device-local versioned saves
-The game SHALL preserve money, unlocked floors/sections, upgrades, employees, assignments, outfit ownership/selection, tutorial, and in-progress simulation state using versioned validated device-local saves. Invalid primary saves SHALL recover from a validated backup; incompatible newer versions SHALL not be overwritten. Storage failures SHALL be visible. Legacy versions one through three SHALL migrate safely to schema four, preserving owned tables and delivered goods.
+The game SHALL preserve money, unlocked floors/sections, upgrades, employees, assignments, outfit ownership/selection, tutorial, and in-progress simulation state using versioned validated device-local saves. Invalid primary saves SHALL recover from a validated backup; incompatible newer versions SHALL not be overwritten. Storage failures SHALL be visible. Legacy versions one through four SHALL migrate safely to schema five, preserving owned tables and delivered goods and adding an empty basement to saves that predate it. Basement purchases, security round ids, remaining timers and charged selections SHALL persist. Unsupported future saves SHALL remain protected from older clients.
 
 #### Scenario: Interrupted transaction
 - **WHEN** the application reloads immediately after a persisted payment or purchase

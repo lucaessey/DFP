@@ -2,6 +2,8 @@ import './style.css';
 import './vr.css';
 import './world.css';
 import './casual.css';
+import './basement.css';
+import {BasementView,basementCard} from './basement-view.js';
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, tableCost, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
 import {paymentQuote} from './economy.js';
 import {WORLD} from './config.js';
@@ -14,9 +16,10 @@ import { Sound } from './audio.js';
 const loaded = loadGame(localStorage), state = loaded.state, sound = new Sound();
 try { if (!localStorage.getItem(SAVE_KEY) && !localStorage.getItem(BACKUP_KEY)) state.settings.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { state.settings.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; }
 let writable = loaded.writable, activeTab = 'home', filterFloor = 0, target = null, paused = false, last = 0, accumulator = 0, lastSave = 0, lastRevision = -1, lastUI = 0, installPrompt = null, registration = null, offlineReady = false, updateReady = false, saveWarning = loaded.warning, lockBlocked = false;
+let inBasement=false;
 const keys = new Set(), joystick = { x: 0, y: 0 }, app = document.querySelector('#app');
 let sessionReady = !navigator.locks;
-const money = n => '$' + Math.floor(n).toLocaleString('en-US');
+const money = n => `${n<0?'−':''}$${Math.abs(Math.floor(n)).toLocaleString('en-US')}`;
 const html = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 app.innerHTML = `
   <header class="topbar"><a class="brand" href="#" aria-label="DFP Home"><span class="brand-mark">${icon('controller')}</span><span class="brand-word">DFP<span>DEEP FRIED PIXELS</span></span></a><div class="top-tagline">Good food. <span>Great pixels.</span></div><div class="header-actions"><div class="balance"><span class="coin-icon">${icon('cash')}</span><span><small>YOUR BALANCE</small><strong id="balance"></strong></span></div><button class="icon-button" data-action="settings" aria-label="Settings">${icon('gear')}</button></div></header>
@@ -26,6 +29,7 @@ app.innerHTML = `
   <footer class="bottom-shell"><div class="save-status"><i id="save-dot"></i><span id="save-status">Saved on this device</span></div><nav class="bottom-nav" aria-label="Main navigation">${[['elevator','elevator','Elevator'],['home','home','Home'],['outfits','shirt','Outfits'],['employees','people','Employees']].map(([id,i,label]) => `<button data-tab="${id}" class="nav-tab ${id === 'home' ? 'active' : ''}" aria-current="${id === 'home' ? 'page' : 'false'}">${icon(i)}<span>${label}</span>${id === 'home' ? '<i></i>' : ''}</button>`).join('')}</nav><div class="made-with">FRESHLY FRIED. <span>ALWAYS PLAYFUL.</span></div></footer>
   <div id="toast" role="status" aria-live="polite"></div><dialog id="dialog"><div id="dialog-content"></div></dialog><div id="session-block" hidden><div class="card"><h2>DFP is open in another tab.</h2><p>Keep playing there, or close that tab and reload this one.</p><button class="dark-button" data-action="reload">Reload DFP</button></div></div>`;
 const canvas = document.querySelector('#game'), renderer = new Renderer(canvas), dialog = document.querySelector('#dialog');
+const basement=new BasementView(state,{purchase:act,save,notify:toast,watchAllowed:()=>!paused&&!lockBlocked&&sessionReady&&!dialog.open&&activeTab==='home'&&inBasement});
 renderer.onCue=kind=>sound.play(kind,state.settings.sound);
 let toastTimer;
 function toast(message,tone='info') { const t = document.querySelector('#toast'); t.textContent = message;t.dataset.tone=tone; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3500); }
@@ -105,7 +109,7 @@ function refreshHome() {
 }
 function selectTab(tab) {
   activeTab = tab; stopMovement();
-  document.querySelector('#home-view').hidden = tab !== 'home'; document.querySelector('#panel-view').hidden = tab === 'home';
+  document.querySelector('#home-view').hidden = tab !== 'home'||inBasement; document.querySelector('#panel-view').hidden = tab === 'home';basement.show(tab==='home'&&inBasement);
   document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
   if (tab === 'employees') filterFloor = state.floor;
   renderPanel(); refreshHome();
@@ -115,7 +119,7 @@ function renderPanel() {
   if (activeTab === 'home') return;
   const panel = document.querySelector('#panel-view');
   if (activeTab === 'elevator') {
-    panel.innerHTML = panelHeading('A LITTLE HIGHER, A LITTLE HAPPIER', 'Going up?', 'Four floors. Four ways to make someone’s day.') + `<div class="floor-grid">${FLOORS.map(f => { const fs = state.floors[f.id], current = state.floor === f.id; return `<article class="floor-card ${fs.unlocked ? '' : 'locked'}" style="--accent:${f.color};--pale:${f.pale}"><div class="floor-illustration"><span class="floor-number">0${f.id + 1}</span><span class="floor-art">${icon(f.icon)}</span><span class="floor-card-badge">${current ? 'YOU ARE HERE' : fs.unlocked ? 'OPEN FOR BUSINESS' : 'ROOM TO GROW'}</span></div><div class="floor-card-body"><h2>${f.name}</h2><p>${f.description}</p><div class="floor-detail">${fs.unlocked ? `${floorCount(state,f.id)} / 12 employees · ${money(fs.revenue)} earned` : f.id > 0 && !state.floors[f.id - 1].unlocked ? `Open floor ${f.id} first` : 'Ready for your next chapter'}</div>${fs.unlocked?'':unlockProgress(f.cost,f.name)}<button class="${current ? 'outline-button' : 'dark-button'}" data-action="${fs.unlocked ? 'visit' : 'unlock-floor'}" data-floor="${f.id}" ${!fs.unlocked && !state.floors[f.id - 1]?.unlocked ? 'disabled' : ''}>${current ? 'Back to your restaurant' : fs.unlocked ? 'Visit floor' : `Unlock · ${money(f.cost)}`} ${icon(fs.unlocked ? 'arrow' : 'lock')}</button></div></article>`; }).join('')}</div><p class="panel-note">${icon('people')} Your assigned team keeps working on every open floor while you play.</p>`;
+    panel.innerHTML = panelHeading('A LITTLE HIGHER, A LITTLE HAPPIER', 'Going up?', 'Four floors, and a cozy basement of your own.') + `<div class="floor-grid">${FLOORS.map(f => { const fs = state.floors[f.id], current = !inBasement && state.floor === f.id; return `<article class="floor-card ${fs.unlocked ? '' : 'locked'}" style="--accent:${f.color};--pale:${f.pale}"><div class="floor-illustration"><span class="floor-number">0${f.id + 1}</span><span class="floor-art">${icon(f.icon)}</span><span class="floor-card-badge">${current ? 'YOU ARE HERE' : fs.unlocked ? 'OPEN FOR BUSINESS' : 'ROOM TO GROW'}</span></div><div class="floor-card-body"><h2>${f.name}</h2><p>${f.description}</p><div class="floor-detail">${fs.unlocked ? `${floorCount(state,f.id)} / 12 employees · ${money(fs.revenue)} earned` : f.id > 0 && !state.floors[f.id - 1].unlocked ? `Open floor ${f.id} first` : 'Ready for your next chapter'}</div>${fs.unlocked?'':unlockProgress(f.cost,f.name)}<button class="${current ? 'outline-button' : 'dark-button'}" data-action="${fs.unlocked ? 'visit' : 'unlock-floor'}" data-floor="${f.id}" ${!fs.unlocked && !state.floors[f.id - 1]?.unlocked ? 'disabled' : ''}>${current ? 'Back to your restaurant' : fs.unlocked ? 'Visit floor' : `Unlock · ${money(f.cost)}`} ${icon(fs.unlocked ? 'arrow' : 'lock')}</button></div></article>`; }).join('')}${basementCard(state,inBasement)}</div><p class="panel-note">${icon('people')} Your assigned team keeps working on every open floor while you play.</p>`;
   }
   if (activeTab === 'outfits') {
     panel.innerHTML = panelHeading('A FRESH LOOK FOR EVERY FLOOR', 'Wear your flavor.', 'All style. All earned in-game. Find a look that feels like you.') + `<div class="outfit-grid">${OUTFITS.map(o => { const owned = state.outfits.includes(o.id), equipped = state.outfit === o.id, open = state.floors[o.floor].unlocked; return `<article class="outfit-card ${equipped ? 'equipped' : ''}"><div class="outfit-preview" style="--outfit:${o.color}"><span class="outfit-badge">${equipped ? 'EQUIPPED' : owned ? 'IN YOUR WARDROBE' : `FLOOR ${o.floor + 1}`}</span><canvas width="160" height="150" data-outfit="${o.id}" aria-label="${o.subtitle} preview"></canvas></div><div class="outfit-body"><small>${o.subtitle}</small><h2>${o.name}</h2><button class="${equipped ? 'outline-button' : 'dark-button'}" data-action="outfit" data-id="${o.id}" ${equipped || !open ? 'disabled' : ''}>${equipped ? 'Looking good' : !open ? `Unlock floor ${o.floor + 1}` : owned ? 'Wear this' : `Unlock · ${money(o.price)}`} ${icon(equipped ? 'check' : open ? 'shirt' : 'lock')}</button></div></article>`; }).join('')}</div>`;
@@ -162,6 +166,9 @@ app.addEventListener('click', event => {
   sound.unlock(); const button = event.target.closest('button'); if (!button || button.disabled) return;
   if (button.dataset.tab) { selectTab(button.dataset.tab); return; }
   const { action, id, category } = button.dataset, f = Number(button.dataset.floor);
+  if(action==='basement-buy')act({type:'basement'});
+  if(action==='basement-visit'&&state.basement.unlocked){inBasement=true;selectTab('home');}
+  if(action?.startsWith('basement-')||action?.startsWith('security-'))basement.action(action,id);
   if (['employees','elevator'].includes(action)) selectTab(action);
   if (action === 'settings') settingsDialog();
   if (action === 'upgrades') upgradesDialog();
@@ -180,7 +187,7 @@ app.addEventListener('click', event => {
   if (action === 'vr-start') vrDialog();
   if (action === 'vr-left' || action === 'vr-right') vrInput(state,action==='vr-left'?-1:1);
   if (action === 'vr-retry') { dialog.classList.remove('vr-dialog'); dialog.close(); vrDialog(); }
-  if (action === 'visit' && act({ type: 'visit', floor: f })) selectTab('home');
+  if (action === 'visit' && act({ type: 'visit', floor: f })) {inBasement=false;selectTab('home');}
   if (action === 'unlock-floor') act({ type: 'floor', floor: f });
   if (action === 'hire') act({ type: 'hire', id: Number(id), floor: state.floor });
   if (action === 'employee-upgrade') act({ type: 'upgrade', id: Number(id), category });
@@ -209,7 +216,7 @@ canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) ret
 canvas.addEventListener('pointermove',e=>{if(e.pointerId===surfacePointer)target=renderer.pick(e.clientX,e.clientY);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{if(e.pointerId===surfacePointer){surfacePointer=null;stopPath();}});
 const movementKey=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'}[e.code]||e.key.toLowerCase());
-window.addEventListener('keydown', e => {const key=movementKey(e);if(e.key==='Escape'){stopMovement();return;}if(dialog.open&&state.vr&&document.querySelector('#vr-field')){if(['arrowleft','a','arrowright','d'].includes(key)){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(key)?-1:1);}return;}if(dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();keys.add(key);target=null;state.player.path=[];state.player.pathKey="";surfacePointer=null;sound.unlock();}});
+window.addEventListener('keydown', e => {const key=movementKey(e);if(e.key==='Escape'){stopMovement();return;}if(dialog.open&&state.vr&&document.querySelector('#vr-field')){if(['arrowleft','a','arrowright','d'].includes(key)){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(key)?-1:1);}return;}if(basement.monitoring||inBasement||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();keys.add(key);target=null;state.player.path=[];state.player.pathKey="";surfacePointer=null;sound.unlock();}});
 window.addEventListener('keyup',e=>{const key=movementKey(e);if(!['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key))return;keys.delete(key);if(!keys.size&&!joystick.x&&!joystick.y&&surfacePointer===null)stopPath();});
 window.addEventListener('blur',stopMovement);
 function joyMove(e) { const r = joy.getBoundingClientRect(), x = e.clientX-r.left-r.width/2, y = e.clientY-r.top-r.height/2, d = Math.max(1,Math.hypot(x,y)/34); joystick.x=x/d/34; joystick.y=y/d/34; knob.style.transform=`translate(${x/d}px,${y/d}px)`; target=null; }
@@ -224,14 +231,14 @@ function frame(timestamp) {
     accumulator += delta;
     while(accumulator>=B.step) {
       const x=joystick.x + (keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0), y=joystick.y+(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0);
-      step(state,B.step,{x:activeTab==='home'&&!dialog.open?x:0,y:activeTab==='home'&&!dialog.open?y:0,target:activeTab==='home'&&!dialog.open?target:null,pausedPlayer:activeTab!=='home'||dialog.open});
+      step(state,B.step,{x:activeTab==='home'&&!dialog.open&&!inBasement?x:0,y:activeTab==='home'&&!dialog.open&&!inBasement?y:0,target:activeTab==='home'&&!dialog.open&&!inBasement?target:null,pausedPlayer:activeTab!=='home'||dialog.open||inBasement,monitoring:basement.watching});
       if(target&&Math.hypot(state.player.x-target.x,state.player.y-target.y)<0.12)target=null;
       accumulator-=B.step;
     }
     for(const event of state.events.splice(0)) {renderer.feedback(event,state.time);sound.play(event.kind,state.settings.sound);if(event.kind==='trash')toast(event.text);if(event.kind==='money'){document.querySelector('#balance').textContent=money(state.money);if(!state.settings.reducedMotion){const balance=document.querySelector('.balance');balance.getAnimations().forEach(a=>a.cancel());balance.animate([{transform:'scale(1)'},{transform:'scale(1.055)',offset:.35},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});}}}
     if(state.revision!==lastRevision || state.time-lastSave>2)save();
   }
-  if(activeTab==='home'&&!paused)renderer.draw(state,state.time);
+  if(activeTab==='home'&&!paused){if(inBasement)basement.draw();else renderer.draw(state,state.time);}
   refreshVR();
   if(timestamp-lastUI>200){refreshHome();lastUI=timestamp;}
   requestAnimationFrame(frame);

@@ -94,3 +94,10 @@
 - [x] 15.2 Present locked drinks boundaries and an explicit Unlock Drinks Section label, price and purchase control; retain $180/$220 unlocks, atomic charging, demand/staff gating, permanent ownership and reveal animation.
 - [x] 15.3 Halve the currently released table prices once, rounded to whole dollars, sharing displayed and charged prices and preserving owned tables/balances.
 - [x] 15.4 Migrate changed layout positions/paths safely, retaining pending orders, stored goods, drink unlocks, outfits, staffing and upgrades; verify player/employee mixed-order flows, all-floor tables, touch, saves and offline builds. Passed 100 unit tests and 64 browser checks; see DRINKS_SECTIONS.md and the local screenshot gallery. All 65 tasks are complete; keep this change unarchived.
+
+## 16. Basement lounge and security minigame
+- [x] 16.1 Add independent basement/furniture/security purchases, affordability and duplicate protection, prerequisite checks and compatible saved progress.
+- [x] 16.2 Implement saved random waits, a single ten-second robber, fixed rewards/penalties, idempotent selections and pause/resume without away-time events.
+- [x] 16.3 Add Elevator access and a chunky 3D lounge with visible furniture, placement/TV activation effects and the four existing navigation tabs.
+- [x] 16.4 Render interactive live footage of the highest unlocked floor, recognizable theft, accessible person targeting, status/feedback and clear exit on mobile/desktop.
+- [x] 16.5 Verify purchases, prerequisites, all monitored floors, timing/results, interruptions, migration, touch/keyboard and offline play; inspect screenshots and document actual results. Passed 109 unit tests and 36 browser checks; see BASEMENT_SECURITY.md and the local basement gallery. All 70 tasks complete; keep the change unarchived.
