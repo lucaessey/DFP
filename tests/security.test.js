@@ -7,8 +7,8 @@ const ready=()=>{const s=newGame();s.money=10000;command(s,{type:'basement'});fo
 const tick=(s,time,watch=true)=>{for(let i=0;i<Math.round(time*20);i++)securityTick(s,.05,watch);};
 const active=s=>{ensureSecurityRound(s);tick(s,s.basement.security.round.remaining);assert.equal(s.basement.security.round.phase,'active');return s.basement.security.round;};
 
-test('basement is a $500 purchase before food or upper floors, with atomic rejection and no repeated charge',()=>{
- let s=newGame();s.money=499;const old=encode(s);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(encode(s),old);s.money=500;assert.equal(command(s,{type:'basement',token:'basement'}).cost,500);assert.equal(s.money,0);assert.deepEqual(s.floors.map(f=>f.unlocked),[true,false,false,false]);assert.equal(s.floors[0].products.controller,false);s=decode(encode(s));assert.ok(s.basement.unlocked);assert.equal(command(s,{type:'basement',token:'basement'}).ok,false);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(s.money,0);
+test('basement is a $200 purchase before food or upper floors, with atomic rejection and no repeated charge',()=>{
+ let s=newGame();s.money=199;const old=encode(s);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(encode(s),old);s.money=200;assert.equal(command(s,{type:'basement',token:'basement'}).cost,200);assert.equal(s.money,0);assert.deepEqual(s.floors.map(f=>f.unlocked),[true,false,false,false]);assert.equal(s.floors[0].products.controller,false);s=decode(encode(s));assert.ok(s.basement.unlocked);assert.equal(command(s,{type:'basement',token:'basement'}).ok,false);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(s.money,0);
 });
 test('all furniture and security prices, each prerequisite, insufficient money and reload ownership',()=>{
  let s=newGame();s.money=1000;assert.equal(command(s,{type:'furniture',id:'tv'}).ok,false);command(s,{type:'basement'});

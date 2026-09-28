@@ -1,7 +1,7 @@
 import {LAYOUTS,WORLD} from './config.js';
 import {followPath} from './navigation.js';
 
-export const BASEMENT_PRICE=500, SECURITY_PRICE=150;
+export const BASEMENT_PRICE=200, SECURITY_PRICE=150;
 export const FURNITURE=[
  {id:'tv',name:'TV',cost:50,x:6,y:1.7},
  {id:'couch',name:'Couch',cost:100,x:6,y:6.6},

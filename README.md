@@ -8,7 +8,7 @@ Characters now share a rounded charcoal base with a featureless head, thick limb
 
 Food and drinks now have separate sections, counters and queues. Drinks unlock for $180/$220, and table prices are halved once. See [changes and test results](DRINKS_SECTIONS.md).
 
-The Elevator also offers an independent **$500 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md).
+The Elevator also offers an independent **$200 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md).
 
 ## Run locally
 
@@ -55,7 +55,7 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 
 ## Play
 
-- **Basement:** available in Elevator from the start for $500, without upper-floor prerequisites. Buy a TV ($50), couch ($100) and two plants ($15 each), then install the $150 security system. The checklist tracks all four furnishings. Tap the TV to monitor upstairs; Home returns to your lounge until you visit a restaurant floor.
+- **Basement:** available in Elevator from the start for $200, without upper-floor prerequisites. Buy a TV ($50), couch ($100) and two plants ($15 each), then install the $150 security system. The checklist tracks all four furnishings. Tap the TV to monitor upstairs; Home returns to your lounge until you visit a restaurant floor.
 - **Security:** the feed shows your highest unlocked floor with its actual employees, customers and activity. A robber appears after a random 1–30 seconds, with ten seconds to catch them. Look for reaching, stolen goods and a dark sack. A catch pays exactly $15; a wrong person or escape costs $5, unaffected by upgrades. Repeated selection of the same person in a round does not charge twice. Full penalties can put the balance below zero; free navigation and earning money still work. Use camera-zone buttons, zoom, or arrow keys to inspect the floor. Exit/Escape, menus, focus loss and backgrounding pause the encounter; returning to the TV resumes it, including after reload. No encounters occur while away.
 
 - **Move:** hold WASD/arrows, drag the phone joystick, or press and hold the floor. Release to stop. Tap a station icon or an area button to walk there automatically; the square stop button or Escape cancels that trip. Losing focus or opening a menu also stops movement. Stand inside a marked ring to work automatically.

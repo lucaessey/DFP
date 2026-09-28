@@ -3,11 +3,11 @@
 ## ADDED Requirements
 
 ### Requirement: Independent basement and furniture purchases
-Elevator SHALL offer the basement for $500 from the beginning, independently of upper-floor and food progression, while retaining exactly four bottom navigation tabs. The room SHALL offer a TV for $50, a couch for $100 and two distinct plants for $15 each. Each purchase SHALL reject insufficient funds and duplicate ownership, charge once, reveal its own visible 3D object and persist permanently. The lounge SHALL use the approved chunky style with the couch facing the TV and plants in separate positions.
+Elevator SHALL offer the basement for $200 from the beginning, independently of upper-floor and food progression, while retaining exactly four bottom navigation tabs. The room SHALL offer a TV for $50, a couch for $100 and two distinct plants for $15 each. Each purchase SHALL reject insufficient funds and duplicate ownership, charge once, reveal its own visible 3D object and persist permanently. The lounge SHALL use the approved chunky style with the couch facing the TV and plants in separate positions.
 
 #### Scenario: Basement before upper floors
-- **WHEN** the player has $500 while only Takeout is unlocked
-- **THEN** purchasing the basement costs exactly $500 and allows visiting it without unlocking any upper floor.
+- **WHEN** the player has $200 while only Takeout is unlocked
+- **THEN** purchasing the basement costs exactly $200 and allows visiting it without unlocking any upper floor.
 
 ### Requirement: Furnished security system
 The security system SHALL cost $150 and SHALL require the TV, couch and both plants. A checklist SHALL show each requirement. Once purchased, interacting with the TV SHALL open a large animated view of the actual highest unlocked above-ground floor, including its layout and current customers, employees and store activity. The monitored floor SHALL update automatically as higher floors unlock. Monitoring SHALL have clear status, touch/click person targets, camera controls and an exit control.

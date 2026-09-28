@@ -101,3 +101,5 @@
 - [x] 16.3 Add Elevator access and a chunky 3D lounge with visible furniture, placement/TV activation effects and the four existing navigation tabs.
 - [x] 16.4 Render interactive live footage of the highest unlocked floor, recognizable theft, accessible person targeting, status/feedback and clear exit on mobile/desktop.
 - [x] 16.5 Verify purchases, prerequisites, all monitored floors, timing/results, interruptions, migration, touch/keyboard and offline play; inspect screenshots and document actual results. Passed 109 unit tests and 36 browser checks; see BASEMENT_SECURITY.md and the local basement gallery. All 70 tasks complete; keep the change unarchived.
+
+- [x] 16.6 Reduce basement access to $200 in the shared displayed/charged price; update documentation and verify affordability, persistence and duplicate protection. Passed 109 unit tests, 13 basement browser checks, both production builds and strict OpenSpec validation; all 71 tasks complete, keep unarchived.

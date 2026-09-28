@@ -4,11 +4,11 @@ Implemented and verified September 27, 2026.
 
 ## How to play
 
-Open **Elevator → The Basement**. It costs **$500** from the beginning, independent of food and upper-floor unlocks. The existing four navigation tabs remain.
+Open **Elevator → The Basement**. It costs **$200** from the beginning, independent of food and upper-floor unlocks. The existing four navigation tabs remain.
 
 | Purchase | Price | Requirement |
 | --- | ---: | --- |
-| Basement | $500 | Sufficient money |
+| Basement | $200 | Sufficient money |
 | TV | $50 | Basement |
 | Couch | $100 | Basement |
 | Plant one | $15 | Basement |
@@ -41,3 +41,7 @@ The first browser checks exposed a test reading an autosave before the next save
 Browser verification uses isolated Microsoft Edge/Chromium profiles and emulated phone viewports/touch. Background handling was verified with focus events and a simulated visibility-change event; physical iOS/Android backgrounding and installation were not tested. The player's browser saves were not modified. Live public-origin browser access remains blocked here by Microsoft Family Safety; publication is verified through GitHub Actions and the equivalent `/DFP/` build is tested locally.
 
 With the local server running, open [the screenshot gallery](http://localhost:8080/artifacts/basement/index.html). Images and the JSON browser report are local, ignored verification artifacts in `artifacts/basement/`; they are not shipped in the game.
+
+## Basement price follow-up
+
+Basement access now costs $200. The shared price drives both the Elevator label and actual deduction; existing ownership and balances are preserved without a refund or additional charge. Reverification passed all 109 unit tests and 13 basement browser checks, including the displayed $200 offer, rejection at $199, exact-price purchase, persistence, duplicate protection and offline reload. Root and Pages builds and strict OpenSpec validation passed.
