@@ -78,7 +78,7 @@
 - [x] 13.2 Blend grounded distance-driven walking, idle, turns, carrying, job-specific reaches, customer seating/eating/departure and purchase celebrations; respect reduced motion.
 - [x] 13.3 Keep visual transfers and interruptions independent of inventory, payment and customer state; prevent visible furniture intersections and reuse model resources.
 - [x] 13.4 Verify unchanged gameplay/saves, all-floor jobs, outfits, interruption, touch/orientation, offline assets and actual rendering performance. See CHARACTER_UPGRADE.md for 82 passing unit tests, browser results and desktop-GPU measurements.
-- [ ] 13.5 Inspect and capture all four floors and a gameplay clip, document actual results and publish the verified update. Reference comparison, local inspection, fresh 43.32-second recording, report and both builds are complete; deployment verification is pending.
+- [x] 13.5 Inspect and capture all four floors and a gameplay clip, document actual results and publish the verified update. Reference comparison, local inspection, fresh 43.32-second recording, report and both builds are complete. Commit 2d3367b passed GitHub tests/build and deployed successfully in run 36365552695.
 - [x] 13.6 Provide front/side/back base previews and in-game carrying evidence; compare proportions and materials against the supplied Pizza Ready gallery. The dark featureless head, compact bright shirt/cap, rounded limbs and carrying pose were inspected against the reference; preserve the approved DFP base and original assets.
 
 ## 14. Cohesive casual world and event animation

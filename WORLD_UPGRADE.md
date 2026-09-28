@@ -78,4 +78,4 @@ $env:DFP_TEST_URL='http://127.0.0.1:4184/DFP/'
 node tests/pages-browser.mjs
 ```
 
-The comparison fixture is local evidence from the character checkpoint; the tracked `artifacts/3d-upgrade/comparison-state.json` is also accepted by the visual script. The OpenSpec change remains unarchived. Publication status is recorded after the deployment completes.
+The comparison fixture is local evidence from the character checkpoint; the tracked `artifacts/3d-upgrade/comparison-state.json` is also accepted by the visual script. The OpenSpec change is complete (61/61 tasks) and remains unarchived. Game commit `2d3367b` passed GitHub tests/build and was published successfully by [Pages run 36365552695](https://github.com/lucaessey/DFP/actions/runs/36365552695). Play at https://lucaessey.github.io/DFP/.
