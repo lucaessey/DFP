@@ -103,3 +103,10 @@
 - [x] 16.5 Verify purchases, prerequisites, all monitored floors, timing/results, interruptions, migration, touch/keyboard and offline play; inspect screenshots and document actual results. Passed 109 unit tests and 36 browser checks; see BASEMENT_SECURITY.md and the local basement gallery. All 70 tasks complete; keep the change unarchived.
 
 - [x] 16.6 Reduce basement access to $200 in the shared displayed/charged price; update documentation and verify affordability, persistence and duplicate protection. Passed 109 unit tests, 13 basement browser checks, both production builds and strict OpenSpec validation; all 71 tasks complete, keep unarchived.
+
+## 17. Basement computer and apps
+- [x] 17.1 Add $100 computer, $50 email and three $50 game purchases with ownership validation, exact charges and schema-six migration retaining existing security.
+- [x] 17.2 Add original 3D desk/computer and responsive desktop, move security access off the TV and retain prerequisites, clocks and return controls.
+- [x] 17.3 Add two fictional email categories with at least ten original messages each, inbox/detail navigation and no gameplay effects.
+- [x] 17.4 Embed the three fixed game URLs with protected parent navigation, loading/retry/offline behavior, persistent returns and audio teardown.
+- [x] 17.5 Verify purchases, migration, desktop/mobile apps, security pauses, external embedding/input/focus, offline saves and screenshots; document actual limitations. Implementation verified: 115 unit tests and 55 browser checks, both production builds and strict validation; see COMPUTER.md. All 76 tasks complete; keep unarchived.

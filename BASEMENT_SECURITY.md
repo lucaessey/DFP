@@ -17,15 +17,17 @@ Open **Elevator → The Basement**. It costs **$200** from the beginning, indepe
 
 The lounge uses original procedural 3D furniture, the approved character base, soft lighting and purchase placement animations. The couch faces the TV; plants occupy separate corners. The checklist shows each requirement. Owned items cannot be charged again.
 
-After installing security, tap the TV. The feed renders the **actual highest unlocked above-ground floor**, including its current products, furniture, customers, employees and activity. Opening a higher floor automatically changes the monitored floor. Workstation, service and dining camera buttons, zoom controls and keyboard arrows help inspect the room; phone person targets are enlarged and overlapping targets resolve to the nearest visible body center. The camera remains fixed when viewing a zone. Bottom navigation and an explicit Exit button stay available; Escape also exits.
+Buy the $100 basement computer, install security from its desktop, then open its Security app. The TV remains a furnishing and requirement. The feed renders the **actual highest unlocked above-ground floor**, including its current products, furniture, customers, employees and activity. Opening a higher floor automatically changes the monitored floor. Workstation, service and dining camera buttons, zoom controls and keyboard arrows help inspect the room; phone person targets are enlarged and overlapping targets resolve to the nearest visible body center. The camera remains fixed when viewing a zone. Bottom navigation and an explicit Exit button stay available; Escape also exits.
 
 Each encounter starts with a random integer wait of **1–30 seconds**, followed by one robber and a **10-second** catch window. Look for reaching, stolen goods, a dark outfit and a sack. Catching pays exactly **$15**; choosing an innocent person or letting the robber escape costs exactly **$5**. A wrong selection keeps the encounter running. Restaurant profit upgrades, fractional bonuses and the fivefold earnings multiplier do not affect security amounts. Full penalties may take the balance below zero; free navigation and earning remain available, while purchases still require sufficient funds.
 
-Closing monitoring, opening another panel, losing focus, backgrounding or reloading pauses the saved wait/encounter. Return to the TV to resume it. No real-world elapsed time is used, and monitoring never starts automatically on reload. Round ids and saved charged selections prevent duplicate rewards and repeated charges for the same person in a round. Presentation does not award money or alter purchases.
+Closing monitoring, opening another panel, losing focus, backgrounding or reloading pauses the saved wait/encounter. Return to Security on the computer to resume it. No real-world elapsed time is used, and monitoring never starts automatically on reload. Round ids and saved charged selections prevent duplicate rewards and repeated charges for the same person in a round. Presentation does not award money or alter purchases.
 
-Schema five preserves previous balances, floors, tables, inventory, upgrades, employees, assignments and outfits. Older saves gain an empty basement. Older clients recognize the newer schema as unsupported and cannot overwrite it. All models, materials and animations are local and cached in production; reduced-motion and reduced-effects settings continue to apply.
+Schema six preserves previous balances, floors, tables, inventory, upgrades, employees, assignments and outfits. Older saves gain missing basement/computer ownership records. Existing security ownership and encounters remain intact. Older clients recognize the newer schema as unsupported and cannot overwrite it. All models, materials and animations are local and cached in production; reduced-motion and reduced-effects settings continue to apply.
 
-## Actual verification
+See [COMPUTER.md](COMPUTER.md) for the latest computer integration, migration and app verification.
+
+## Original basement verification
 
 | Check | Result |
 | --- | --- |

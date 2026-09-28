@@ -8,7 +8,7 @@ Characters now share a rounded charcoal base with a featureless head, thick limb
 
 Food and drinks now have separate sections, counters and queues. Drinks unlock for $180/$220, and table prices are halved once. See [changes and test results](DRINKS_SECTIONS.md).
 
-The Elevator also offers an independent **$200 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md).
+The Elevator also offers an independent **$200 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md) and [the computer apps and test report](COMPUTER.md).
 
 ## Run locally
 
@@ -55,7 +55,8 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 
 ## Play
 
-- **Basement:** available in Elevator from the start for $200, without upper-floor prerequisites. Buy a TV ($50), couch ($100) and two plants ($15 each), then install the $150 security system. The checklist tracks all four furnishings. Tap the TV to monitor upstairs; Home returns to your lounge until you visit a restaurant floor.
+- **Computer:** a $100 permanent desk/computer purchase in the basement. Its turquoise desktop offers Security, $50 Email (22 fictional notes), and a store with Boggle, Wordventure and Snake at $50 each. Owned games open inside the computer. Back to Computer and Back to DFP stay outside the game; leaving/backgrounding closes its session and sound. External games may need internet; desktop/email/security work offline.
+- **Basement:** available in Elevator from the start for $200, without upper-floor prerequisites. Buy a TV ($50), couch ($100) and two plants ($15 each), then install the $150 security system. The checklist tracks all four furnishings. Buy the $100 computer and open Security on its desktop to monitor upstairs; Home returns to your lounge until you visit a restaurant floor.
 - **Security:** the feed shows your highest unlocked floor with its actual employees, customers and activity. A robber appears after a random 1–30 seconds, with ten seconds to catch them. Look for reaching, stolen goods and a dark sack. A catch pays exactly $15; a wrong person or escape costs $5, unaffected by upgrades. Repeated selection of the same person in a round does not charge twice. Full penalties can put the balance below zero; free navigation and earning money still work. Use camera-zone buttons, zoom, or arrow keys to inspect the floor. Exit/Escape, menus, focus loss and backgrounding pause the encounter; returning to the TV resumes it, including after reload. No encounters occur while away.
 
 - **Move:** hold WASD/arrows, drag the phone joystick, or press and hold the floor. Release to stop. Tap a station icon or an area button to walk there automatically; the square stop button or Escape cancels that trip. Losing focus or opening a menu also stops movement. Stand inside a marked ring to work automatically.
@@ -108,7 +109,7 @@ The existing 20% boost and saved fractional carry produce the previous whole-dol
 
 ## Saves and updates
 
-Saves are **device-local to this browser and origin**, not cloud-synced. Clearing browser data deletes progress. The app stores a versioned, validated snapshot and a backup, migrates earlier formats through schema 5 (adding an empty basement to older saves), and preserves unknown future saves. Settings offers save export for safekeeping; this first version does not include a save-import UI.
+Saves are **device-local to this browser and origin**, not cloud-synced. Clearing browser data deletes progress. The app stores a versioned, validated snapshot and a backup, migrates earlier formats through schema 6 (adding missing basement/computer records while preserving existing security), and preserves unknown future saves. Settings offers save export for safekeeping; this first version does not include a save-import UI.
 
 Discrete purchases/payments save immediately; movement and unfinished work save at least every two simulated seconds and on page hiding. A storage error is reported in Settings. A second tab is blocked from writing to the same save. Invalid primary data can recover from its valid backup. A newer app download never clears localStorage. When an update is ready, use **Settings → Save & update DFP**.
 

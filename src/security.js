@@ -1,5 +1,6 @@
 import {LAYOUTS,WORLD} from './config.js';
 import {followPath} from './navigation.js';
+import {newComputer,validateComputer} from './computer.js';
 
 export const BASEMENT_PRICE=200, SECURITY_PRICE=150;
 export const FURNITURE=[
@@ -8,7 +9,7 @@ export const FURNITURE=[
  {id:'plant1',name:'Plant one',cost:15,x:2,y:3},
  {id:'plant2',name:'Plant two',cost:15,x:10,y:6.4},
 ];
-export const newBasement=()=>({unlocked:false,furniture:Object.fromEntries(FURNITURE.map(p=>[p.id,false])),security:{owned:false,seed:81927,nextId:1,round:null,catches:0,escapes:0,wrong:0,rewards:0,penalties:0,result:null}});
+export const newBasement=()=>({unlocked:false,computer:newComputer(),furniture:Object.fromEntries(FURNITURE.map(p=>[p.id,false])),security:{owned:false,seed:81927,nextId:1,round:null,catches:0,escapes:0,wrong:0,rewards:0,penalties:0,result:null}});
 export const furnished=s=>FURNITURE.every(p=>s.basement.furniture[p.id]);
 export const highestFloor=s=>s.floors.reduce((last,f,i)=>f.unlocked?i:last,0);
 function random(sec){sec.seed=(Math.imul(1664525,sec.seed)+1013904223)>>>0;return sec.seed/4294967296;}
@@ -48,7 +49,7 @@ export function securitySelect(s,{roundId,person,watching}){
 }
 export function validateBasement(b){
  const int=(n,min=0,max=1e12)=>Number.isInteger(n)&&n>=min&&n<=max;
- if(!b||typeof b.unlocked!=='boolean'||!b.furniture||!FURNITURE.every(p=>typeof b.furniture[p.id]==='boolean'))return false;
+ if(!b||typeof b.unlocked!=='boolean'||!validateComputer(b.computer,b.unlocked)||!b.furniture||!FURNITURE.every(p=>typeof b.furniture[p.id]==='boolean'))return false;
  const sec=b.security;if(!sec||typeof sec.owned!=='boolean'||!int(sec.seed,0,4294967295)||!int(sec.nextId,1)||!['catches','escapes','wrong','rewards','penalties'].every(k=>int(sec[k])))return false;
  if(!b.unlocked&&(sec.owned||FURNITURE.some(p=>b.furniture[p.id])))return false;
  if(sec.owned&&!FURNITURE.every(p=>b.furniture[p.id]))return false;

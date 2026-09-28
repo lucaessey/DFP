@@ -1,4 +1,9 @@
 const shapes = {
+  email: '<rect x="2" y="5" width="20" height="15" rx="3"/><path d="m3 6 9 7 9-7"/>',
+  shield: '<path d="m12 2 8 3v6c0 5-5 9-8 11-3-2-8-6-8-11V5Z"/><path d="m8 12 3 3 5-6"/>',
+  letters: '<rect x="2" y="2" width="20" height="20" rx="4"/><path d="m6 17 6-11 6 11M9 13h6"/>',
+  map: '<path d="m2 5 7-3 6 3 7-3v17l-7 3-6-3-7 3Zm7-3v17m6-14v17"/>',
+  snake: '<path d="M5 20h10a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h10v6h-4M18 7h4"/><circle cx="16" cy="6" r=".5"/>',
   cash: '<rect x="2" y="6" width="20" height="12" rx="3"/><path d="M5 18v3h15M9 6v12m6-12v12"/><circle cx="6" cy="12" r="1"/><circle cx="18" cy="12" r="1"/>',
   prep: '<path d="M4 17h16v4H4zM6 14l10-11c4 3 2 7-2 9l-3-3m-5 5-3 3"/>',
   fry: '<path d="M4 12h13v8H4zM17 13l4-3M7 12V9m4 3V9M7 6c-2-2 2-2 0-4m5 4c-2-2 2-2 0-4"/>',

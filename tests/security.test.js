@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {newGame,command,step} from '../src/simulation.js';
 import {FURNITURE,highestFloor,securityTick,securitySelect,ensureSecurityRound} from '../src/security.js';
 import {encode,decode,validateSave} from '../src/storage.js';
-const ready=()=>{const s=newGame();s.money=10000;command(s,{type:'basement'});for(const p of FURNITURE)command(s,{type:'furniture',id:p.id});command(s,{type:'security'});return s;};
+const ready=()=>{const s=newGame();s.money=10000;command(s,{type:'basement'});command(s,{type:'computer'});for(const p of FURNITURE)command(s,{type:'furniture',id:p.id});command(s,{type:'security'});return s;};
 const tick=(s,time,watch=true)=>{for(let i=0;i<Math.round(time*20);i++)securityTick(s,.05,watch);};
 const active=s=>{ensureSecurityRound(s);tick(s,s.basement.security.round.remaining);assert.equal(s.basement.security.round.phase,'active');return s.basement.security.round;};
 
@@ -11,7 +11,7 @@ test('basement is a $200 purchase before food or upper floors, with atomic rejec
  let s=newGame();s.money=199;const old=encode(s);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(encode(s),old);s.money=200;assert.equal(command(s,{type:'basement',token:'basement'}).cost,200);assert.equal(s.money,0);assert.deepEqual(s.floors.map(f=>f.unlocked),[true,false,false,false]);assert.equal(s.floors[0].products.controller,false);s=decode(encode(s));assert.ok(s.basement.unlocked);assert.equal(command(s,{type:'basement',token:'basement'}).ok,false);assert.equal(command(s,{type:'basement'}).ok,false);assert.equal(s.money,0);
 });
 test('all furniture and security prices, each prerequisite, insufficient money and reload ownership',()=>{
- let s=newGame();s.money=1000;assert.equal(command(s,{type:'furniture',id:'tv'}).ok,false);command(s,{type:'basement'});
+ let s=newGame();s.money=1000;assert.equal(command(s,{type:'furniture',id:'tv'}).ok,false);command(s,{type:'basement'});command(s,{type:'computer'});
  for(const p of FURNITURE){assert.equal(command(s,{type:'security'}).ok,false);s.money=p.cost-1;const old=encode(s);assert.equal(command(s,{type:'furniture',id:p.id}).ok,false);assert.equal(encode(s),old);s.money=p.cost;assert.equal(command(s,{type:'furniture',id:p.id}).cost,p.cost);assert.equal(s.money,0);s=decode(encode(s));assert.ok(s.basement.furniture[p.id]);assert.equal(command(s,{type:'furniture',id:p.id}).ok,false);}
  s.money=149;assert.equal(command(s,{type:'security'}).ok,false);s.money=150;assert.equal(command(s,{type:'security'}).cost,150);assert.equal(s.money,0);s=decode(encode(s));assert.ok(s.basement.security.owned);assert.equal(command(s,{type:'security'}).ok,false);
 });
@@ -34,7 +34,7 @@ test('highest-floor monitoring follows actual unlocks without changing selected 
  const s=ready();let r=active(s);tick(s,2);for(let f=1;f<4;f++){assert.ok(command(s,{type:'floor',floor:f}).ok);const before=r.remaining;securityTick(s,.05,true);r=s.basement.security.round;assert.equal(highestFloor(s),f);assert.equal(r.floor,f);assert.ok(Math.abs(r.remaining-(before-.05))<1e-8);assert.equal(s.floor,0);assert.ok(r.robber);}assert.equal(s.basement.security.catches,0);
 });
 test('schema-four saves gain an empty basement without altering prior progress; newer feature saves are protected',()=>{
- const s=newGame();s.money=12345;command(s,{type:'hire',id:0});command(s,{type:'outfit',id:'chef'});command(s,{type:'upgrade',category:'profit'});const before=structuredClone(s);s.version=4;delete s.basement;const loaded=decode(JSON.stringify(s));assert.equal(loaded.version,5);assert.deepEqual(loaded.floors,before.floors);assert.deepEqual(loaded.employees,before.employees);assert.equal(loaded.money,before.money);assert.equal(loaded.outfit,'chef');assert.equal(loaded.basement.unlocked,false);assert.equal(loaded.basement.security.round,null);assert.throws(()=>decode(JSON.stringify({...loaded,version:6})),/FUTURE_VERSION/);
+ const s=newGame();s.money=12345;command(s,{type:'hire',id:0});command(s,{type:'outfit',id:'chef'});command(s,{type:'upgrade',category:'profit'});const before=structuredClone(s);s.version=4;delete s.basement;const loaded=decode(JSON.stringify(s));assert.equal(loaded.version,6);assert.deepEqual(loaded.floors,before.floors);assert.deepEqual(loaded.employees,before.employees);assert.equal(loaded.money,before.money);assert.equal(loaded.outfit,'chef');assert.equal(loaded.basement.unlocked,false);assert.equal(loaded.basement.security.round,null);assert.throws(()=>decode(JSON.stringify({...loaded,version:7})),/FUTURE_VERSION/);
 });
 test('invalid security ownership and forged rewards are rejected',()=>{
  for(const corrupt of [s=>s.basement.security.owned=true,s=>s.basement.furniture.tv=true,s=>s.basement.security.rewards=15,s=>s.basement.security.nextId=NaN]){const s=newGame();corrupt(s);assert.equal(validateSave(s),false);}

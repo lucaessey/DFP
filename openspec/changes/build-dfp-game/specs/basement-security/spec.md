@@ -10,7 +10,7 @@ Elevator SHALL offer the basement for $200 from the beginning, independently of 
 - **THEN** purchasing the basement costs exactly $200 and allows visiting it without unlocking any upper floor.
 
 ### Requirement: Furnished security system
-The security system SHALL cost $150 and SHALL require the TV, couch and both plants. A checklist SHALL show each requirement. Once purchased, interacting with the TV SHALL open a large animated view of the actual highest unlocked above-ground floor, including its layout and current customers, employees and store activity. The monitored floor SHALL update automatically as higher floors unlock. Monitoring SHALL have clear status, touch/click person targets, camera controls and an exit control.
+The security system SHALL cost $150 and SHALL require the TV, couch and both plants. A checklist SHALL show each requirement. Once purchased, opening Security on the purchased computer SHALL open a large animated view of the actual highest unlocked above-ground floor, including its layout and current customers, employees and store activity. The monitored floor SHALL update automatically as higher floors unlock. Monitoring SHALL have clear status, touch/click person targets, camera controls and an exit control.
 
 #### Scenario: Incomplete lounge
 - **WHEN** any of the four furnishings is unowned
@@ -28,7 +28,7 @@ While monitoring is visible and active, a uniformly random integer wait of 1–3
 - **THEN** a $5 penalty and feedback occur, the robber remains active with the same remaining time, and a duplicate selection for that person in that round cannot charge twice.
 
 ### Requirement: Paused and persistent monitoring
-Closing monitoring, backgrounding the application or reloading SHALL preserve the current wait or encounter and its remaining time. No encounters or penalties SHALL be generated while away; monitoring SHALL resume the saved round when reopened. Basement, furniture and security ownership SHALL persist with existing balances, floors, upgrades, employees and outfits preserved. Furniture and TV animations SHALL remain cosmetic, respect reduced motion and work offline.
+Closing monitoring, backgrounding the application or reloading SHALL preserve the current wait or encounter and its remaining time. No encounters or penalties SHALL be generated while away; monitoring SHALL resume the saved round when reopened. The TV SHALL remain furnishing only and SHALL NOT open monitoring. Basement, furniture and security ownership SHALL persist with existing balances, floors, upgrades, employees and outfits preserved. Furniture and TV animations SHALL remain cosmetic, respect reduced motion and work offline.
 
 #### Scenario: Away during theft
 - **WHEN** monitoring closes with four seconds remaining and reopens later
