@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {isDrink,serviceQueue,drinkQueue} from './config.js';
 import {DECOR} from './config.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -103,6 +104,14 @@ export function room(state,floor) {
   const W=WORLD.width,D=WORLD.depth;
   box(base,palette.floor,W/2,-.22,D/2,W+.35,.42,D+.35);
   for(let x=0;x<W;x+=2)for(let z=0;z<D;z+=2)shape(base,'block',x>=WORLD.diningStart?'#ffcf96':(x+z)%4?palette.tile:palette.alternate,x+1,.005,z+1,1.992,.04,1.992);
+  if(floor<2){
+    const unlocked=state.floors[floor].section,color=unlocked?'#c7adeb':'#e8d6ab';
+    box(base,unlocked?'#e3cff5':'#eee3ca',11.8,.04,4.7,4.7,.018,8.6);
+    for(let z=.5;z<9;z+=.6)for(const x of [9.45,14.15])box(base,color,x,.06,z,.10,.02,.35);
+    for(let x=9.5;x<14.2;x+=.6)for(const z of [.5,9])box(base,color,x,.06,z,.35,.02,.10);
+    lettering(base,unlocked?'DRINKS':'DRINKS · LOCKED',11.8,1.6,.08,2.5,'#67488d','#eadcf6');
+    for(let i=0;i<6;i++){const a=serviceQueue(i,floor),b=drinkQueue(i);ring(base,'#e9bf88',a.x,.055,a.y,.38);if(unlocked)ring(base,'#c8a1df',b.x,.055,b.y,.38);}
+  }
   box(base,palette.wall,W/2,.4,-.08,W+.3,.8,.22);box(base,palette.wall,-.08,.4,D/2,.22,.8,D+.3);
   box(base,palette.trim,W/2,.84,-.08,W+.4,.11,.27);box(base,palette.trim,-.08,.84,D/2,.27,.11,D+.35);
   box(base,accent,WORLD.diningStart,.04,D/2,.12,.04,D);lettering(base,'THE DINING ROOM',21,1.25,.05,4,'#426451','#fff0d1');
@@ -112,9 +121,9 @@ export function room(state,floor) {
   for(const x of [WORLD.entrance.x-.7,WORLD.entrance.x+.7])box(base,'#fff4db',x,.68,D+.08,.11,1.36,.11);
   box(base,accent,WORLD.entrance.x,1.39,D+.08,1.6,.2,.15);lettering(base,'WELCOME',WORLD.entrance.x,1.4,D+.17,1.37);
   // Wall menu and broad awnings are intentionally behind the workstations.
-  box(base,'#fff2d7',5.8,1.6,-.05,3.4,.72,.16);lettering(base,floor===0?'DEEP FRIED PIXELS':FLOORS[floor].name.toUpperCase(),5.8,1.6,.05,3.2,'#355951','#fff2d7');
+  box(base,'#fff2d7',5.8,1.6,-.05,3.4,.72,.16);lettering(base,floor<2?'FOOD · DFP':FLOORS[floor].name.toUpperCase(),5.8,1.6,.05,3.2,'#355951','#fff2d7');
   for(const p of DECOR)plant(base,p.x,p.y);
-  if(floor===0)for(const x of [2,6,10]) {for(let i=0;i<6;i++){const aw=box(base,i%2?'#fff1ce':'#ffb52b',x-.94+i*.38,1.78,.12,.39,.09,.78);aw.rotation.x=.13;} }
+  if(floor===0)for(const x of [1.7,4.8,7.9]) {for(let i=0;i<6;i++){const aw=box(base,i%2?'#fff1ce':'#ffb52b',x-.94+i*.38,1.78,.12,.39,.09,.78);aw.rotation.x=.13;} }
   if(floor===1){for(let x=1;x<12;x+=2)box(base,'#c8a771',x,.46,.026,.035,.6,.025);}
   const stations=new Map();
   for(const st of LAYOUTS[floor]) {
@@ -122,6 +131,7 @@ export function room(state,floor) {
     const detail=group(dynamic),goods=group(detail);const pad=ring(detail,open?(st.id==='counter'?'#f08b47':'#78af95'):'#b8beb3',st.pad.x,.055,st.pad.y,st.id==='counter'?1.25:1);
     stations.set(st.id,{st,detail,goods,pad,open,source:base,inventoryKey:'',screens:[],steam:[],bubbles:[],lights:[],parts:[],age:0});
     const data=stations.get(st.id);
+    if(isDrink(st.product)&&!open){box(base,'#cdbd9f',x,.07,z,st.w,.10,st.d);box(base,'#fff0c5',x,.13,z,.45,.04,.09);box(base,'#fff0c5',x,.13,z,.09,.04,.45);continue;}
     if(st.auxiliary) {box(base,'#c07942',x,1.115,z,1.1,.04,.73);lettering(base,'STACK',x,1.14,st.y+st.d+.025,.8,'#fff4d8','#bc753d');continue;}
     if(st.kind==='trash') {box(base,'#52786c',x,.38,z,.62,.74,.62);box(base,'#b6c9b7',x,.79,z,.68,.12,.68);box(base,'#284e47',x,.853,z,.39,.02,.35);lettering(base,'BIN',x,.42,z+.321,.42);continue;}
     if(st.kind==='table') {
@@ -179,7 +189,7 @@ export function room(state,floor) {
       if(st.kind==='wine')for(const dx of [-.45,0,.45])cylinder(base,'#75508c',x+dx,1.5,z-.2,.15,.7);}
     if(st.kind==='tower'||st.kind==='handheld') {plate(base,x,1.11,z);const meal=food(st.kind);meal.position.set(x,1.15,z);detail.add(meal);data.parts.push(meal);box(base,'#785195',x+.7,1.31,z-.3,.29,.44,.26);}
     if(st.kind==='snack'){box(base,'#b98044',x,1.12,z,1,.07,.7);const snack=food(st.id);snack.position.set(x,1.17,z);detail.add(snack);data.parts.push(snack);lettering(base,'CRUNCH',x,1.56,z-.38,1.12,'#fff2ce',c);}
-    if(['counter','checkout','host'].includes(st.kind))data.register=register(detail,st.kind==='counter'?x+1.55:x,z);
+    if(['counter','checkout','host'].includes(st.kind))data.register=register(detail,st.kind==='counter'?x+Math.min(1.55,st.w/2-.4):x,z);
     if(st.kind==='counter') {lettering(base,'DFP',x, .6,z+st.d/2+.04,1.15,'#fff3d7','#f47b45');box(base,'#b8d5bf',x,1.11,z,1.1,.035,.7);}
     if(['stock','keyStock'].includes(st.kind)){for(let i=0;i<3;i++){const item=food(st.kind==='stock'?'souvenir':'keychain');item.position.set(x-.7+i*.7,1.12,z);base.add(item);}lettering(base,'DFP / STOCK',x,.63,z+st.d/2+.03,1.35,'#fff6df','#6295b0');}
   }

@@ -22,7 +22,7 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: stack, serve, pay, seat, eat, then manua
 });
 
 test('table purchases are atomic, independent per floor, limited to six and persistent',()=>{
-  const prices=[[20,38,57,75,93,112],[33,52,70,88,107,125],[47,65,83,102,120,138],[60,78,97,115,133,152]];
+  const prices=[[10,19,29,38,47,56],[17,26,35,44,54,63],[24,33,42,51,60,69],[30,39,49,58,67,76]];
   const s=setup(3);for(let f=0;f<4;f++)for(let i=0;i<6;i++){const cash=s.money;assert.equal(tableCost(f,i),prices[f][i]);assert.ok(command(s,{type:'table',floor:f,id:i}).ok);assert.equal(s.money,cash-prices[f][i]);assert.equal(command(s,{type:'table',floor:f,id:i}).ok,false);}
   assert.equal(command(s,{type:'table',id:6}).ok,false);assert.ok(decode(encode(s)).floors.every(f=>f.tables.every(t=>t.owned)));assert.ok(s.floors.every(f=>Object.values(f.upgrades).every(n=>n===0)));
   const poor=setup(0);poor.money=0;const before=structuredClone(poor);assert.equal(command(poor,{type:'table',id:0}).ok,false);assert.deepEqual(poor,before);
@@ -50,5 +50,5 @@ test('unfinished legacy dining orders retain delivered food and collect their bi
   const old=JSON.parse(readFileSync(new URL('../artifacts/3d-upgrade/comparison-state.json',import.meta.url)));old.floors[1].unlocked=true;old.floors[1].products={tower:true,handheld:true,wine:true};old.floors[1].section=true;
   const c={...structuredClone(old.floors[0].customers[0]),id:old.nextId++,state:'dining',needs:['tower','wine'],delivered:[true,true],paid:false,table:0,machine:null,x:3.4,y:4.7,path:[],pathKey:'',timer:3};old.floors[1].customers=[c];old.floors[1].tables[0]={state:'occupied',customer:c.id};
   const s=decode(JSON.stringify(old)),diner=s.floors[1].customers[0];assert.equal(diner.state,'payment');assert.deepEqual(diner.delivered,[true,true]);assert.equal(s.floors[1].tables[0].owned,true);
-  command(s,{type:'visit',floor:1});const revenue=s.floors[1].revenue,stock=structuredClone(s.floors[1].stock);tick(s,12);at(s,'counter',1.4);assert.equal(s.floors[1].revenue,revenue+60);assert.deepEqual(s.floors[1].stock,stock);at(s,'counter',2);assert.equal(s.floors[1].revenue,revenue+60);assert.ok(validateSave(s));
+  command(s,{type:'visit',floor:1});const revenue=s.floors[1].revenue,stock=structuredClone(s.floors[1].stock);tick(s,12);at(s,'drinkCounter',1.4);assert.equal(s.floors[1].revenue,revenue+60);assert.deepEqual(s.floors[1].stock,stock);at(s,'drinkCounter',2);assert.equal(s.floors[1].revenue,revenue+60);assert.ok(validateSave(s));
 });

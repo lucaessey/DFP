@@ -1,3 +1,4 @@
+import {customerCounter} from './config.js';
 import * as T from 'three';
 import {BALANCE as B,LAYOUTS,tableSeat} from './config.js';
 import {walkable} from './navigation.js';
@@ -75,7 +76,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   let facing=model.angle;
   if(a.moving||moved>.005||model.walk>.35)facing=model.heading??model.angle;
   else if(working)facing=Math.atan2(st.x+st.w/2-x,st.y+st.d/2-z);
-  else if(a.purpose==='food'&&['waiting','payment'].includes(a.state))facing=Math.atan2(5-x,9-z);
+  else if(a.purpose==='food'&&['waiting','payment'].includes(a.state)){const serving=LAYOUTS[floor].find(st=>st.id===customerCounter(floor,a));facing=Math.atan2(serving.x+serving.w/2-x,serving.y+serving.d/2-z);}
   else if(['playing','checkout'].includes(a.state))facing=Math.PI;
   else if(a.state==='browsing')facing=0;
   const seated=sitting&&!model.seatRoute?.length;

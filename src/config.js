@@ -1,8 +1,9 @@
-export const LAYOUT_VERSION=2;
+export const LAYOUT_VERSION=3;
 export const WORLD = Object.freeze({width:28,depth:18,entrance:{x:26.5,y:16.5},diningStart:14.5,kitchen:{x:6.5,y:5.5},dining:{x:20,y:7},camera:{minX:5,maxX:23,minY:4,maxY:14}});
 export const DECOR=[{x:.55,y:10.5,r:.35},{x:14,y:.6,r:.35},{x:27,y:9,r:.35}];
 export const TABLE_COUNT=6;
-export const tableCost=(floor,index)=>Math.round((60+floor*40+index*55)/3);
+// Halve the released one-third prices once; whole-dollar prices round upward at .5.
+export const tableCost=(floor,index)=>Math.round(Math.round((60+floor*40+index*55)/3)/2);
 export const tableSeat=index=>({x:15.5+(index%2)*6,y:4+Math.floor(index/2)*4.5});
 export const FLOOR_FOODS=[['controller','drink'],['tower','handheld','wine'],['snack2'],['snack3']];
 export const BALANCE = Object.freeze({
@@ -42,8 +43,8 @@ export const stationOpen = (s,f,st) => st.kind==='table'?!!s.floors[f].tables[Nu
 export const stationPrice = st => st.tableCost??PRODUCTS.find(p=>p.id===st.product)?.cost??0;
 const station = (id, name, x, y, w, d, kind, px = x + w / 2, py = y + d + 0.7, extra = {}) => ({ id, name, x, y, w, d, kind, pad: { x: px, y: py }, ...extra });
 export const LAYOUTS = [
-  [station('prep','PREP',1,1,2,1.2,'prep',2,3.5),station('fry','FRY',5,1,2,1.2,'fryer',6,3.5),station('pickup','PICK UP',9,1,2,1.2,'pickup',10,3.5),station('drink','DRINKS',12,4,1.3,1.7,'drinks',11,5,{section:true})],
-  [station('tower','PIXEL TOWER',1,1,2,1.2,'tower',2,3.5),station('handheld','POCKET CRUNCH',5,1,2,1.2,'handheld',6,3.5),station('wine','WINE',9,1,2,1.2,'wine',10,3.5)],
+  [station('prep','PREP',.7,1,2,1.2,'prep',1.7,3.5),station('fry','FRY',3.8,1,2,1.2,'fryer',4.8,3.5),station('pickup','PICK UP',6.9,1,2,1.2,'pickup',7.9,3.5),station('drink','DRINKS',11,1,2,1.2,'drinks',12,3.5,{section:true})],
+  [station('tower','PIXEL TOWER',1,1,2,1.2,'tower',2,3.5),station('handheld','POCKET CRUNCH',5,1,2,1.2,'handheld',6,3.5),station('wine','WINE',11,1,2,1.2,'wine',12,3.5,{section:true})],
   [station('stock','STOCKROOM',1,1,2.5,1.2,'stock',2.5,3.5),station('keyStock','KEYCHAINS',8.5,1,2,1.2,'keyStock',9.5,3.5,{section:true}),station('shelf','DFP GOODS',3,5,2.5,1.2,'shelf',6.5,5.5),station('keyShelf','MINI SHOP',9,5,2,1.2,'keyShelf',12,5.5,{section:true}),station('checkout','CHECKOUT',1,12,2.5,1,'checkout',2.5,11)],
   [station('machine0','PIXEL RUSH',1,1,1.7,1.5,'arcade',2,3.5),station('machine1','COSMIC FRY',5,1,1.7,1.5,'arcade',6,3.5),station('machine2','BYTE FIGHT',9,1,1.7,1.5,'arcade',10,3.5),station('vr','VR PLAYGROUND',9,6,2.6,2.1,'vr',8,7,{section:true})],
 ];
@@ -59,10 +60,17 @@ const stationProducts=[{prep:'controller',fry:'controller',pickup:'controller',d
 for(let f=0;f<4;f++){
   LAYOUTS[f].forEach(st=>{st.product=stationProducts[f][st.id];});
   LAYOUTS[f].push(station('counter','SERVE',2.5,8.5,5,1,'counter',5,7.5),station('stack','STACK FOOD',2.6,8.5,1.2,1,'stack',3,7.5,{auxiliary:true}),station('trash','TRASH',.7,5.2,.7,.7,'trash',1,6.5));
+  if(f<2){const product=f===0?'drink':'wine';LAYOUTS[f].push(station('drinkCounter','SERVE DRINKS',10,6,3.5,1,'counter',12.4,5.1,{product,section:true}),station('drinkStack','STACK DRINKS',10.1,6,1.2,1,'stack',10.4,5.1,{product,section:true,auxiliary:true}));}
   if(f>=2)LAYOUTS[f].push(station('snack'+f,'SNACKS',12,1,1.3,1.2,'snack',13,3.5,{product:'snack'+f}));
   for(let i=0;i<TABLE_COUNT;i++){const seat=tableSeat(i);LAYOUTS[f].push(station('table'+i,'TABLE '+String(i+1).padStart(2,'0'),seat.x+.6,seat.y-.75,1.8,1.5,'table',seat.x+1.5,seat.y+1.5,{tableCost:tableCost(f,i)}));}
 }
-export const serviceQueue=(index=0)=>({x:5+index*1.4,y:10.5});
+export const serviceQueue=(index=0,floor=0)=>floor<2?{x:5,y:10.5+index*1.1}:{x:5+index*1.4,y:10.5};
+export const drinkQueue=(index=0)=>({x:12.4,y:8.2+index*1.4});
+export const isDrink=item=>item==='drink'||item==='wine';
+export const serviceItems=(floor,id)=>FLOOR_FOODS[floor].filter(item=>isDrink(item)===['drinkStack','drinkCounter'].includes(id));
+export const customerCounter=(floor,c)=>floor<2&&c.needs.some(isDrink)&&!c.needs.some((item,i)=>!isDrink(item)&&!c.delivered[i])?'drinkCounter':'counter';
+export const serviceCustomers=(fs,floor,id)=>fs.customers.filter(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state)&&customerCounter(floor,c)===id);
+export const customerQueue=(fs,floor,c)=>{const id=customerCounter(floor,c),index=serviceCustomers(fs,floor,id).indexOf(c);return id==='drinkCounter'?drinkQueue(index):serviceQueue(index,floor);};
 export const checkoutQueue=(index=0)=>({x:2.5+index*1.4,y:14});
 export const shopWaiting=index=>({x:5+index*1.4,y:16});
 export const shelfApproach=item=>({x:item==='souvenir'?4.5:10,y:4});

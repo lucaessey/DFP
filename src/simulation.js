@@ -1,7 +1,8 @@
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, ITEMS, WORLD, TABLE_COUNT, FLOOR_FOODS, tableCost, tableSeat, stationOpen, stationPrice, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
 import { paymentQuote } from './economy.js';
-import { LAYOUT_VERSION, serviceQueue, checkoutQueue, shopWaiting, shelfApproach, tableApproach, tableWaiting, arcadeSeat, arcadeWaiting } from './config.js';
+import { LAYOUT_VERSION, checkoutQueue, shopWaiting, shelfApproach, tableApproach, tableWaiting, arcadeSeat, arcadeWaiting } from './config.js';
 import { distance, move, followPath } from './navigation.js';
+import {isDrink,serviceItems,customerCounter,serviceCustomers,customerQueue} from './config.js';
 
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
@@ -136,8 +137,8 @@ export function stationStatus(s, f, st) {
   if (st.id === 'prep') return `${fs.stock.raw} ready to fry`;
   if (st.id === 'fry') return fs.cooking ? `Frying ${Math.max(1, Math.ceil(fs.fry))}s` : 'Start a batch';
   if (st.id === 'pickup') return `${fs.stock.controller} ready`;
-  if (st.id === 'stack') return `${FLOOR_FOODS[f].reduce((n,id)=>n+fs.counter[id],0)} items stacked`;
-  if (st.id === 'counter') return 'Serve from the counter stack';
+  if (st.kind === 'stack') return `${serviceItems(f,st.id).reduce((n,id)=>n+fs.counter[id],0)} ${st.id==='drinkStack'?'drinks':'food items'} stacked`;
+  if (st.kind === 'counter') return st.id==='drinkCounter'?'Serve drinks and collect completed orders':'Serve food from the food stack';
   if (st.kind === 'table') { const t = fs.tables[Number(st.id.slice(5))]; return ({ free: 'Clean · ready to seat',reserved:'Guest on the way',dirty:'Finished eating · clean here',occupied:'Eating · cannot clean yet' })[t.state]; }
   if (st.kind === 'arcade') {const quarters=fs.machines[Number(st.id.slice(-1))].quarters;return `${quarters} quarters · ${paymentQuote(s,f,s.player,quarters).amount} to collect`;}
   if (st.id === 'shelf') return `${fs.shelves.souvenir} on display`;
@@ -155,15 +156,15 @@ function interact(s, f, a, st) {
     if (a.id === undefined && a.bag.length) { const item = a.bag.shift(); changed(s); emit(s, `Discarded ${item}`, 'trash', { x: a.x, y: a.y, floor: f }); }
     return;
   }
-  if(st.id==='stack'){
-    const item=a.bag.find(item=>FLOOR_FOODS[f].includes(item)&&fs.counter[item]<B.stockCap);
+  if(st.kind==='stack'){
+    const item=a.bag.find(item=>serviceItems(f,st.id).includes(item)&&fs.counter[item]<B.stockCap);
     if(item&&take(a,item)){fs.counter[item]++;if(f===0&&a.id===undefined)s.tutorial=Math.max(s.tutorial,4);changed(s);}return;
   }
-  if(st.id==='counter'){
-    const c=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
-    if(c&&distance(c,serviceQueue())<.6){
+  if(st.kind==='counter'){
+    const c=serviceCustomers(fs,f,st.id)[0];
+    if(c&&distance(c,customerQueue(fs,f,c))<.6){
       if(c.state==='payment'){pay(s,f,a,c.needs.reduce((n,v)=>n+B.prices[v],0),c);recordSale(s,f,c);seatAfterPurchase(s,f,c);if(f===0&&a.id===undefined)s.tutorial=Math.max(s.tutorial,5);}
-      else{for(let i=0;i<c.needs.length;i++)if(!c.delivered[i]&&fs.counter[c.needs[i]]>0){fs.counter[c.needs[i]]--;c.delivered[i]=true;changed(s);}if(!missing(c).length){c.state='payment';changed(s);}}
+      else{for(let i=0;i<c.needs.length;i++)if(!c.delivered[i]&&serviceItems(f,st.id).includes(c.needs[i])&&fs.counter[c.needs[i]]>0){fs.counter[c.needs[i]]--;c.delivered[i]=true;changed(s);}if(!missing(c).length){c.state='payment';changed(s);}}
     }return;
   }
   if(st.kind==='snack'){collectItem(s,f,a,st.id);return;}
@@ -200,22 +201,22 @@ export function workerGoal(s, f, a) {
   const dirty=fs.tables.findIndex(t=>t.owned&&t.state==='dirty');if(dirty>=0)return `table${dirty}`;
   if(f===2&&fs.customers.some(c=>c.state==='checkout'))return 'checkout';
   if(f===3){const richest=fs.machines.reduce((best,m,i)=>m.quarters>fs.machines[best].quarters?i:best,0);if(fs.machines[richest].quarters>0)return `machine${richest}`;}
-  if(f>0){
-    const food=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
-    const c=shopDemand&&food&&shopDemand.id<food.id?null:food;
-    if(c?.state==='payment'||c&&missing(c).some(id=>fs.counter[id]>0))return 'counter';
-    if(a.bag.some(id=>FLOOR_FOODS[f].includes(id)&&fs.counter[id]<B.stockCap))return 'stack';
-    if(c){if(a.bag.length>=capacity(s,a,f))returnBag(s,a,f);return missing(c)[0]||'counter';}
-    if(f===1)return null;
+  const food=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));
+  const c=shopDemand&&food&&shopDemand.id<food.id?null:food;
+  const counter=c?customerCounter(f,c):'counter',needed=c?missing(c).filter(item=>serviceItems(f,counter).includes(item)):[];
+  if(c?.state==='payment'||c&&needed.some(item=>fs.counter[item]>0))return counter;
+  const cargo=a.bag.find(item=>FLOOR_FOODS[f].includes(item)&&fs.products[item]&&fs.counter[item]<B.stockCap);
+  if(cargo)return isDrink(cargo)?'drinkStack':'stack';
+  if(c&&needed.length){
+    const item=needed[0];if(a.bag.length>=capacity(s,a,f))returnBag(s,a,f);
+    if(f!==0||item==='drink')return fs.products[item]?item:null;
   }
-  if (f === 0) {
-    const c = fs.customers.find(c => ['waiting', 'payment'].includes(c.state));
-    if (c?.state === 'payment' || (c && missing(c).some(item => fs.counter[item] > 0))) return 'counter';
-    if (a.bag.some(item=>['controller','drink'].includes(item)&&fs.counter[item]<B.stockCap)) return 'stack';
-    if (c && missing(c).includes('drink') && !a.bag.includes('drink')) return 'drink';
-    if (fs.stock.controller > 0 && a.bag.length < capacity(s, a, f)) return 'pickup';
-    if (fs.stock.raw === 0) return 'prep';
-    if (!fs.cooking && fs.stock.controller < B.stockCap) return 'fry';
+  if(f===1)return null;
+  if(f===0){
+    if(!fs.products.controller)return null;
+    if(fs.stock.controller>0&&a.bag.length<capacity(s,a,f))return 'pickup';
+    if(fs.stock.raw===0)return 'prep';
+    if(!fs.cooking&&fs.stock.controller<B.stockCap)return 'fry';
     return 'pickup';
   }
   if (f === 2) {
@@ -237,7 +238,8 @@ export function workerGoal(s, f, a) {
 function workActor(s, f, a, dt, automatic) {
   if (automatic) {
     const goal = workerGoal(s, f, a), station = LAYOUTS[f].find(st => st.id === goal);
-    if (station && distance(a, station.pad) > 0.28) followPath(a, f, station.pad, dt, speed(s, a, f));
+    if(!station||!stationOpen(s,f,station)){a.moving=false;a.action='';a.progress=0;return;}
+    if (distance(a, station.pad) > 0.28) followPath(a, f, station.pad, dt, speed(s, a, f));
     else a.moving = false;
   }
     const st = LAYOUTS[f].find(st => distance(a, st.pad) < 0.62 && stationOpen(s,f,st));
@@ -254,8 +256,7 @@ function customersTick(s, f, dt) {
     }
     if(c.purpose==='food'){
       if(['waiting','payment'].includes(c.state)){
-        const queue=fs.customers.filter(v=>v.purpose==='food'&&['waiting','payment'].includes(v.state)),index=queue.indexOf(c);
-        followPath(c,f,serviceQueue(index),dt,2.2);
+        followPath(c,f,customerQueue(fs,f,c),dt,2.2);
       }else if(c.state==='waitingTable'){
         seatAfterPurchase(s,f,c);
         if(c.state==='waitingTable'){const i=fs.customers.filter(v=>v.state==='waitingTable').indexOf(c);followPath(c,f,tableWaiting(i),dt,2.2);}

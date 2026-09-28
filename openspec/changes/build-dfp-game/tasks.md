@@ -88,3 +88,9 @@
 - [x] 14.4 Distinguish equipment states; animate fryers, dispensers, checkout, arcade and VR; reveal purchased stations/tables with restrained construction and clear unlock progress.
 - [x] 14.5 Update rounded UI, selection, tap/panel transitions and success/failure feedback; preserve immediate controls, four tabs, safe areas and reduced motion.
 - [x] 14.6 Verify all-floor player/staff loops, interruptions, touch/camera, clipping, saves/recovery, offline updates and performance; deliver screenshots, gameplay recording and honest limitations. Completed: 89 unit tests, all listed browser suites, 43.32-second gameplay recording and measured performance; see WORLD_UPGRADE.md.
+
+## 15. Separate drinks sections and halve table prices
+- [x] 15.1 Separate food and drinks on floors one/two with distinct production, stacking/service counters, queues, signs/colors and reachable interaction/navigation areas.
+- [x] 15.2 Present locked drinks boundaries and an explicit Unlock Drinks Section label, price and purchase control; retain $180/$220 unlocks, atomic charging, demand/staff gating, permanent ownership and reveal animation.
+- [x] 15.3 Halve the currently released table prices once, rounded to whole dollars, sharing displayed and charged prices and preserving owned tables/balances.
+- [x] 15.4 Migrate changed layout positions/paths safely, retaining pending orders, stored goods, drink unlocks, outfits, staffing and upgrades; verify player/employee mixed-order flows, all-floor tables, touch, saves and offline builds. Passed 100 unit tests and 64 browser checks; see DRINKS_SECTIONS.md and the local screenshot gallery. All 65 tasks are complete; keep this change unarchived.

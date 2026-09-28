@@ -6,6 +6,8 @@ Characters now share a rounded charcoal base with a featureless head, thick limb
 
 **[Play DFP](https://lucaessey.github.io/DFP/)** — free in your browser. Progress saves on your device. The public site and localhost have separate saves.
 
+Food and drinks now have separate sections, counters and queues. Drinks unlock for $180/$220, and table prices are halved once. See [changes and test results](DRINKS_SECTIONS.md).
+
 ## Run locally
 
 Requires Node.js 22.12+ (tested with Node 24) and npm.
@@ -53,15 +55,15 @@ Open **http://127.0.0.1:4174/DFP/**. The manifest, icons, scripts, styles and of
 
 - **Move:** hold WASD/arrows, drag the phone joystick, or press and hold the floor. Release to stop. Tap a station icon or an area button to walk there automatically; the square stop button or Escape cancels that trip. Losing focus or opening a menu also stops movement. Stand inside a marked ring to work automatically.
 - **Unlock products:** use **Unlock items** on every floor. All food, drinks, merchandise, arcade cabinets, and VR start locked on a new game. Unlock Crispy Controller for $50 first. Guests only order products you have opened.
-- **Takeout:** PREP → FRY → PICK UP → **STACK FOOD**. Unload onto the marked counter spot, then stand in the separate middle **SERVE** circle to give the waiting customer food from that stack and collect payment. Unlock the drinks bar to add drinks to about 80% of orders. Drinks use the same stack-and-serve flow.
-- **Fine dining:** collect the requested Pixel Tower or Pocket Crunch meal and wine, unload at **STACK FOOD**, then stand in the middle **SERVE** circle. Guests pay there before taking their food to a purchased table.
+- **Takeout:** PREP → FRY → PICK UP → **STACK FOOD** → **SERVE**. Buy the separate drinks section for $180 to add drinks to about 80% of orders. Its purple area has its own dispenser, **STACK DRINKS** pad, service circle and customer queue. Mixed orders collect food first, then drinks, and pay the full bill once at the drinks counter.
+- **Fine dining:** collect the requested Pixel Tower or Pocket Crunch meal, unload at **STACK FOOD**, then stand in the food **SERVE** circle. The separate wine section costs $220 and has its own stacking and service counter. Guests pay once at their final counter before taking their food to a purchased table.
 - **Gift shop:** carry stock from the stockroom to shelves; guests browse and take items; work at CHECKOUT to collect payment. Unlock the miniature-keychain shop for another product. The separately unlocked Shop Crunch snack counter uses STACK FOOD → SERVE → tables.
 - **Arcade:** guests play the three machines. Collect the visible quarters from their rings. Quarters use the same fivefold collection rule as sales. Unlock VR, walk into its ring, and start Pixel Run. Use left/right arrows, A/D, or its touch buttons to dodge for up to 25 seconds. Leaving early forfeits the run's reward. No headset or tickets. Arcade Crunch snacks use the separate STACK FOOD and SERVE circles.
 - **Trash:** every floor has a TRASH can. Stand in its ring to discard carried items one at a time. Discarding pays nothing. Leave the ring to stop. “Return carried stock” safely puts it back in the floor's stock instead.
 
 **Spacious floors:** each room is now 28×18 units, about 64% larger, with wider workstation aisles, separate shop and food queues, and table spacing of 6 units across and 4.5 units between rows. Character size and walking speed stay readable and familiar. Old saves move obstructed characters to nearby clear ground, align seated guests with relocated tables and discard obsolete walking targets while keeping progress.
 
-**Tables on every floor:** use **Tables** to buy up to six tables, or choose an owned table to walk there. Tables cost one-third of their former price, rounded to the nearest whole dollar. First tables cost $20/$33/$47/$60 by floor; later tables use round((60 + 40 × floor index + 55 × table index) / 3), with both indices starting at zero. **Dining area →** walks to the expanded seating wing; **← Kitchen** returns. Paid food guests reserve a clean table, sit and eat, then leave it dirty. Stand at its ring to clean, or let an employee do it. Occupied tables cannot be cleaned. If all owned tables are busy or dirty, paid guests wait; if no tables are owned, food is takeaway. Table purchases do not use player upgrade allowances.
+**Tables on every floor:** use **Tables** to buy up to six tables, or choose an owned table to walk there. Tables now cost half the previously released prices, rounded to whole dollars. First tables cost $10/$17/$24/$30 by floor; later tables use round(round((60 + 40 × floor index + 55 × table index) / 3) / 2), with both indices starting at zero. This reduction applies once; saved balances and owned tables stay unchanged. **Dining area →** walks to the expanded seating wing; **← Kitchen** returns. Paid food guests reserve a clean table, sit and eat, then leave it dirty. Stand at its ring to clean, or let an employee do it. Occupied tables cannot be cleaned. If all owned tables are busy or dirty, paid guests wait; if no tables are owned, food is takeaway. Table purchases do not use player upgrade allowances.
 
 **Elevator, Home, Outfits, Employees** are the four bottom tabs. Settings is the gear button. On small screens, the Upgrade button is in the gameplay area.
 
@@ -121,6 +123,7 @@ npm run spec:validate
 npm run test:browser
 node tests/seating-browser.mjs
 node tests/controls-browser.mjs
+node tests/drinks-sections-browser.mjs
 node tests/expanded-browser.mjs
 node tests/camera-browser.mjs
 node tests/visual-3d.mjs

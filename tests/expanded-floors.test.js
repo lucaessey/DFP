@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {newGame,command,step,newActor} from '../src/simulation.js';
-import {LAYOUTS,WORLD,LAYOUT_VERSION,PRODUCTS,tableSeat,tableApproach,serviceQueue,checkoutQueue,shelfApproach,shopWaiting,tableWaiting,arcadeSeat,arcadeWaiting} from '../src/config.js';
+import {LAYOUTS,WORLD,LAYOUT_VERSION,PRODUCTS,tableSeat,tableApproach,serviceQueue,drinkQueue,checkoutQueue,shelfApproach,shopWaiting,tableWaiting,arcadeSeat,arcadeWaiting} from '../src/config.js';
 import {findPath,followPath,walkable,distance} from '../src/navigation.js';
 import {encode,decode} from '../src/storage.js';
 
@@ -9,7 +9,8 @@ for(let floor=0;floor<4;floor++)test(`expanded floor ${floor+1}: every station p
   assert.ok(WORLD.width*WORLD.depth>=22*14*1.6);
   const pads=LAYOUTS[floor].map(s=>s.pad);
   const destinations=[WORLD.entrance,WORLD.kitchen,WORLD.dining,...pads];
-  for(let i=0;i<6;i++)destinations.push(serviceQueue(i),tableApproach(i),tableWaiting(i));
+  for(let i=0;i<6;i++)destinations.push(serviceQueue(i,floor),tableApproach(i),tableWaiting(i));
+  if(floor<2)for(let i=0;i<6;i++)destinations.push(drinkQueue(i));
   if(floor===2){destinations.push(shelfApproach('souvenir'),shelfApproach('keychain'));for(let i=0;i<6;i++)destinations.push(checkoutQueue(i),shopWaiting(i));}
   if(floor===3){for(let i=0;i<3;i++)destinations.push(arcadeSeat(i));for(let i=0;i<6;i++)destinations.push(arcadeWaiting(i));}
   for(const from of pads)for(const to of destinations){
@@ -22,7 +23,7 @@ for(let floor=0;floor<4;floor++)test(`expanded floor ${floor+1}: every station p
 });
 
 test('frequent work routes stay compact and table aisles accommodate passing',()=>{
-  const trips=[[0,'prep','fry'],[0,'fry','pickup'],[0,'pickup','stack'],[0,'drink','stack'],[1,'tower','stack'],[1,'wine','stack'],[2,'stock','shelf'],[2,'keyStock','keyShelf'],[2,'shelf','checkout'],[2,'snack2','stack'],[3,'snack3','stack'],[3,'machine2','vr']];
+  const trips=[[0,'prep','fry'],[0,'fry','pickup'],[0,'pickup','stack'],[0,'drink','drinkStack'],[1,'tower','stack'],[1,'wine','drinkStack'],[2,'stock','shelf'],[2,'keyStock','keyShelf'],[2,'shelf','checkout'],[2,'snack2','stack'],[3,'snack3','stack'],[3,'machine2','vr']];
   for(const [f,from,to] of trips){const a=LAYOUTS[f].find(s=>s.id===from).pad,b=LAYOUTS[f].find(s=>s.id===to).pad,path=[a,...findPath(f,a,b)];const length=path.slice(1).reduce((n,p,i)=>n+distance(path[i],p),0);assert.ok(length<=18,`${from} → ${to}: ${length}`);}
   assert.equal(tableSeat(1).x-tableSeat(0).x,6);assert.equal(tableSeat(2).y-tableSeat(0).y,4.5);
   for(let f=0;f<4;f++)for(const y of [4,8.5,13])assert.ok(walkable(f,20,y,.6));

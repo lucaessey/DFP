@@ -60,9 +60,9 @@ try{
   for(const item of new Set(diner.needs)){
     await walk(1,item,s=>s.player.bag.filter(v=>v===item).length>=diner.needs.filter(v=>v===item).length);
     if(item===diner.needs[0]){await clickStation(1,'counter');await page.clock.runFor(8000);assert.equal((await snapshot()).floors[1].served,0);}
-    await walk(1,'stack',s=>s.player.bag.length===0);
+    await walk(1,item==='wine'?'drinkStack':'stack',s=>s.player.bag.length===0);
   }
-  assert.equal((await snapshot()).floors[1].served,0);await walk(1,'counter',s=>s.floors[1].served>=1);
+  assert.equal((await snapshot()).floors[1].served,0);await walk(1,'counter',s=>s.floors[1].customers.find(c=>c.id===diner.id).delivered.slice(0,2).every(Boolean));await walk(1,'drinkCounter',s=>s.floors[1].served>=1);
   await until(s=>s.floors[1].customers.find(c=>c.id===diner.id)?.state==='dining','paid diner sitting');await page.locator('#area-button').click();await page.clock.runFor(3000);await shot('desktop-dining');
   await until(s=>s.floors[1].tables[0].state==='dirty','meal finished');await walk(1,'table0',s=>s.floors[1].tables[0].state==='free');pass('Dining table purchased; three-item order stacked, served, paid before eating, then table cleaned');
 

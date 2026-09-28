@@ -46,7 +46,7 @@ test('drink fill, placed food and fryer effects stay cosmetic and stop in reduce
 });
 
 test('pending bill visuals reflect receipt state without awarding, collecting or replaying money',()=>{
- const s=opened(),d=fixture('counter');s.floors[0].customers=[{purpose:'food',state:'payment',paid:false}];const before=JSON.stringify(s);
+ const s=opened(),d=fixture('counter');s.floors[0].customers=[{purpose:'food',state:'payment',paid:false,needs:['controller'],delivered:[true]}];const before=JSON.stringify(s);
  updateStationMotion(d,s,.05,1,false,false);assert.equal(d.bills.filter(b=>b.visible).length,1);assert.ok(d.cashAge>=1,'An existing saved bill must not replay its arrival');
  for(let i=0;i<20;i++)updateStationMotion(d,s,.05,i*.05,false,false);assert.equal(JSON.stringify(s),before);
  s.floors[0].customers[0].paid=true;updateStationMotion(d,s,.05,2,false,false);assert.ok(d.bills.every(b=>!b.visible));

@@ -66,3 +66,7 @@ Layout migration SHALL preserve balances, paid flags, partial orders, inventorie
 #### Scenario: Old position inside a moved station
 - **WHEN** a saved player or employee position conflicts with the expanded layout
 - **THEN** the actor resumes on a nearby reachable tile with unchanged cargo and progress, and no money is credited by migration.
+
+#### Scenario: Separate drinks layout preserves an existing shift
+- **WHEN** a layout-version-two save loads the separate food and drinks counters
+- **THEN** existing drink unlocks, stored drinks, carried goods, partial deliveries, paid flags and balances survive, obsolete paths clear, and customers resume at the appropriate food or drinks queue without replaying purchases or earnings.

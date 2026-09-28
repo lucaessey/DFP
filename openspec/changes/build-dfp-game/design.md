@@ -1,5 +1,12 @@
 # Design
 
+## Separate drink service and table-price revision
+On floors zero/one, use a cream food kitchen on the left and a lavender drinks bay on the right, before the unchanged dining wing. Compact the three takeout production stations into the food bay. Give drinks their own dispenser, stack pad, service counter and vertical queue, separated from the food queue by a wide cross-floor route. All station rectangles remain collision sources. Mark locked sections with a visible striped floor boundary and muted construction plinths; do not place impassable cosmetic ropes across navigation routes. A clear Unlock Drinks Section control shows $180/$220 and uses the existing atomic product/section command, including prerequisites and insufficient-funds rejection. One product flag enables the entire section and its reveal animation; do not add a second charge.
+
+Derive a customer's service counter from undelivered items: receive all food first, then visit drinks if ordered. Keep existing needs/delivered/paid fields and persistent per-item counter stock; route food and drink inventories to their respective stacking pads. Pay the combined order exactly once at its final counter before seating. Employees derive the same counter and stack destinations and cannot choose locked workstations. Preserve legacy partially delivered orders and already-unlocked products. Increment layoutVersion to 3 to repair obstructed positions and clear stale paths without changing money, goods, paid flags or table ownership.
+
+The released table baseline is round((60 + 40f + 55i)/3). The confirmed new reduction is round(released baseline/2), once in configuration; first-table prices become $10/$17/$24/$30. Whole-dollar rounding matches the existing money/save rules. Both UI offers and purchases call tableCost. Do not discount stored balances, repeat the reduction during load, or refund owned tables. Other costs and fivefold earnings remain unchanged.
+
 ## Cohesive casual world and event motion
 Use shared peach/cream floors, purple station bodies and orange/yellow trims with distinct atmosphere per floor. Chunky bevelled props retain their existing footprints and navigation pads. Keep the elevated diagonal camera and approved charcoal characters. Merge structural surfaces once; merge each station body separately so only newly purchased objects rise and settle. Walls, floor and ordinary furniture remain still.
 

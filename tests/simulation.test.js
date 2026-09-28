@@ -28,7 +28,7 @@ test('player completes takeout production, pickup, service, and one payment',()=
 test('drink orders require both goods and pay their sum once',()=>{
   const s=rich();command(s,{type:'section',floor:0});tick(s,20);const c=s.floors[0].customers[0];c.needs=['controller','drink'];c.delivered=[false,false];
   s.player.bag=['controller'];at(s,0,'stack');at(s,0,'counter');assert.equal(c.state,'waiting');assert.deepEqual(c.delivered,[true,false]);
-  s.player.bag=['drink'];at(s,0,'stack');const before=s.money;at(s,0,'counter',2);assert.equal(s.money-before,20);assert.ok(c.paid);assert.equal(c.state,'leaving');
+  s.player.bag=['drink'];at(s,0,'drinkStack');tick(s,8);const before=s.money;at(s,0,'drinkCounter',2);assert.equal(s.money-before,20);assert.ok(c.paid);assert.equal(c.state,'leaving');
 });
 test('drinks occur near 80 percent and unlocking refreshes only untouched orders',()=>{
   const s=rich(false);command(s,{type:'product',id:'controller'});tick(s,20);const started=s.floors[0].customers[0];started.delivered[0]=true;command(s,{type:'section',floor:0});assert.deepEqual(started.needs,['controller']);assert.ok(s.floors[0].customers.slice(1).some(c=>c.needs.includes('drink')));

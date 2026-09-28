@@ -1,4 +1,5 @@
-import {BALANCE as B,FLOOR_FOODS,LAYOUTS,stationOpen,stationPrice} from './config.js';
+import {serviceItems,serviceCustomers,customerCounter} from './config.js';
+import {BALANCE as B,LAYOUTS,stationOpen,stationPrice} from './config.js';
 import {capacity} from './simulation.js';
 import {food,group,material} from './scene-assets.js';
 
@@ -17,10 +18,10 @@ export function stationCue(state,f,st){
  if(st.kind==='vr')return {...result,state:state.floor===f&&state.vr?(state.vr.done?'ready':'working'):'idle',progress:state.vr?clamp01(state.vr.time/B.vrTime):0};
  if(st.kind==='fryer')return {...result,state:fs.cooking?'working':fs.stock.controller>=B.stockCap||worker&&!fs.stock.raw?'blocked':fs.stock.raw?'ready':'idle',progress:fs.cooking?1-fs.fry/B.fryTime:0};
  if(st.kind==='pickup')return {...result,state:worker&&worker.bag.length>=capacity(state,worker,f)?'blocked':fs.stock.controller?'ready':worker?'blocked':'idle',amount:fs.stock.controller};
- if(st.kind==='counter'){const c=fs.customers.find(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state));return {...result,state:c?.state==='payment'?'ready':c?(c.needs.some((n,i)=>!c.delivered[i]&&fs.counter[n])?'working':'blocked'):'idle'};}
+ if(st.kind==='counter'){const c=serviceCustomers(fs,f,st.id)[0];return {...result,state:c?.state==='payment'?'ready':c?(c.needs.some((n,i)=>!c.delivered[i]&&serviceItems(f,st.id).includes(n)&&fs.counter[n])?'working':'blocked'):'idle'};}
  if(st.kind==='checkout')return {...result,state:fs.customers.some(c=>c.state==='checkout')?'ready':'idle'};
  if(st.kind==='shelf'||st.kind==='keyShelf'){const item=st.kind==='shelf'?'souvenir':'keychain',amount=fs.shelves[item];return {...result,state:worker?.bag.includes(item)&&amount<B.stockCap?'working':amount?'ready':worker?'blocked':'idle',amount};}
- if(st.kind==='stack'){const total=FLOOR_FOODS[f].reduce((n,k)=>n+fs.counter[k],0),canPlace=worker?.bag.some(k=>FLOOR_FOODS[f].includes(k)&&fs.counter[k]<B.stockCap);return {...result,state:canPlace?'working':worker?.bag.length?'blocked':total?'ready':'idle',amount:total};}
+ if(st.kind==='stack'){const total=serviceItems(f,st.id).reduce((n,k)=>n+fs.counter[k],0),canPlace=worker?.bag.some(k=>serviceItems(f,st.id).includes(k)&&fs.counter[k]<B.stockCap);return {...result,state:canPlace?'working':worker?.bag.length?'blocked':total?'ready':'idle',amount:total};}
  if(st.kind==='trash')return {...result,state:worker?.bag.length?'working':'idle'};
  const full=st.kind==='prep'?fs.stock.raw>=B.stockCap:worker&&worker.bag.length>=capacity(state,worker,f);
  return {...result,state:full?'blocked':worker?'working':'idle'};
@@ -55,7 +56,7 @@ export function updateStationMotion(data,state,dt,time,reduced,reducedEffects){
  data.lights.forEach((light,i)=>{light.visible=data.open;const running=cue.state==='working',finished=cue.state==='ready';light.material=material(finished?'#83f456':running?'#ffe060':'#b59dda',false,true);light.scale.y=1.84*(running&&!reduced?.84+Math.sin(time*5+i)*.16:1);});
  // Uncollected bills are a view of existing customer states, never a new balance.
  if(['counter','checkout'].includes(st.kind)){
-   const pending=fs.customers.filter(c=>!c.paid&&(st.kind==='counter'?c.purpose==='food'&&c.state==='payment':c.state==='checkout')).length;
+   const pending=fs.customers.filter(c=>!c.paid&&(st.kind==='counter'?c.purpose==='food'&&c.state==='payment'&&customerCounter(f,c)===st.id:c.state==='checkout')).length;
    if(!data.cash){data.cash=group(data.detail);data.bills=Array.from({length:3},(_,i)=>{const b=food('cash');b.scale.setScalar(.8);b.position.set(x+(st.kind==='counter'?1.25:.45),1.12+i*.15,z+.1);data.cash.add(b);return b;});}
    if(data.pending!==undefined&&pending>data.pending)data.cashAge=0;data.pending=pending;data.cashAge=(data.cashAge??1)+dt;
    data.bills.forEach((b,i)=>{b.visible=i<Math.min(3,pending);b.position.y=1.12+i*.15+(reduced?0:landing(data.cashAge/.28));});

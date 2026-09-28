@@ -1,5 +1,6 @@
+import {serviceItems,isDrink} from './config.js';
 import * as T from 'three';
-import { LAYOUTS, OUTFITS, ROSTER, WORLD, FLOOR_FOODS } from './config.js';
+import { LAYOUTS, OUTFITS, ROSTER, WORLD } from './config.js';
 import { stationStatus } from './simulation.js';
 import { room, character, food, shape, disposeRoom } from './scene-assets.js';
 import { animateCharacter, crowdTargets, separateCrowd, damp } from './animation.js';
@@ -76,7 +77,7 @@ export class Renderer {
       data.pad.scale.setScalar((id==='counter'?1.25:1)*(active&&!this.reducedMotion?1+Math.sin(time*4)*.045:1));
       const items=[],x=st.x+st.w/2,z=st.y+st.d/2;
       if(id==='pickup')for(let i=0;i<Math.min(6,fs.stock.controller);i++)items.push({kind:'controller',x:x+(i%3-1)*.5,y:1.205,z:z+(Math.floor(i/3)-.5)*.36,scale:.7});
-      if(id==='stack')FLOOR_FOODS[state.floor].forEach((kind,k)=>{for(let i=0;i<Math.min(4,fs.counter[kind]);i++)items.push({kind,x:st.x+.25+k*.7,y:1.15+i*(['controller','snack2','snack3','handheld'].includes(kind)?.18:.43),z,scale:.82});});
+      if(st.kind==='stack'&&open)serviceItems(state.floor,id).forEach((kind,k)=>{for(let i=0;i<Math.min(4,fs.counter[kind]);i++)items.push({kind,x:st.x+.25+k*.7,y:1.15+i*(['controller','snack2','snack3','handheld'].includes(kind)?.18:.43),z,scale:.82});});
       if(id==='shelf'||id==='keyShelf'){const kind=id==='shelf'?'souvenir':'keychain';for(let i=0;i<Math.min(8,fs.shelves[kind]);i++)items.push({kind,x:st.x+.4+(i%4)*.52,y:.27+Math.floor(i/4)*.56,z,scale:.85});}
       if(st.kind==='arcade'){const m=fs.machines[Number(id.at(-1))];for(let i=0;i<Math.min(8,m.quarters);i++)items.push({kind:'quarter',x:x+.5,y:.15+i*.055,z:z+.69});data.screens.forEach((pixel,i)=>{pixel.position.y=1.32+Math.floor(i/3)*.27+(!this.reducedMotion&&m.customer?Math.sin(time*3+i)*.055:0);});}
       if(st.kind==='table'){const t=fs.tables[Number(id.slice(5))],c=fs.customers.find(c=>c.id===t.customer);if(c?.state==='dining')for(let i=0;i<c.needs.length;i++)if(c.delivered[i])items.push({kind:c.needs[i],x:x-.3+i*.54,y:1.11,z,scale:.72});if(t.state==='dirty')items.push({kind:'raw',x:x-.36,y:1.12,z,scale:.38});label.classList.toggle('dirty-table',dirty);}
@@ -102,7 +103,7 @@ export class Renderer {
       for(const item of added){const source=st||(e.actor.purpose==='shop'?LAYOUTS[2].find(s=>s.id===(item==='keychain'?'keyShelf':'shelf')):null);if(source)this.transfer(item,surface(source),held.clone(),e.rig);}
       const destination=st||(e.actor.purpose==='food'&&e.actor.state==='dining'?LAYOUTS[state.floor].find(s=>s.id==='table'+e.actor.table):null);
       if(destination)for(const item of removed)this.transfer(item,held.clone(),surface(destination),e.rig);
-      if(e.actor.purpose==='food')for(const item of delivered)this.transfer(item,surface(LAYOUTS[state.floor].find(s=>s.id==='counter')),held.clone(),e.rig);
+      if(e.actor.purpose==='food')for(const item of delivered)this.transfer(item,surface(LAYOUTS[state.floor].find(s=>s.id===(isDrink(item)?'drinkCounter':'counter'))),held.clone(),e.rig);
       if(e.role==='customer'){let label=this.customerLabels.get(e.key);if(!label){label=document.createElement('span');label.className='order-bubble';this.layer.append(label);this.customerLabels.set(e.key,label);}
         const a=e.actor,needs=(a.needs||[]).filter((n,i)=>!a.delivered[i]),text=a.state==='leaving'?'♥':a.state==='dining'?'Enjoying!':a.state==='payment'?'$':a.state==='playing'?'PLAY':a.state==='toTable'?'Table time':a.state==='waitingTable'?'Need a clean table':a.state==='seating'?'This way':needs.map(n=>itemNames[n]).join(' + ');
         if(label.dataset.text!==text){label.dataset.text=text;label.setAttribute('aria-label',text);const stateIcon={leaving:'heart',dining:'serve',payment:'coin',playing:'arcade',toTable:'table',waitingTable:'clock',seating:'arrow'}[a.state];label.innerHTML=stateIcon?icon(stateIcon):needs.map(n=>`<span class="need-icon">${icon(n==='drink'||n==='wine'?'wine':n==='souvenir'||n==='keychain'?'gift':'controller')}</span>`).join('');}

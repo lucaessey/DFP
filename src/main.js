@@ -52,7 +52,7 @@ function tutorial() {
     ['Time for a golden glow.', 'Walk to FRY to start the fryer. A batch takes a moment.', 'fry'],
     ['Stack ’em up.', 'Walk to PICK UP and collect a freshly fried controller.', 'pickup'],
     ['Make a tasty little stack.', 'Walk to STACK FOOD to unload onto the counter.', 'stack'],
-    ['Your first happy customer.', 'Stand in the middle SERVE circle to hand out food and collect payment.', 'counter'],
+    ['Your first happy customer.', state.floors[0].section ? 'Serve food here, then stack and serve drinks in their own section. Collect the full payment there.' : 'Stand in the middle SERVE circle to hand out food and collect payment.', 'counter'],
     ['Build your little dream team.', 'Hire your first helper. They’ll keep the kitchen moving.', null],
   ][state.tutorial];
 }
@@ -67,6 +67,10 @@ function refreshHome() {
   document.querySelector('#floor-chip').textContent = `Floor ${state.floor + 1} of 4`;
   document.querySelector('#scene-name').textContent = f.short.toUpperCase();
   document.querySelector('#customer-count').textContent = fs.customers.filter(c => c.state !== 'leaving').length;
+  let drinksSection=document.querySelector('#drinks-section');
+  if(!drinksSection){drinksSection=document.createElement('button');drinksSection.id='drinks-section';drinksSection.dataset.action='drinks-section';drinksSection.className='small-button';document.querySelector('.play-area').append(drinksSection);}
+  drinksSection.hidden=state.floor>1;
+  if(state.floor<2){drinksSection.classList.toggle('section-locked',!fs.section);drinksSection.innerHTML=fs.section?`${icon('wine')} Drinks →`:`${icon('lock')}<span>Unlock Drinks Section<strong>${money(f.sectionCost)} · Buy</strong></span>`;}
   document.querySelector('#carry-label').textContent = `${state.player.bag.length} / ${capacity(state, state.player, state.floor)} carried`;
   document.querySelector('#served-count').textContent = fs.served;
   document.querySelector('#floor-earnings').textContent = money(fs.revenue);
@@ -131,6 +135,7 @@ function settingsDialog() {
   showDialog(`<span class="eyebrow">YOUR LITTLE CORNER</span><h2>Make yourself at home.</h2><div class="setting-row"><span>${icon('sound')} Kitchen sounds</span><button data-action="sound" class="toggle ${state.settings.sound ? 'on' : ''}" aria-label="Toggle sound" aria-pressed="${state.settings.sound}"></button></div><div class="setting-row"><span>${icon('star')} Reduced motion</span><button data-action="motion" class="toggle ${state.settings.reducedMotion ? 'on' : ''}" aria-label="Toggle reduced motion" aria-pressed="${state.settings.reducedMotion}"></button></div><div class="setting-row"><span>${icon('bolt')} Reduced effects</span><button data-action="effects" class="toggle ${state.settings.reducedEffects ? 'on' : ''}" aria-label="Toggle reduced effects" aria-pressed="${!!state.settings.reducedEffects}"></button></div><p class="fine-print">Lighter shadows and fewer effects for smoother play.</p><div class="settings-section"><h3>A home on your home screen.</h3><p>${ios ? 'In Safari, tap Share, then Add to Home Screen.' : installPrompt ? 'Install DFP for its own window and easy access.' : 'Use your browser’s Install app or Add to Home Screen menu when available. Installation requires HTTPS or localhost.'}</p><button class="outline-button" data-action="install">${icon('download')} ${installPrompt ? 'Install DFP' : 'Installation guidance'}</button><p class="offline-status">${offlineReady ? '● Ready to play offline' : import.meta.env.DEV ? 'Development preview · offline mode is available in the production build.' : 'Downloading the ingredients for offline play…'}</p>${updateReady ? '<button class="dark-button" data-action="update">Save & update DFP</button>' : ''}</div><div class="settings-section"><h3>Saved right here.</h3><p>Progress is device-local, in this browser. Clearing browser data removes it. There are no accounts or cloud saves. Your team earns only while the game is active.</p>${saveWarning ? `<p class="warning-text">${html(saveWarning)}</p>` : ''}<button class="outline-button" data-action="export">${icon('download')} Export local save</button></div><p class="fine-print">DFP · Deep Fried Pixels · v1.0<br>Original art and sound. Always freshly fried.</p>`);
 }
 function unlockProgress(cost,label){return `<div class="unlock-progress-wrap"><progress class="unlock-progress" max="${cost}" value="${Math.min(cost,state.money)}" aria-label="Progress toward ${html(label)}"></progress><small>${money(Math.min(cost,state.money))} / ${money(cost)}</small></div>`;}
+function drinksDialog(){const f=FLOORS[state.floor];showDialog(`<span class="eyebrow">YOUR DRINKS AREA</span><h2>Unlock Drinks Section</h2><p>${state.floor===0?'Pixel Pop drinks':'House wine'} gets its own dispenser, stacking counter and service circle. Guests collect food first, then drinks, and pay once.</p>${unlockProgress(f.sectionCost,'drinks section')}<p>${state.floor===0?'Requires Crispy Controller.':'Requires Pixel Tower or Pocket Crunch.'}</p><button class="dark-button" data-action="buy-drinks-section">Unlock Drinks Section · ${money(f.sectionCost)}</button>`);}
 function menuDialog() {
   const f=state.floor,fs=state.floors[f];
   showDialog(`<span class="eyebrow">BUILD YOUR MENU, ONE ITEM AT A TIME</span><h2>Something worth unlocking.</h2><p>Every product starts here. ${FLOORS[f].name}.</p><div class="product-list">${PRODUCTS.filter(p=>p.floor===f).map(p=>`<article><span class="product-symbol">${icon(p.icon)}</span><div><h3>${p.name}</h3><p>${p.description}</p><small>${B.prices[p.id]?`Next single-item sale: ${money(paymentQuote(state,f,state.player,B.prices[p.id]).amount)}`:p.id==='vr'?`Reward starts at ${money(paymentQuote(state,f,state.player,B.vrBaseReward).amount)}; grows with dodges`:`Next play collection: ${money(paymentQuote(state,f,state.player,B.quarters).amount)}`}</small>${fs.products[p.id]?'':unlockProgress(p.cost,p.name)}</div><button class="${fs.products[p.id]?'outline-button':'dark-button'}" data-action="product" data-id="${p.id}" ${fs.products[p.id]?'disabled':''}>${fs.products[p.id]?'Open':money(p.cost)}</button></article>`).join('')}</div><p class="fine-print">Player previews include upgrades and fivefold earnings. The full order is paid once; small bonuses carry into later payments. Guests only order unlocked items.</p>`);
@@ -161,7 +166,9 @@ app.addEventListener('click', event => {
   if (action === 'settings') settingsDialog();
   if (action === 'upgrades') upgradesDialog();
   if (action === 'menu') menuDialog();
-  if (action === 'station') { const st=LAYOUTS[state.floor].find(s=>s.id===button.dataset.station);if(st){if(st.kind==='table'&&!state.floors[state.floor].tables[Number(st.id.slice(5))].owned)tablesDialog();else if(st.product&&!state.floors[state.floor].products[st.product])menuDialog();else target={...st.pad};} }
+  if(action==='drinks-section'){if(state.floor<2){if(state.floors[state.floor].section)target={...LAYOUTS[state.floor].find(st=>st.id===(state.floor===0?'drink':'wine')).pad};else drinksDialog();}}
+  if(action==='buy-drinks-section'){if(state.floor<2&&act({type:'section'}))dialog.close();}
+  if (action === 'station') { const st=LAYOUTS[state.floor].find(s=>s.id===button.dataset.station);if(st){if(st.kind==='table'&&!state.floors[state.floor].tables[Number(st.id.slice(5))].owned)tablesDialog();else if(st.product&&!state.floors[state.floor].products[st.product]){if(state.floor<2&&['drink','wine'].includes(st.product))drinksDialog();else menuDialog();}else target={...st.pad};} }
   if(action==='tables')tablesDialog();
   if(action==='buy-table'){act({type:'table',id:Number(id)});dialog.close();tablesDialog();}
   if(action==='walk-table'){dialog.close();target={...LAYOUTS[state.floor].find(st=>st.id===`table${id}`).pad};}
@@ -198,7 +205,7 @@ const joy = document.querySelector('#joystick'), knob = document.querySelector('
 function stopPath(){target=null;state.player.path=[];state.player.pathKey='';state.player.moving=false;}
 function releaseJoy(){joyPointer=null;joystick.x=joystick.y=0;knob.style.transform='';}
 function stopMovement(){stopPath();keys.clear();releaseJoy();surfacePointer=null;}
-canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) return; stopMovement();sound.unlock();const picked=renderer.pick(e.clientX,e.clientY);if(picked.locked){if(picked.station?.startsWith('table'))tablesDialog();else menuDialog();return;}surfacePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);target=picked;canvas.focus({preventScroll:true}); });
+canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) return; stopMovement();sound.unlock();const picked=renderer.pick(e.clientX,e.clientY);if(picked.locked){if(picked.station?.startsWith('table'))tablesDialog();else if(state.floor<2&&['drink','wine','drinkStack','drinkCounter'].includes(picked.station))drinksDialog();else menuDialog();return;}surfacePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);target=picked;canvas.focus({preventScroll:true}); });
 canvas.addEventListener('pointermove',e=>{if(e.pointerId===surfacePointer)target=renderer.pick(e.clientX,e.clientY);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{if(e.pointerId===surfacePointer){surfacePointer=null;stopPath();}});
 const movementKey=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'}[e.code]||e.key.toLowerCase());

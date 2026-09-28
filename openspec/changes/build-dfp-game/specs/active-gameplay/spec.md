@@ -5,6 +5,17 @@ Deliver readable, approachable restaurant work through a directly controlled cha
 
 ## ADDED Requirements
 
+### Requirement: Separate food and drink service
+Takeout and Pixel & Pour SHALL contain distinct food and drink sections with their own equipment, stacking pads, service counters and customer queues. Signs and floor colors SHALL identify the sections. Collisions, navigation, camera-visible controls and spacious walking routes SHALL match the actual furniture. Food SHALL only be stacked/served in the food section and drinks in the drink section. Mixed orders SHALL receive food first, then drinks, and pay once for the full order at the final section before seating. Player and employee jobs SHALL follow the same rules.
+
+#### Scenario: Mixed order crosses sections
+- **WHEN** a customer orders food and a drink
+- **THEN** food service fills only the food units, the customer moves to the drinks queue, drink service fills the remaining units, and collection pays the combined bill once.
+
+#### Scenario: Accessible independent queues
+- **WHEN** both sections have customers and employees working
+- **THEN** all production, stack and service pads remain reachable without furniture intersections, and queues occupy separate spaces with clear routes to dining and the entrance.
+
 ### Requirement: Cohesive chunky world
 All four floors SHALL share warm peach/cream floors, purple furniture or trim, yellow-orange accents, bevelled chunky equipment, minimal surface detail, elevated diagonal framing and soft directional/contact shadows. Each floor SHALL retain its own atmosphere, theme, expanded layout and approved black featureless characters.
 
@@ -30,7 +41,7 @@ Products SHALL emerge, follow short pickup/delivery arcs and settle with small l
 ### Requirement: Original three-dimensional presentation
 The restaurant SHALL use real 3D characters, furniture, machines, food and carried objects, with consistent lighting, soft contact shadows, low walls, visible legs and doorways. An elevated three-quarter camera SHALL follow smoothly with restrained movement. All four floors SHALL have distinct original furniture and atmosphere, and all five outfits SHALL alter the player model and preview.
 
-Characters SHALL use an original shared 3D base with a large rounded slightly oval featureless charcoal-black head, a compact rounded body, thick smooth black arms and legs, mitten hands and rounded black feet. Soft material highlights SHALL reveal curvature without facial detail. The default uniform SHALL be a bright red short-sleeved collared shirt and curved red baseball cap with a visible brim. A common articulated rig SHALL support all five outfits and distinct player, employee and customer clothing colors/accessories. Clothing SHALL retain each existing outfit's identity. The expanded room layouts, fivefold earnings, reduced table prices, staffing limits, controls and saves SHALL remain unchanged.
+Characters SHALL use an original shared 3D base with a large rounded slightly oval featureless charcoal-black head, a compact rounded body, thick smooth black arms and legs, mitten hands and rounded black feet. Soft material highlights SHALL reveal curvature without facial detail. The default uniform SHALL be a bright red short-sleeved collared shirt and curved red baseball cap with a visible brim. A common articulated rig SHALL support all five outfits and distinct player, employee and customer clothing colors/accessories. Clothing SHALL retain each existing outfit's identity. The enlarged room sizes, fivefold earnings, staffing limits, controls and saves SHALL be retained; section layouts and table prices SHALL follow the current service and economy requirements.
 
 #### Scenario: Character design inspection
 - **WHEN** the updated shared base is reviewed
@@ -80,7 +91,7 @@ The game SHALL provide an original isometric environment, keyboard WASD/arrows, 
 - **THEN** the character moves continuously in the indicated screen direction and stops after release.
 
 ### Requirement: Takeout service
-Floor one SHALL include preparation, timed frying, pickup, a separate marked counter-stacking spot, a middle service circle, queues, payment, an unlockable drink station, employees, and player upgrades. The player and employees SHALL unload goods onto the counter at the stacking spot, then stand in the middle service circle to give customers food from the counter stack and collect payment. Carried goods SHALL NOT be handed directly to customers at the service circle. Drinks SHALL become an additional customer need after unlocking.
+Floor one SHALL include preparation, timed frying, pickup, a marked food-stacking spot, a food service circle, queues, payment, a separately purchased drinks section, employees, and player upgrades. The player and employees SHALL unload goods onto their section's stacking spot, then stand in that section's service circle to serve from its counter. Carried goods SHALL NOT be handed directly to customers at a service circle. Drinks SHALL become an additional customer need only after unlocking, and mixed orders SHALL pay once at the final drinks counter.
 
 #### Scenario: Stack then serve
 - **WHEN** a player carries food into the service circle with an empty counter
@@ -91,10 +102,10 @@ Floor one SHALL include preparation, timed frying, pickup, a separate marked cou
 - **THEN** the order is completed only after the requested food and drink are delivered.
 
 ### Requirement: Seated dining
-Floor two SHALL sell two original console-shaped meals and wine through the same separate stacking and middle-circle service process as takeout. Customers SHALL pay at the counter before moving to purchased tables to eat. This supersedes the initial waiter-delivery workflow.
+Floor two SHALL sell two original console-shaped meals and wine through the same separate food and drinks stacking/service sections as takeout. Customers SHALL pay once at their final counter before moving to purchased tables to eat. This supersedes the initial waiter-delivery workflow.
 
 #### Scenario: Complete dining cycle
-- **WHEN** a worker stacks a diner's food and wine and serves from the middle circle
+- **WHEN** a worker stacks and serves a diner's food and wine at their respective section counters
 - **THEN** payment occurs once before the diner sits and eats, and the table becomes dirty only after eating finishes.
 
 ### Requirement: Counter food service and purchased seating on every floor

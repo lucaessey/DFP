@@ -20,7 +20,7 @@ test('three-item food order consumes duplicates separately, resumes partial serv
   let s=setup(0,['controller','drink']);let c=order(s,['controller','controller','drink']);Object.assign(c,{...serviceQueue(),path:[],pathKey:''});const cash=s.money;
   s.floors[0].counter.controller=1;at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,false,false]);assert.equal(s.money,cash);assert.equal(s.floors[0].counter.controller,0);
   s=decode(encode(s));c=s.floors[0].customers[0];s.player.bag=['controller','drink'];at(s,'counter');assert.deepEqual(c.delivered,[true,false,false]);
-  at(s,'stack',1.4);assert.equal(s.money,cash);at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,true,true]);assert.equal(s.money,cash+30);assert.equal(s.floors[0].served,1);assert.ok(c.paid);
+  at(s,'stack',1.4);assert.equal(s.money,cash);at(s,'counter',1.4);assert.deepEqual(c.delivered,[true,true,false]);assert.equal(s.money,cash);assert.deepEqual(s.player.bag,['drink']);at(s,'drinkStack');tick(s,8);at(s,'drinkCounter',1.4);assert.deepEqual(c.delivered,[true,true,true]);assert.equal(s.money,cash+30);assert.equal(s.floors[0].served,1);assert.ok(c.paid);
   s=decode(encode(s));at(s,'counter',2);assert.equal(s.money,cash+30);assert.equal(s.floors[0].served,1);
 });
 

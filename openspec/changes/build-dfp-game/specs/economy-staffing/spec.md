@@ -13,15 +13,30 @@ All collected earnings SHALL pay exactly five times the previous whole-dollar pa
 - **THEN** total earnings are $30, with no lost fractional bonus and no duplicate payment.
 
 ### Requirement: Purchased tables and snack menus
-Each floor SHALL offer six independent one-time table purchases outside player upgrade allowances. Each table SHALL cost one-third of its former price, rounded to the nearest whole dollar: round((60 + 40 × zero-based floor + 55 × zero-based table index) / 3). First-table costs SHALL be $20/$33/$47/$60 by floor. New games SHALL start without purchased tables. Existing table ownership and saved balances SHALL remain unchanged, without retroactive refunds. Gift-shop and arcade snacks SHALL require their own unlocks and retain internal base values of $3/$4 before the collected-earnings rule. All non-table purchase prices SHALL remain unchanged.
+Each floor SHALL offer six independent one-time table purchases outside player upgrade allowances. Each table SHALL cost 50% less than the released one-third price, rounded to the nearest whole dollar: round(round((60 + 40 × zero-based floor + 55 × zero-based table index) / 3) / 2). This fixed formula SHALL apply the reduction exactly once and SHALL be shared by displayed prices and actual deductions. First-table costs SHALL be $10/$17/$24/$30 by floor. New games SHALL start without purchased tables. Existing table ownership and saved balances SHALL remain unchanged, without retroactive refunds. Gift-shop and arcade snacks SHALL require their own unlocks and retain internal base values of $3/$4 before the collected-earnings rule. All non-table purchase prices SHALL remain unchanged.
+
+#### Scenario: Halve a released table offer once
+- **WHEN** an unowned table previously cost $20 or $60
+- **THEN** its menu, interaction offer and one-time deduction are $10 or $30 respectively, and reloading changes neither the price nor any saved balance.
 
 #### Scenario: No duplicate table charge
 - **WHEN** an owned table purchase is requested again
 - **THEN** the request is rejected without changing money or seating state.
 
 #### Scenario: Payment occurs before eating
-- **WHEN** a completed food order is paid at the middle service circle
+- **WHEN** a completed food order is paid at its final service circle
 - **THEN** money is credited exactly once before the customer heads to a table, and eating and cleanup create no additional payment.
+
+### Requirement: Purchased drinks sections
+New progress SHALL keep drinks sections locked until purchased, with a visible locked boundary, an Unlock Drinks Section label, its price and a clear purchase control. Existing prices SHALL remain $180 on Takeout and $220 on Pixel & Pour, with existing meal prerequisites. Insufficient-funds and repeated purchases SHALL be rejected without mutation. A successful purchase SHALL charge once, reveal the equipment briefly, enable drink demand and employee work, and persist ownership. Existing unlocked drink sections SHALL remain open after updates and reloads.
+
+#### Scenario: Locked section cannot strand an order
+- **WHEN** a drinks section has not been purchased
+- **THEN** customers never request its drinks and employees never select its equipment, stack or service jobs.
+
+#### Scenario: Unlock survives interruption
+- **WHEN** a section purchase succeeds and the game reloads during its reveal
+- **THEN** the section stays open with one deduction, and neither the charge nor reveal replays.
 
 ### Requirement: Every sellable item requires an unlock
 Every food, drink, merchandise product, arcade cabinet, and VR offering SHALL require its own one-time in-game purchase on its unlocked floor. Locked products SHALL not be produced, stocked, ordered, or used. A visible Unlock items menu SHALL show ownership, unlock costs, and base earnings. Starting cash SHALL cover the first controller-food unlock; other spending SHALL reserve that minimum until it is purchased. Existing saves SHALL keep previously available products during migration.
