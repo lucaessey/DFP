@@ -22,7 +22,7 @@ test('security still costs $150 and needs every furnishing plus access to the co
 });
 test('schema-five security migrates intact, with no new charges, lost timers or replayed catch',()=>{
  const s=ownComputer();s.money=10000;for(const p of FURNITURE)command(s,{type:'furniture',id:p.id});command(s,{type:'security'});command(s,{type:'hire',id:0});ensureSecurityRound(s);securityTick(s,s.basement.security.round.remaining,true);securityTick(s,2,true);
- const before=structuredClone(s);s.version=5;delete s.basement.computer;let migrated=decode(JSON.stringify(s));assert.equal(migrated.version,6);assert.deepEqual(migrated.basement.computer,newComputer());assert.deepEqual(migrated.basement.security,before.basement.security);assert.deepEqual(migrated.floors,before.floors);assert.deepEqual(migrated.employees,before.employees);assert.equal(migrated.money,before.money);assert.equal(command(migrated,{type:'security'}).ok,false);
+ const before=structuredClone(s);s.version=5;delete s.basement.computer;let migrated=decode(JSON.stringify(s));assert.equal(migrated.version,7);assert.deepEqual(migrated.basement.computer,newComputer());assert.deepEqual(migrated.basement.security,before.basement.security);assert.deepEqual(migrated.floors,before.floors);assert.deepEqual(migrated.employees,before.employees);assert.equal(migrated.money,before.money);assert.equal(command(migrated,{type:'security'}).ok,false);
  const round=migrated.basement.security.round.id;assert.equal(command(migrated,{type:'computer'}).cost,100);const money=migrated.money;assert.equal(securitySelect(migrated,{roundId:round,person:'robber',watching:true}).amount,15);migrated=decode(encode(migrated));assert.equal(securitySelect(migrated,{roundId:round,person:'robber',watching:true}).ok,false);assert.equal(migrated.money,money+15);
 });
 test('email and game ownership survives reload while security stays paused during other activities',()=>{
@@ -34,5 +34,5 @@ test('catalog has exactly the three approved HTTPS URLs; fictional email has dis
 });
 test('invalid app ownership is rejected and future saves remain protected',()=>{
  for(const damage of [s=>s.basement.computer.owned=true,s=>s.basement.computer.email=true,s=>s.basement.computer.games.boggle=true,s=>s.basement.computer.games.snake='owned',s=>delete s.basement.computer]){const s=newGame();damage(s);assert.equal(validateSave(s),false);}
- const s=ownComputer();assert.throws(()=>decode(JSON.stringify({...s,version:7})),/FUTURE_VERSION/);
+ const s=ownComputer();assert.throws(()=>decode(JSON.stringify({...s,version:8})),/FUTURE_VERSION/);
 });

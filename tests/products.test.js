@@ -22,7 +22,7 @@ test('guests order only unlocked meals and use only unlocked cabinets',()=>{
   assert.ok(s.floors[1].customers.every(c=>c.needs.length>=1&&c.needs.length<=3&&c.needs.every(item=>item==='handheld')));assert.equal(s.floors[3].machines[0].quarters,0);assert.equal(s.floors[3].machines[2].quarters,0);assert.ok(s.floors[3].machines[1].quarters>0);
 });
 test('version-two migration preserves previously available products and all balances',()=>{
-  const s=newGame();s.version=2;s.money=678;s.floors[1].unlocked=true;s.floors[1].section=true;s.floors[0].section=true;s.floors.forEach(f=>delete f.products);const restored=decode(JSON.stringify(s));assert.equal(restored.version,6);assert.equal(restored.money,678);for(const id of ['controller','drink'])assert.ok(restored.floors[0].products[id]);for(const id of ['tower','handheld','wine'])assert.ok(restored.floors[1].products[id]);assert.equal(restored.floors[2].products.souvenir,false);
+  const s=newGame();s.version=2;s.money=678;s.floors[1].unlocked=true;s.floors[1].section=true;s.floors[0].section=true;s.floors.forEach(f=>delete f.products);const restored=decode(JSON.stringify(s));assert.equal(restored.version,7);assert.equal(restored.money,678);for(const id of ['controller','drink'])assert.ok(restored.floors[0].products[id]);for(const id of ['tower','handheld','wine'])assert.ok(restored.floors[1].products[id]);assert.equal(restored.floors[2].products.souvenir,false);
 });
 test('harder base earnings and more frequent drinks are explicit balance values',()=>{
   assert.equal(BALANCE.prices.controller,1);assert.equal(BALANCE.prices.drink,3);assert.equal(BALANCE.quarters,3);assert.equal(BALANCE.drinkOrderChance,.8);assert.equal(BALANCE.vrBaseReward,3);

@@ -3,6 +3,7 @@ import {LAYOUT_VERSION,tableSeat,arcadeSeat} from './config.js';
 import { newGame } from './simulation.js';
 import {newBasement,validateBasement} from './security.js';
 import {newComputer} from './computer.js';
+import {newPets,validatePets} from './pets.js';
 import { ITEMS, OUTFITS, UPGRADE_TYPES, PRODUCTS, BALANCE, WORLD, TABLE_COUNT, upgradeCount } from './config.js';
 export const SAVE_KEY = 'dfp.save';
 export const BACKUP_KEY = 'dfp.backup';
@@ -10,9 +11,9 @@ const finite = (n, min = 0, max = 1e12) => typeof n === 'number' && Number.isFin
 const integer = (n, min = 0, max = 1e12) => Number.isInteger(n) && finite(n, min, max);
 const uValid = (u, cap) => u && UPGRADE_TYPES.every(k => integer(u[k], 0, cap));
 const point = p => p && finite(p.x, 0, WORLD.width) && finite(p.y, 0, WORLD.depth);
-const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= 8 && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string';
+const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= (a.id===undefined?11:8) && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string';
 export function validateSave(s) {
-  if (!s || s.version !== 6 || !validateBasement(s.basement) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
+  if (!s || s.version !== 7 || !validatePets(s.pets) || !validateBasement(s.basement) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
   if(s.layoutVersion!==undefined&&(!integer(s.layoutVersion,1,LAYOUT_VERSION)))return false;
   if (!integer(s.floor, 0, 3) || !actorValid(s.player) || !Array.isArray(s.floors) || s.floors.length !== 4) return false;
   if (!integer(s.tutorial, 0, 5) || !s.settings || typeof s.settings.sound !== 'boolean' || typeof s.settings.reducedMotion !== 'boolean') return false;
@@ -78,6 +79,7 @@ export function migrate(s) {
   }
   if(s?.version===4){s.basement??=newBasement();s.version=5;}
   if(s?.version===5&&s.basement){s.basement.computer=newComputer();s.version=6;}
+  if(s?.version===6){s.pets=newPets();s.version=7;}
   if (!validateSave(s)) throw new Error('Invalid save data');
   if((s.layoutVersion??1)<LAYOUT_VERSION){
     const relocate=(actor,floor,position)=>{Object.assign(actor,position??nearestWalkable(floor,actor),{path:[],pathKey:'',moving:false});if(actor.action!==undefined){actor.action='';actor.progress=0;}};
@@ -93,7 +95,7 @@ export function encode(s) { if (!validateSave(s)) throw new Error('Save failed v
 export function decode(raw) {
   const envelope = JSON.parse(raw); let data = envelope;
   if (typeof envelope.data === 'string') { if (checksum(envelope.data) !== envelope.checksum) throw new Error('Checksum mismatch'); data = JSON.parse(envelope.data); }
-  if (data?.version > 6 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
+  if (data?.version > 7 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
   return migrate(data);
 }
 export function loadGame(storage) {

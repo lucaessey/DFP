@@ -24,7 +24,10 @@
     "comments:emulators": "firebase emulators:start --only auth,database --project demo-dfp-comments",
     "comments:local-api": "node tests/people-local-server.mjs",
     "comments:worker:check": "wrangler deploy --config worker/wrangler.jsonc --dry-run",
-    "spec:comments": "openspec validate add-people-comments --strict"
+    "spec:comments": "openspec validate add-people-comments --strict",
+    "test:pets": "node --test tests/pets.test.js",
+    "test:pets:browser": "node tests/pets-browser.mjs",
+    "spec:pets": "openspec validate add-pet-companions --strict"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

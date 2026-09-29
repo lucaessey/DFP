@@ -30,7 +30,7 @@ try{
       const width=Math.max(box.width<500?14.8:18.6,13.7*box.width/box.height),height=width*box.height/box.width,camera=new T.OrthographicCamera(-width/2,width/2,height/2,-height/2,.1,80);camera.position.fromArray(d.camera);camera.lookAt(d.camera[0]-13,.4,d.camera[2]-16);camera.updateMatrixWorld();
       const foot=new T.Vector3(player.x,0,player.y).project(camera),head=new T.Vector3(player.x,2.2,player.y).project(camera),pixels=(head.y-foot.y)*box.height/2;
       assert.ok(Math.abs(foot.x)<.92&&Math.abs(foot.y)<.94&&Math.abs(head.y)<.98,`Player clipped in ${mode} ${area}`);assert.ok(pixels>=20,`Character too small: ${pixels}px`);
-      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await page.locator('[data-tab]').count(),4);frames.push({floor:floor+1,mode,area,characterHeight:Math.round(pixels),calls:d.calls});
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.equal(await page.locator('[data-tab]').count(),5);frames.push({floor:floor+1,mode,area,characterHeight:Math.round(pixels),calls:d.calls});
       await page.screenshot({path:`test-results/expanded/${mode}-floor-${floor+1}-${area}.png`,fullPage:true});
     }
     if(mode==='desktop'){

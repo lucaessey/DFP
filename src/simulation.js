@@ -5,25 +5,28 @@ import { distance, move, followPath } from './navigation.js';
 import {isDrink,serviceItems,customerCounter,serviceCustomers,customerQueue} from './config.js';
 import {newBasement,BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,securityTick} from './security.js';
 import {COMPUTER_PRICE,EMAIL_PRICE,COMPUTER_GAMES} from './computer.js';
+import {newPets,petById,petBonus,equippedPet,preparationStation} from './pets.js';
+import {findPath} from './navigation.js';
 
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 6, basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 7, pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
     floors: FLOORS.map((f, i) => ({ unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
   };
 }
 function random(s) { s.seed = (Math.imul(1664525, s.seed) + 1013904223) >>> 0; return s.seed / 4294967296; }
-export function capacity(s, actor, floor) { return actor.id === undefined ? B.capacity + s.floors[floor].upgrades.capacity : B.employeeCapacity + actor.upgrades.capacity; }
-export function speed(s, actor, floor) { return actor.id === undefined ? B.speed * (1 + B.playerSpeedBonus * s.floors[floor].upgrades.speed) : B.employeeSpeed * (1 + B.employeeSpeedBonus * actor.upgrades.speed); }
+export function capacity(s, actor, floor) { return actor.id === undefined ? B.capacity + s.floors[floor].upgrades.capacity + petBonus(s,'capacity') : B.employeeCapacity + actor.upgrades.capacity; }
+export function speed(s, actor, floor) { return actor.id === undefined ? B.speed * (1 + B.playerSpeedBonus * s.floors[floor].upgrades.speed)*(1+petBonus(s,'speed')/100) : B.employeeSpeed * (1 + B.employeeSpeedBonus * actor.upgrades.speed); }
 export function emit(s, text, kind = 'info', pos) { s.events.push({ text, kind, floor: s.floor, ...pos }); if (s.events.length > 30) s.events.shift(); }
 function changed(s) { s.revision++; }
-function pay(s, floor, actor, base, receipt) {
+function pay(s, floor, actor, base, receipt, petEligible=true) {
   if (receipt.paid) return 0;
-  const quote=paymentQuote(s,floor,actor,base),amount=quote.amount;
+  const quote=paymentQuote(s,floor,actor,base,petEligible),amount=quote.amount;
   s.floors[floor].bonusCents=quote.bonusCents;
+  s.pets.incomeCents=quote.petCents;
   receipt.paid = true; s.money += amount; s.earned += amount; s.floors[floor].revenue += amount;
   changed(s); emit(s, `+$${amount}`, 'money', { x: actor.x, y: actor.y, floor }); return amount;
 }
@@ -35,6 +38,15 @@ export function command(s, c) {
   if (!Number.isInteger(f) || !s.floors[f]) return fail('Unknown floor');
   const fs = s.floors[f]; let cost = 0, apply;
   switch (c.type) {
+    case 'pet-buy': {
+      const pet=petById(c.id);if(!pet||s.pets.owned.includes(c.id))return fail('Pet unavailable or already owned');
+      cost=pet.price;apply=()=>{s.pets.owned.push(c.id);s.pets.equipped=c.id;emit(s,'New companion!','pet');};break;
+    }
+    case 'pet-equip':
+      if(!s.pets.owned.includes(c.id))return fail('Buy this pet first');
+      if(s.pets.equipped===c.id)return fail('Already equipped');
+      apply=()=>{s.pets.equipped=c.id;emit(s,'Companion equipped!','pet');};break;
+    case 'pet-unequip':apply=()=>{s.pets.equipped=null;};break;
     case 'basement':
       if(s.basement.unlocked)return fail('Basement already open');
       cost=BASEMENT_PRICE;apply=()=>{s.basement.unlocked=true;};break;
@@ -271,7 +283,7 @@ function workActor(s, f, a, dt, automatic) {
     const st = LAYOUTS[f].find(st => distance(a, st.pad) < 0.62 && stationOpen(s,f,st));
   if (!st) { a.action = ''; a.progress = 0; return; }
   if (a.action !== st.id) { a.action = st.id; a.progress = 0; }
-  a.progress += dt;
+  a.progress += dt*(a.id===undefined&&preparationStation(st)?1+petBonus(s,'prep')/100:1);
   if (a.progress >= B.actionTime) { a.progress = 0; interact(s, f, a, st); }
 }
 function customersTick(s, f, dt) {
@@ -341,7 +353,39 @@ export function stepVR(s, dt) {
     if (!o.passed && o.y >= 0.83) { o.passed = true; if (o.lane === v.lane) v.lives = Math.max(0, v.lives - 1); else v.score++; }
   }
   v.obstacles = v.obstacles.filter(o => o.y < 1.15);
-  if (v.lives <= 0 || v.time >= B.vrTime) { v.done = true; v.reward = pay(s, 3, s.player, B.vrBaseReward + v.score * B.vrDodgeReward, v); changed(s); }
+  if (v.lives <= 0 || v.time >= B.vrTime) { v.done = true; v.reward = pay(s, 3, s.player, B.vrBaseReward + v.score * B.vrDodgeReward, v, false); changed(s); }
+}
+// Helpers use simulation state, never animation completion, and keep cooldowns across switches.
+export function petTasks(s,dt,active=true){
+  const pet=equippedPet(s);if(!pet||!active||s.vr&&!s.vr.done)return;
+  const f=s.floor,fs=s.floors[f],a=s.player;
+  for(const k of ['cash','serve','clean']){const left=s.pets.cooldowns[k]-dt;s.pets.cooldowns[k]=left<1e-8?0:left;}
+  for(const kind of ['cash','serve','clean']){
+    const ability=pet.abilities[kind];if(!ability||s.pets.cooldowns[kind]>0)continue;
+    const [range,cooldown]=ability;
+    const nearby=LAYOUTS[f].filter(st=>stationOpen(s,f,st)&&distance(a,st.pad)<=range).sort((x,y)=>distance(a,x.pad)-distance(a,y.pad));
+    for(const st of nearby){
+      const candidate=kind==='clean'?st.kind==='table'&&fs.tables[Number(st.id.slice(5))].state==='dirty':kind==='serve'?st.kind==='counter':st.kind==='counter'||st.kind==='checkout'||st.kind==='arcade';
+      if(!candidate)continue;
+      const path=findPath(f,a,st.pad);if(!path.length&&distance(a,st.pad)>.1)continue;
+      let length=0,prev=a;for(const p of path){length+=distance(prev,p);prev=p;}if(length>range+1)continue;
+      let done=false;
+      if(kind==='clean'){interact(s,f,a,st);done=true;}
+      if(st.kind==='counter'){
+        const c=serviceCustomers(fs,f,st.id)[0];if(!c||distance(c,customerQueue(fs,f,c))>=.6)continue;
+        if(kind==='cash'&&c.state==='payment'&&!c.paid&&c.delivered.every(Boolean)){interact(s,f,a,st);done=true;}
+        if(kind==='serve'&&c.state==='waiting'){
+          const i=c.needs.findIndex((item,i)=>!c.delivered[i]&&serviceItems(f,st.id).includes(item)&&fs.counter[item]>0);
+          if(i>=0){fs.counter[c.needs[i]]--;c.delivered[i]=true;if(c.delivered.every(Boolean))c.state='payment';changed(s);done=true;}
+        }
+      }
+      if(kind==='cash'&&st.kind==='checkout'){
+        const c=fs.customers.find(c=>c.state==='checkout');if(c&&!c.paid&&c.delivered.every(Boolean)&&distance(c,checkoutQueue())<.7){interact(s,f,a,st);done=true;}
+      }
+      if(kind==='cash'&&st.kind==='arcade'&&fs.machines[Number(st.id.at(-1))].quarters>0){interact(s,f,a,st);done=true;}
+      if(done){s.pets.cooldowns[kind]=cooldown;changed(s);emit(s,`${pet.name} helped!`,'pet',{x:st.pad.x,y:st.pad.y});break;}
+    }
+  }
 }
 export function step(s, dt = B.step, input = {}) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.25) throw new Error('Simulation requires a bounded fixed step');
@@ -361,9 +405,10 @@ export function step(s, dt = B.step, input = {}) {
     const fs = s.floors[f]; if (!fs.unlocked) continue;
     fs.arrival -= dt;
     if (fs.arrival <= 0 && fs.customers.filter(c => c.state !== 'leaving').length < B.maxCustomers) { spawnCustomer(s, f); fs.arrival = B.arrivalTime + random(s) * 2; }
-    if (fs.cooking) { fs.fry -= dt; if (fs.fry <= 0) { fs.cooking = false; fs.fry = 0; fs.stock.controller += B.batch; } }
+    if (fs.cooking) { const boost=f===s.floor&&!input.pausedPlayer&&!(s.vr&&!s.vr.done)&&distance(a,LAYOUTS[0].find(st=>st.id==='fry').pad)<=3?petBonus(s,'prep'):0;fs.fry -= dt*(1+boost/100); if (fs.fry <= 0) { fs.cooking = false; fs.fry = 0; fs.stock.controller += B.batch; } }
     customersTick(s, f, dt);
     if (f === s.floor && !input.pausedPlayer) workActor(s, f, a, dt, false);
     for (const employee of s.employees.filter(e => e.floor === f)) workActor(s, f, employee, dt, true);
   }
+  petTasks(s,dt,!input.pausedPlayer);
 }

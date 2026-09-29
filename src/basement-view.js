@@ -2,6 +2,8 @@ import * as T from 'three';
 import {Renderer} from './renderer.js';
 import {ComputerView} from './computer-view.js';
 import {COMPUTER_PRICE} from './computer.js';
+import {equippedPet} from './pets.js';
+import {petModel,animatePet} from './pet-models.js';
 import {box,ball,cylinder,group,lettering,character} from './scene-assets.js';
 import {FLOORS,OUTFITS} from './config.js';
 import {BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,highestFloor,ensureSecurityRound,securitySelect} from './security.js';
@@ -18,7 +20,7 @@ class LoungeRenderer{
   box(this.scene,'#ccace7',6,.057,4.5,6.2,.04,6.6);box(this.scene,'#ebdafa',6,.08,4.5,5.8,.02,6.2);lettering(this.scene,'THE DOWNSTAIRS CLUB',6,1.8,.1,4.7,'#754996','#fff2d2');
   this.objects=new Map();this.known=null;this.last=0;this.lost=false;
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});canvas.addEventListener('webglcontextrestored',()=>{this.lost=false;this.last=0;});
-  canvas.dfpDiagnostics=()=>({furniture:[...this.objects].filter(([id])=>id!=='system').map(([id,o])=>({id,building:o.age<.6})),security:this.objects.has('system'),calls:this.gl.info.render.calls});
+  canvas.dfpDiagnostics=()=>({pet:this.pet?.definition.id??null,furniture:[...this.objects].filter(([id])=>id!=='system').map(([id,o])=>({id,building:o.age<.6})),security:this.objects.has('system'),calls:this.gl.info.render.calls});
  }
  object(id){
   const def=FURNITURE.find(p=>p.id===id),g=group(this.scene,def?.x??(id==='computer'?2.2:10),.0,def?.y??(id==='computer'?7.5:1.8));
@@ -46,6 +48,8 @@ class LoungeRenderer{
   for(const o of this.objects.values()){o.age+=dt;const t=Math.min(1,o.age/.6),rise=s.settings.reducedMotion?1:1-(1-t)**3;const scale=s.settings.reducedMotion?1:.8+.2*rise+.035*Math.sin(t*Math.PI);o.mesh.scale.setScalar(scale);o.mesh.position.y=-.25*(1-rise);}
   if(this.look!==s.outfit){if(this.actor){this.scene.remove(this.actor.root);this.actor.contact.material.dispose();}this.actor=character(OUTFITS.find(o=>o.id===s.outfit));this.actor.root.position.set(8.8,0,8.4);this.actor.rig.rotation.y=-2.3;this.scene.add(this.actor.root);this.look=s.outfit;}
   this.actor.torso.scale.y=s.settings.reducedMotion?1:1+Math.sin(now*.0018)*.012;
+  const pet=equippedPet(s);if(this.pet?.definition.id!==pet?.id){if(this.pet)this.scene.remove(this.pet.root);this.pet=pet?petModel(pet):null;if(this.pet){this.pet.root.scale.setScalar(.7);this.pet.root.position.set(7.65,0,8.35);this.pet.root.rotation.y=-2.3;this.pet.reaction=1;this.scene.add(this.pet.root);}}
+  if(this.pet)animatePet(this.pet,dt,now/1000,false,s.settings.reducedMotion);
   const aspect=b.width/b.height,w=Math.max(15,11.7*aspect);Object.assign(this.camera,{left:-w/2,right:w/2,top:w/aspect/2,bottom:-w/aspect/2});this.camera.position.set(17,16,20);this.camera.lookAt(6,.45,4.5);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();this.gl.render(this.scene,this.camera);
  }
  project(x,z,y=0){const p=new T.Vector3(x,y,z).project(this.camera),r=this.canvas.getBoundingClientRect();return{x:(p.x*.5+.5)*r.width,y:(-.5*p.y+.5)*r.height};}

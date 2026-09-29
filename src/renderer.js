@@ -6,6 +6,9 @@ import { room, character, food, shape, disposeRoom,ball,box } from './scene-asse
 import { animateCharacter, crowdTargets, separateCrowd, damp } from './animation.js';
 import { icon } from './icons.js';
 import {collectionPoint,updateStationMotion,smooth,landing} from './world-motion.js';
+import {equippedPet} from './pets.js';
+import {petModel,animatePet} from './pet-models.js';
+import {newFollower,followPet} from './pet-follower.js';
 
 const itemNames={controller:'Controller',drink:'Drink',tower:'Tower',handheld:'Handheld',wine:'Wine',souvenir:'DFP bag',keychain:'Keychain',snack2:'Shop Crunch',snack3:'Arcade Crunch'},v=new T.Vector3();
 const stationIcons={prep:'prep',fryer:'fry',pickup:'pickup',drinks:'wine',wine:'wine',tower:'controller',handheld:'controller',snack:'controller',counter:'serve',stack:'stack',trash:'trash',table:'table',stock:'bag',keyStock:'gift',shelf:'gift',keyShelf:'gift',checkout:'coin',arcade:'arcade',vr:'arcade'};
@@ -22,7 +25,7 @@ export class Renderer {
     canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;canvas.parentElement.classList.add('graphics-paused');});
     canvas.addEventListener('webglcontextrestored',()=>{this.contextLost=false;canvas.parentElement.classList.remove('graphics-paused');this.last=0;});
     // Read-only telemetry permits real performance checks without game cheats.
-    canvas.dfpDiagnostics=()=>({engine:'Three.js WebGL',style:'stickman',floor:this.floor,calls:this.gl.info.render.calls,triangles:this.gl.info.render.triangles,geometries:this.gl.info.memory.geometries,textures:this.gl.info.memory.textures,frames:[...this.samples],renderMs:[...this.renderSamples],pixelRatio:this.gl.getPixelRatio(),actors:this.actors.size,particles:this.particles.length,transfers:this.transfers.length,contextLost:!!this.contextLost,transferKinds:this.transfers.map(t=>t.kind),stations:this.world?[...this.world.userData.stations].map(([id,d])=>({id,state:d.cue?.state,progress:d.cue?.progress,building:d.buildAge!==undefined,scale:d.body.scale.x,y:d.body.position.y,pending:d.pending||0,fill:d.fill?.scale.y,pouring:!!d.stream?.visible,inventory:d.goods.children.length})):[],positions:[...this.actors].map(([key,m])=>({key,x:m.root.position.x,y:m.root.position.z,rotation:m.angle,walk:m.walk,bag:m.bagKey,sit:m.sit,motion:m.motion,celebrate:m.celebrate,phase:m.phase,visibleGoods:m.bagModels.length,quantity:m.visibleQuantity,carryHeight:m.carry.userData.height||0,handTargets:m.handTargets.map(p=>p.toArray())})),camera:this.camera.position.toArray()});
+    canvas.dfpDiagnostics=()=>({engine:'Three.js WebGL',style:'stickman',pet:this.petRig?{id:this.petRig.definition.id,x:this.petFollow?.x,y:this.petFollow?.y,moving:this.petFollow?.moving,recovered:this.petFollow?.recovered,models:1}:null,floor:this.floor,calls:this.gl.info.render.calls,triangles:this.gl.info.render.triangles,geometries:this.gl.info.memory.geometries,textures:this.gl.info.memory.textures,frames:[...this.samples],renderMs:[...this.renderSamples],pixelRatio:this.gl.getPixelRatio(),actors:this.actors.size,particles:this.particles.length,transfers:this.transfers.length,contextLost:!!this.contextLost,transferKinds:this.transfers.map(t=>t.kind),stations:this.world?[...this.world.userData.stations].map(([id,d])=>({id,state:d.cue?.state,progress:d.cue?.progress,building:d.buildAge!==undefined,scale:d.body.scale.x,y:d.body.position.y,pending:d.pending||0,fill:d.fill?.scale.y,pouring:!!d.stream?.visible,inventory:d.goods.children.length})):[],positions:[...this.actors].map(([key,m])=>({key,x:m.root.position.x,y:m.root.position.z,rotation:m.angle,walk:m.walk,bag:m.bagKey,sit:m.sit,motion:m.motion,celebrate:m.celebrate,phase:m.phase,visibleGoods:m.bagModels.length,quantity:m.visibleQuantity,carryHeight:m.carry.userData.height||0,handTargets:m.handTargets.map(p=>p.toArray())})),camera:this.camera.position.toArray()});
   }
   resize(state) {
     const r=this.canvas.getBoundingClientRect();if(!r.width||!r.height)return false;const ratio=state.settings.reducedEffects?1:Math.min(1.65,devicePixelRatio||1);
@@ -53,6 +56,7 @@ export class Renderer {
     const st=LAYOUTS[this.floor].find(s=>Math.hypot(s.pad.x-hit.x,s.pad.y-hit.z)<.7);return st?{...st.pad,station:st.id,locked:!this.world.userData.stations.get(st.id).open}:{x:Math.max(.4,Math.min(WORLD.width-.4,hit.x)),y:Math.max(.4,Math.min(WORLD.depth-.4,hit.z))};
   }
   feedback(event,time) {
+    if(event.kind==='pet'&&this.petRig)this.petRig.reaction=1;
     if(event.kind!=='money'){if(event.kind==='purchase')this.celebrateNext=event.floor;if(event.floor===undefined||event.floor===this.floor)this.burst(event.x??6,event.y??5,'#a5dcaf',4);return;}
     if(event.floor!==undefined&&event.floor!==this.floor)return;const el=document.createElement('span');el.className=`world-feedback ${event.kind==='money'?'money-feedback':''}`;el.textContent=event.text;this.layer.append(el);
     this.effects.push({el,x:event.x??6,z:event.y??5,time,kind:event.kind});if(this.effects.length>10)this.effects.shift().el.remove();if(!this.reducedMotion)this.burst(event.x??6,event.y??5,event.kind==='money'?'#f5ca5b':'#a5dcaf',event.kind==='money'?6:4);
@@ -126,6 +130,17 @@ export class Renderer {
       occupied.push({x:p.x,y:p.y+dy,w,h});this.place(label,e.rig.root.position.x,e.rig.root.position.z,2.08,dy+10);
     }
   }
+  companion(state,dt,time){
+    const pet=this.security?null:equippedPet(state);
+    if(this.petRig?.definition.id!==pet?.id){if(this.petRig)this.scene.remove(this.petRig.root);this.petRig=pet?petModel(pet):null;this.petFollow=null;if(this.petRig){this.petRig.root.scale.setScalar(.7);this.scene.add(this.petRig.root);this.petRig.reaction=1;}}
+    if(!this.petRig)return;
+    const actors=[state.player,...state.employees.filter(e=>e.floor===state.floor),...state.floors[state.floor].customers];
+    this.petFollow??=newFollower(state.floor,state.player,actors,this.petRig.clearance);followPet(this.petFollow,state.floor,state.player,actors,dt);
+    const p=this.petFollow;this.petRig.root.position.set(p.x,0,p.y);this.petRig.root.rotation.y=p.angle;
+    if(this.petRecovery!==p.recovered){this.petRecovery=p.recovered;this.petArrival=0;}
+    this.petArrival=Math.min(1,(this.petArrival??0)+dt*6);this.petRig.root.scale.setScalar(.7*(this.reducedMotion?1:.75+.25*this.petArrival));
+    animatePet(this.petRig,dt,time,p.moving,this.reducedMotion,p.velocity);
+  }
   draw(state,time) {
     if(this.contextLost||!this.resize(state))return;const now=performance.now(),dt=this.last?Math.max(0,Math.min(.1,(now-this.last)/1000)):1/60;
     if(this.last){this.samples.push(now-this.last);if(this.samples.length>600)this.samples.shift();}this.last=now;this.reducedMotion=state.settings.reducedMotion;this.reducedEffects=state.settings.reducedEffects;this.rebuild(state);
@@ -136,6 +151,7 @@ export class Renderer {
     for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i],age=time-e.time;if(age>1.4){e.el.remove();this.effects.splice(i,1);continue;}this.placeEarning(e,age,obstacles);e.el.style.opacity=String(Math.min(1,(1.4-age)*3));}
     for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life-=dt;if(p.life<=0||this.reducedMotion){this.scene.remove(p.mesh);this.particles.splice(i,1);continue;}p.vy-=dt*3;p.mesh.position.x+=p.vx*dt;p.mesh.position.z+=p.vz*dt;p.mesh.position.y+=p.vy*dt;p.mesh.scale.setScalar(.1*p.life/.6);}
     for(let i=this.transfers.length-1;i>=0;i--){const t=this.transfers[i];t.age+=dt;const cash=t.kind==='cash';if(t.collector&&this.actors.get(t.collector.key)===t.collector)t.collector.hands[1].getWorldPosition(t.to);const progress=Math.max(0,Math.min(1,(t.age-(cash?.28:0))/(cash?.5:.32))),p=smooth(progress);t.mesh.position.lerpVectors(t.from,t.to,p);t.mesh.position.y+=cash&&t.age<.28?landing(t.age/.28):Math.sin(p*Math.PI)*.20;if(cash)t.mesh.scale.setScalar(t.age<.14?.95*(.65+.35*smooth(t.age/.14)):.95);if(progress>=1||this.reducedMotion||t.owner&&(this.actors.get(t.owner.key)!==t.owner||t.token!==t.owner.transferToken)){this.scene.remove(t.mesh);this.transfers.splice(i,1);}}
+    this.companion(state,dt,time);
     const start=performance.now();this.gl.render(this.scene,this.camera);this.renderSamples.push(performance.now()-start);if(this.renderSamples.length>600)this.renderSamples.shift();
   }
 }

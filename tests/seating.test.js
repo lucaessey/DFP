@@ -42,7 +42,7 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: employees automatically serve and clean 
 
 test('real schema-three save migrates balances, employee cargo, old dining tables and counter stock',()=>{
   const old=JSON.parse(readFileSync(new URL('../artifacts/3d-upgrade/comparison-state.json',import.meta.url)));old.floors[1].unlocked=true;old.floors[1].tables[0].state='dirty';const cash=old.money,cargo=[...old.player.bag],counter=old.floors[0].counter.controller;
-  const s=decode(JSON.stringify(old));assert.equal(s.version,6);assert.equal(s.money,cash);assert.deepEqual(s.player.bag,cargo);assert.equal(s.floors[0].counter.controller,counter);assert.equal(s.employees.length,old.employees.length);
+  const s=decode(JSON.stringify(old));assert.equal(s.version,7);assert.equal(s.money,cash);assert.deepEqual(s.player.bag,cargo);assert.equal(s.floors[0].counter.controller,counter);assert.equal(s.employees.length,old.employees.length);
   assert.deepEqual(s.floors.map(f=>f.tables.filter(t=>t.owned).length),[0,2,0,0]);assert.equal(s.floors[1].tables[0].state,'dirty');assert.equal(s.floors[2].products.snack2,false);assert.ok(validateSave(s));
 });
 

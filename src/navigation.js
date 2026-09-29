@@ -16,23 +16,25 @@ export function nearestWalkable(floor,point){
   for(let x=.5;x<WORLD.width;x+=.5)for(let y=.5;y<WORLD.depth;y+=.5){const d=(x-point.x)**2+(y-point.y)**2;if(d<score&&walkable(floor,x,y,.23)){best={x,y};score=d;}}
   return best;
 }
-export function move(actor,dx,dy,floor){
+export function move(actor,dx,dy,floor,radius=.2){
   const x=actor.x,y=actor.y;
-  if(walkable(floor,actor.x+dx,actor.y))actor.x+=dx;
-  if(walkable(floor,actor.x,actor.y+dy))actor.y+=dy;
+  if(walkable(floor,actor.x+dx,actor.y,radius))actor.x+=dx;
+  if(walkable(floor,actor.x,actor.y+dy,radius))actor.y+=dy;
   actor.moving=Math.hypot(actor.x-x,actor.y-y)>.001;
   if(actor.moving)actor.facing=dx-dy>=0?1:-1;
 }
 const columns=WORLD.width*2+1,rows=WORLD.depth*2+1;
 const grids=COLLISIONS.map((_,floor)=>Uint8Array.from({length:columns*rows},(_,key)=>walkable(floor,(key%columns)/2,Math.floor(key/columns)/2,.23)?1:0));
-function cell(floor,p){
-  const grid=grids[floor];let best=-1,score=Infinity;
+const clearanceGrids=new Map();
+function gridFor(floor,radius){if(radius===.23)return grids[floor];const key=`${floor}/${radius}`;if(!clearanceGrids.has(key))clearanceGrids.set(key,Uint8Array.from({length:columns*rows},(_,k)=>walkable(floor,(k%columns)/2,Math.floor(k/columns)/2,radius)?1:0));return clearanceGrids.get(key);}
+function cell(floor,p,grid=grids[floor]){
+  let best=-1,score=Infinity;
   for(let key=0;key<grid.length;key++)if(grid[key]){const d=((key%columns)/2-p.x)**2+(Math.floor(key/columns)/2-p.y)**2;if(d<score){score=d;best=key;}}
   return best;
 }
-export function findPath(floor,from,to){
-  if(!walkable(floor,to.x,to.y,.23))return [];
-  const grid=grids[floor],start=cell(floor,from),dest=cell(floor,to),previous=new Int32Array(grid.length).fill(-2),queue=[start];previous[start]=-1;
+export function findPath(floor,from,to,radius=.23){
+  if(!walkable(floor,to.x,to.y,radius))return [];
+  const grid=gridFor(floor,radius),start=cell(floor,from,grid),dest=cell(floor,to,grid),previous=new Int32Array(grid.length).fill(-2),queue=[start];previous[start]=-1;
   for(let i=0;i<queue.length;i++){
     const k=queue[i];if(k===dest)break;
     for(const next of [k+1,k+columns,k-1,k-columns])if(next>=0&&next<grid.length&&grid[next]&&previous[next]===-2){previous[next]=k;queue.push(next);}
@@ -42,11 +44,11 @@ export function findPath(floor,from,to){
   for(let key=dest;key!==start;key=previous[key])path.unshift({x:(key%columns)/2,y:Math.floor(key/columns)/2});
   return path;
 }
-export function followPath(actor,floor,destination,dt,speed){
+export function followPath(actor,floor,destination,dt,speed,radius=.2){
   const targetKey=`${destination.x},${destination.y}`;
   if(distance(actor,destination)<.08){actor.moving=false;actor.path=[];actor.pathKey=targetKey;return;}
-  if(actor.pathKey!==targetKey||!actor.path?.length){actor.pathKey=targetKey;actor.path=findPath(floor,actor,destination);}
+  if(actor.pathKey!==targetKey||!actor.path?.length){actor.pathKey=targetKey;actor.path=findPath(floor,actor,destination,Math.max(.23,radius));}
   while(actor.path.length&&distance(actor,actor.path[0])<.08)actor.path.shift();
   const next=actor.path[0];if(!next){actor.moving=false;return;}
-  const d=distance(actor,next),amount=Math.min(speed*dt,d);move(actor,(next.x-actor.x)/d*amount,(next.y-actor.y)/d*amount,floor);
+  const d=distance(actor,next),amount=Math.min(speed*dt,d);move(actor,(next.x-actor.x)/d*amount,(next.y-actor.y)/d*amount,floor,radius);
 }

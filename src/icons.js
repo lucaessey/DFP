@@ -1,4 +1,5 @@
 const shapes = {
+  paw: '<ellipse cx="6" cy="7" rx="2.3" ry="3"/><ellipse cx="12" cy="4.5" rx="2.3" ry="3"/><ellipse cx="18" cy="7" rx="2.3" ry="3"/><path d="M5 17c0-3 4-7 7-7s7 4 7 7c0 5-4 2-7 2s-7 3-7-2Z"/>',
   email: '<rect x="2" y="5" width="20" height="15" rx="3"/><path d="m3 6 9 7 9-7"/>',
   shield: '<path d="m12 2 8 3v6c0 5-5 9-8 11-3-2-8-6-8-11V5Z"/><path d="m8 12 3 3 5-6"/>',
   letters: '<rect x="2" y="2" width="20" height="20" rx="4"/><path d="m6 17 6-11 6 11M9 13h6"/>',
