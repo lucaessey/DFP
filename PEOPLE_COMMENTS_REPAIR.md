@@ -35,7 +35,7 @@ Six fresh, read-only production HTTP probes returned:
 | `internal` | 401 denied |
 | Unbounded `public/all` | 401 denied |
 
-No production feedback was created, no real sign-in email was sent during local verification, and no test credentials were written to production.
+No production feedback was created and no test credentials were written to production. After publishing the repair, one real sign-in email was requested through the deployed game; Firebase confirmed sending it. The owner has been asked to complete the link, so delivery/completion and live session restoration remain unverified.
 
 ## Verification
 
@@ -63,7 +63,7 @@ Reproduce the normal comments tests using [PEOPLE_COMMENTS.md](PEOPLE_COMMENTS.m
 
 If no backend exists, the prepared Worker requires separate deployment authorization and server credentials. No new Cloudflare service, service account or billing has been activated. Conditional setup instructions remain in [PEOPLE_COMMENTS.md](PEOPLE_COMMENTS.md); they are not a claim of deployment or approval. Without a trusted backend, publication remains blocked and drafts stay local.
 
-After the repaired frontend deploys, the owner must complete a real email link on `https://lucaessey.github.io/DFP/` to verify delivery and the production session. If it opens in another browser, confirm the same owner email in the game. Expired/reused links require a new request. Do not send sign-in links or codes through chat. Firebase's free email-link quota is five per day, so avoid repeated real test sends.
+The repaired frontend was deployed successfully by GitHub Pages from commit `d454a40` ([deployment run](https://github.com/lucaessey/DFP/actions/runs/36632491620)). The live browser activated its waiting update through Save & update, retained its $120 balance, displayed the new Settings sign-in entry, and confirmed one email send with the resend button disabled. The owner must complete that real email link on `https://lucaessey.github.io/DFP/` to verify delivery and the production session. If it opens in another browser, confirm the same owner email in the game. Expired/reused links require a new request. Do not send sign-in links or codes through chat. Firebase's free email-link quota is five per day, so avoid repeated real test sends.
 
 After backend activation, complete a real two-browser public/private posting, exact-rating filtering and moderation test, plus direct denial checks with an ordinary production token. These live checks remain unchecked in OpenSpec; successful emulator checks do not establish live operation.
 

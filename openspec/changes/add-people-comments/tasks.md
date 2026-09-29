@@ -30,7 +30,7 @@
 - [x] 5.2 Remove the unnecessary moderation-service dependency from Firebase email sign-in; verify owner access with protected Firebase reads, restore sessions, support explicit sign-out and preserve private-data boundaries.
 - [x] 5.3 Bound authentication/submission waits, retain failed drafts and stable retry IDs, prevent repeated requests, recover loading controls and explain unavailable moderation without claiming success.
 - [x] 5.4 Provide a save-preserving PWA update check; verify current and upgraded builds, anonymous/private/public/moderation/retry flows and offline gameplay with isolated tests.
-- [ ] 5.5 Verify requesting and completing a real owner email link on the deployed repaired game; record any owner action still required.
+- [ ] 5.5 Verify requesting and completing a real owner email link on the deployed repaired game; requesting was confirmed on the live repaired site, but owner completion and session restoration are still pending.
 - [ ] 5.6 Connect an already-authorized trusted backend and verify live public/private submissions across sessions. Do not activate a new service or billing without authorization; leave this unchecked if no authorized backend exists.
 
 ## Activation (external prerequisites, not claimed complete)
