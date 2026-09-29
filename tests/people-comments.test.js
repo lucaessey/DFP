@@ -103,6 +103,10 @@ test('owner authorization verifies current email, email verification, provider, 
   const account={localId:'owner',email:OWNER_EMAIL,emailVerified:true,validSince:'100'};
   const check=(identity=claims,patch={})=>requireOwner(identity,'token',{FIREBASE_WEB_API_KEY:'public-key'},{fetcher:async()=>Response.json({users:[{...account,...patch}]})});
   assert.equal((await check()).owner,true);
-  for(const patch of [{email:'someone@example.com'},{email_verified:false},{firebase:{sign_in_provider:'anonymous'}}]){assert.equal(ownerClaims({...claims,...patch}),false);await assert.rejects(check({...claims,...patch}),e=>e.status===403);}
-  for(const patch of [{disabled:true},{emailVerified:false},{validSince:'201'},{localId:'other'},{email:'other@example.com'}])await assert.rejects(check(claims,patch),e=>e.status===403);
+  for(const provider of ['password','google.com']){
+    const identity={...claims,firebase:{sign_in_provider:provider}};
+    assert.equal((await check(identity)).owner,true);
+    for(const patch of [{email:'someone@example.com'},{email_verified:false},{firebase:{sign_in_provider:'anonymous'}},{firebase:{sign_in_provider:'custom'}},{firebase:{sign_in_provider:'facebook.com'}}]){assert.equal(ownerClaims({...identity,...patch}),false);await assert.rejects(check({...identity,...patch}),e=>e.status===403);}
+    for(const patch of [{disabled:true},{emailVerified:false},{validSince:'201'},{localId:'other'},{email:'other@example.com'}])await assert.rejects(check(identity,patch),e=>e.status===403);
+  }
 });

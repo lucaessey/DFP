@@ -73,14 +73,34 @@ export class CommentsClient {
     safeSet(COOLDOWN,String(Date.now()+300000));
     const operation=(async()=>{const auth=await this.init();await auth.send(OWNER_EMAIL,returnURL);})();this.sendingLink=operation;
     operation.finally(()=>{if(this.sendingLink===operation)this.sendingLink=null;}).catch(()=>{});
-    try{await bounded(()=>operation,{message:'No email confirmation received. Check your inbox before requesting another link.'});safeSet(EMAIL,OWNER_EMAIL);this.message='Sign-in email sent. Check your inbox. Firebase’s free plan allows five sign-in emails per day.';this.emit();}
+    try{await bounded(()=>operation,{message:'No email confirmation received. Check your inbox before requesting another link.'});safeSet(EMAIL,OWNER_EMAIL);this.message='Firebase accepted the email request. Check your inbox and Spam; delivery is not confirmed. You can also sign in with Google.';this.emit();}
     catch(e){throw new CommentError('email',authMessage(e));}
+  }
+  async signInGoogle(){
+    if(!navigator.onLine)throw new CommentError('offline','Connect to sign in with Google.');
+    if(this.googleInFlight||this.completingLink)throw new CommentError('busy','A sign-in is already in progress. Finish or close its window first.');
+    this.signedOut=false;
+    const operation=(async()=>{
+      const auth=await this.init();if(this.signedOut)return;
+      await auth.google();
+      if(this.signedOut){await auth.logout();return;}
+      const token=await auth.user.getIdTokenResult(true);
+      if(!ownerClaims(token.claims)){await auth.logout();this.revoke();throw new CommentError('wrong-account',`Choose ${OWNER_EMAIL}. Other Google accounts cannot open Producer.`);}
+      if(this.signedOut){await auth.logout();return;}
+      await this.checkOwner();
+      if(this.signedOut)return;
+      this.message=this.owner?'Producer verified. Open your computer to use the Producer app.':'Google sign-in finished, but private access could not be checked. Reconnect and choose Check session.';this.emit();
+    })();
+    this.googleInFlight=operation;
+    operation.finally(()=>{if(this.googleInFlight===operation)this.googleInFlight=null;}).catch(()=>{});
+    try{await bounded(()=>operation,{ms:120000,message:'Google sign-in is still waiting. Finish or close the Google window before retrying.'});}
+    catch(e){throw new CommentError('google',authMessage(e));}
   }
   async completeLink(email){
     if(email!==OWNER_EMAIL)throw new CommentError('email','Enter the producer email address that received the link.');
     if(!this.link)throw new CommentError('link','Open the newest sign-in link from your email.');
     if(!navigator.onLine)throw new CommentError('offline','Connect to finish sign-in.');
-    if(this.completingLink)throw new CommentError('busy','The previous sign-in is still being checked. Please wait.');
+    if(this.completingLink||this.googleInFlight)throw new CommentError('busy','The previous sign-in is still being checked. Please wait.');
     this.signedOut=false;
     const operation=(async()=>{const auth=await this.init();if(!auth.isLink(this.link))throw new CommentError('link','This link cannot be used. Request a new link.');await auth.complete(email,this.link);if(this.signedOut){await auth.logout();return;}this.link=null;safeRemove(EMAIL);})();this.completingLink=operation;
     operation.finally(()=>{if(this.completingLink===operation)this.completingLink=null;}).catch(()=>{});
@@ -100,10 +120,13 @@ export class CommentsClient {
 }
 export function authMessage(e){
   const code=e?.code||'';
-  if(code==='timeout'||code==='link')return e.message;
+  if(code==='timeout'||code==='link'||code==='wrong-account')return e.message;
+  if(/popup-closed-by-user|cancelled-popup-request/.test(code))return 'Google sign-in was cancelled. No Producer access was granted. You can try again.';
+  if(/popup-blocked/.test(code))return 'Allow pop-ups for this site, then choose Sign in with Google again.';
+  if(/operation-not-supported-in-this-environment/.test(code))return 'Open DFP in Chrome, Edge or Safari to sign in with Google.';
   if(/expired-action-code|invalid-action-code|invalid-email|invalid-credential/.test(code))return 'This link is expired, already used, or does not match the email. Request a new link.';
   if(/too-many-requests|quota-exceeded/.test(code))return 'Firebase’s email limit has been reached. Try again later; the free plan allows five sign-in emails per day.';
-  if(/operation-not-allowed|unauthorized-domain|invalid-continue-uri/.test(code))return 'Producer email sign-in is not configured for this site yet.';
+  if(/operation-not-allowed|unauthorized-domain|invalid-continue-uri/.test(code))return 'Producer sign-in is not configured for this site yet.';
   if(/network-request-failed|web-storage-unsupported/.test(code))return 'Sign-in could not connect or save this session. Check your connection and browser storage settings, then retry.';
   return 'Sign-in could not be completed. Check your connection or request a new link.';
 }

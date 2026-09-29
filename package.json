@@ -20,6 +20,7 @@
     "test:comments:browser": "node tests/people-browser.mjs",
     "test:comments:auth": "node tests/people-auth-errors-browser.mjs",
     "test:comments:repair": "node tests/people-repair-browser.mjs",
+    "test:comments:google": "node tests/people-google-browser.mjs",
     "comments:emulators": "firebase emulators:start --only auth,database --project demo-dfp-comments",
     "comments:local-api": "node tests/people-local-server.mjs",
     "comments:worker:check": "wrangler deploy --config worker/wrangler.jsonc --dry-run",

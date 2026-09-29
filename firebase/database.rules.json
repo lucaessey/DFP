@@ -13,7 +13,7 @@
       },
       "private": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'password') && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
           ".indexOn": [
             "createdAt"
           ]
@@ -21,7 +21,7 @@
       },
       "pending": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'password') && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
           ".indexOn": [
             "createdAt"
           ]
@@ -29,7 +29,7 @@
       },
       "ownerPublic": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'password') && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
           ".indexOn": [
             "createdAt"
           ]

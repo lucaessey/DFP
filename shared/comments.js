@@ -28,7 +28,7 @@ export function parseFilter(search){
   return {stars,cursor};
 }
 export function ownerClaims(claims){
-  return claims?.email===OWNER_EMAIL&&claims.email_verified===true&&claims.firebase?.sign_in_provider==='password';
+  return claims?.email===OWNER_EMAIL&&claims.email_verified===true&&['password','google.com'].includes(claims.firebase?.sign_in_provider);
 }
 export function commentPage(data,cursor){
   const entries=Object.entries(data||{}),rows=entries.filter(([key])=>!cursor||key<cursor).sort(([a],[b])=>b.localeCompare(a));

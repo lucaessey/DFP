@@ -29,8 +29,8 @@ try{
   let sends=0,release;const blocked=new Promise(resolve=>release=resolve);
   await fresh.route('**/accounts:sendOobCode*',async route=>{sends++;await blocked;await route.continue();});
   await Promise.all([fresh.waitForRequest('**/accounts:sendOobCode*'),tap(fresh,'send-link')]);
-  assert.ok(await fresh.locator('[data-people="send-link"]').isDisabled());assert.equal(await fresh.getByText(/Sign-in email sent/).count(),0);
-  release();await fresh.getByText(/Sign-in email sent/).waitFor();assert.equal(sends,1);
+  assert.ok(await fresh.locator('[data-people="send-link"]').isDisabled());assert.equal(await fresh.getByText(/Firebase accepted the email request/).count(),0);
+  release();await fresh.getByText(/Firebase accepted the email request/).waitFor();assert.equal(sends,1);
   pass('Unconfigured frontend requests Firebase email once and reports success only after confirmation');
   const mail=(await (await fetch(auth+'/emulator/v1/projects/demo-dfp-comments/oobCodes')).json()).oobCodes.filter(x=>x.email==='lucaessey@gmail.com').at(-1);
   const link=new URL(noAPI);link.search=new URL(mail.oobLink).search;

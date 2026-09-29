@@ -13,6 +13,8 @@ DFP's purchased Email inbox currently contains only 40 fictional reviews. Player
 - Preserve computer purchases, fictional reviews, local saves, offline gameplay and all existing economy rules.
 - Repair the deployed sign-in dependency on an unconfigured moderation endpoint: Firebase email authentication and protected read-only inbox access must work independently, while all publication/moderation writes still require an authorized trusted service. Improve timeout/retry feedback and save-preserving PWA update checks.
 
+- Add the user-approved Google sign-in option alongside email links. Accept only the same verified owner through Firebase rules and trusted backend checks; explain that email request acceptance and resend cooldowns do not confirm inbox delivery.
+
 ## Capabilities
 
 ### New Capabilities

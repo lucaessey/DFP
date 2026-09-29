@@ -19,11 +19,11 @@ The configuration was read from **DFP game**, project **dfp-game-e2926**, web ap
 - Database: `https://dfp-game-e2926-default-rtdb.firebaseio.com/`.
 - Console showed **Spark, No-cost ($0/month)**; that plan was preserved.
 - Published rules originally denied all root reads/writes. The inspected database was empty. The original rules are retained in `firebase/published-rules-before.json`.
-- Anonymous authentication and Email/Password with email-link sign-in were enabled and saved.
+- Anonymous authentication and Email/Password with email-link sign-in were enabled and saved. On September 29 the owner approved adding Google sign-in; that provider was enabled with the DFP public name and owner support email, preserving Spark.
 - `lucaessey.github.io` was added to authorized domains, preserving existing domains. The production return URL is `https://lucaessey.github.io/DFP/`.
-- The tested `firebase/database.rules.json` was published. No production submissions or test accounts were created, and no production sign-in emails were sent.
+- The tested `firebase/database.rules.json` was published and updated to accept the same verified owner through Google or email links. No production submissions or test accounts were created. One production sign-in email was requested during the earlier repair; Firebase accepted it, but the owner reports no delivery.
 
-The Firebase web configuration and API key in `src/people/config.js` are public app identifiers. They are not privileged service credentials. Rules and backend authorization enforce access. Firebase requires the email/password provider plus the email-link option for this flow. Spark currently permits five email-link sign-in emails daily; the interface reserves a five-minute resend cooldown even after a send timeout. [Firebase email-link guidance](https://firebase.google.com/docs/auth/web/email-link-auth), [Authentication limits](https://firebase.google.com/docs/auth/limits).
+The Firebase web configuration and API key in `src/people/config.js` are public app identifiers. They are not privileged service credentials. Rules and backend authorization enforce the exact verified owner email and `password` or `google.com` provider. Google sign-in uses the SDK popup with default identity scopes only, without sending email or requesting Gmail access. Firebase requires the email/password provider plus the email-link option for email links. Spark currently permits five email-link sign-in emails daily; the interface reserves a five-minute resend cooldown even after a send timeout. A cooldown is not a delivery countdown; only a confirmed Firebase response produces an accepted-request message. [Google sign-in guidance](https://firebase.google.com/docs/auth/web/google-signin), [Firebase email-link guidance](https://firebase.google.com/docs/auth/web/email-link-auth), [Authentication limits](https://firebase.google.com/docs/auth/limits).
 
 ## Storage and authority
 

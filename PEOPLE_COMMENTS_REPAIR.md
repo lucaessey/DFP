@@ -2,6 +2,20 @@
 
 September 29, 2026. Project: **DFP game / dfp-game-e2926**. Database: `https://dfp-game-e2926-default-rtdb.firebaseio.com/`. Producer: `lucaessey@gmail.com`.
 
+## Google sign-in follow-up (September 29)
+
+The owner reported no email arrival even though Firebase accepted the request. **“Resend in 5 minutes” is a client request limit, not a delivery countdown.** The correct public API key/project and authorized production domain were checked again; the actual cause of missing delivery is not established. No further production email requests were sent in this follow-up.
+
+The owner explicitly approved Google sign-in alongside email links. The new button uses Firebase's Google popup, the existing project and only default identity scopes. Google sign-in does not send an email or request Gmail access. Other accounts are denied and signed out of the attempted Producer flow. The UI handles cancelled/blocked popups, prevents overlapping attempts, and restores the verified session after reload. Firebase acceptance is now described separately from confirmed email delivery.
+
+The Google provider was enabled in **DFP game**, with public name **DFP — Deep Fried Pixels** and the owner support email. The console still shows **Spark — No-cost**. Published database rules retain denied browser writes and permit protected reads only for the exact verified owner through `password` or `google.com`. Matching shared checks protect the prepared backend too; no backend deployment or billing change was made.
+
+Current follow-up verification: **131 unit tests, 9 rules checks, 12 existing comments browser checks, 4 email error checks and 7 new Google browser checks passed.** The Google suite covers cancellation/retry, wrong-account denial, owner popup completion while email resend is locked, protected reads without a moderation API, restored session/purchases/balance, persistent sign-out, portrait/landscape fit, offline reload and blocked-popup help. Tests use disposable Auth/Database emulators. The emulator's optional remote styles are excluded from this suite, while Firebase's real popup SDK script must remain reachable. Evidence: `artifacts/people-google/report.json`, `google-verified-phone.png` and `google-signin-landscape.png`.
+
+To reproduce Google checks, run the Auth/Database emulators and the missing-backend test build on port 4187 as described below, then `npm run test:comments:google`. Email-link compatibility is covered by the existing suite on port 4186. Strict OpenSpec validation and the `/DFP/` production build passed. Production deployment and a real Google sign-in are tracked separately from these local results.
+
+The following sections record the earlier repair. Comment submission remains blocked until an authorized trusted moderation backend is connected; adding Google does not publish unchecked comments.
+
 ## Actual causes
 
 **Producer sign-in:** the frontend disabled the email button, owner verification, and session restoration whenever `VITE_COMMENTS_API_URL` was missing. Firebase email authentication does not require that moderation API. The deployed Pages workflow reads repository variable `DFP_COMMENTS_API_URL`; the repository variable list was empty. An isolated reproduction of the pre-repair production build showed a disabled sign-in button and no authentication request, network failure, or JavaScript exception. This was an application gate, not an observed rejected Firebase email request.
@@ -13,14 +27,14 @@ September 29, 2026. Project: **DFP game / dfp-game-e2926**. Database: `https://d
 ## Completed code repairs
 
 - Request and complete Firebase email links without depending on the moderation API. Settings provides sign-in even on a device without basement purchases. The production return address remains `https://lucaessey.github.io/DFP/`.
-- Check the real Firebase identity and perform a bounded, protected database read before showing Producer. Every private read refreshes the Firebase token; rules require the verified owner email and password/email-link provider. Local role flags never authorize access. Sessions restore after reload; sign-out clears private views and late responses cannot refill them.
+- Check the real Firebase identity and perform a bounded, protected database read before showing Producer. Every private read refreshes the Firebase token; rules require the verified owner email and an approved sign-in provider (originally email links, now also Google). Local role flags never authorize access. Sessions restore after reload; sign-out clears private views and late responses cannot refill them.
 - Read public and protected inbox projections directly from Firebase with matching exact-star indexes and shared pagination. All browser writes remain denied. The trusted backend still exclusively performs submission, moderation, reporting and read-marker writes; unavailable actions are visibly disabled.
 - Limit waits across authentication, network requests and response parsing. Preserve text and the request ID after failures; allow retry without duplicate publication. Prevent overlapping email requests, reserve the resend cooldown before sending, handle quota/expired-link errors, and show success only after a recognized service receipt.
 - Add **Settings → Check for updates → Save & update DFP**. Worker update checks bypass HTTP caches, detect waiting versions, and save before activation/reload. No saved balances, purchases, drafts or authentication storage are cleared.
 
 ## Firebase configuration checked
 
-The existing Firebase console was inspected during the repair. Anonymous sign-in, Email/Password and its passwordless email-link option are enabled. Authorized domains include `lucaessey.github.io`, `localhost`, and the project's Firebase domains. The console still shows **Spark — No-cost ($0/month)**. No billing or provider changes were made.
+The existing Firebase console was inspected during the initial repair. Anonymous sign-in, Email/Password and its passwordless email-link option are enabled. Authorized domains include `lucaessey.github.io`, `localhost`, and the project's Firebase domains. The console showed **Spark — No-cost ($0/month)**. That initial repair made no provider changes; the separately approved Google addition is recorded above.
 
 The published Realtime Database rules were re-opened and match `firebase/database.rules.json`. They use `public`, `private`, `pending`, `ownerPublic` and server-only `internal` projections, not the old Real/Funny labels. Form audiences remain `everyone` and `producer`. No rules change was necessary. An earlier console inspection was temporarily blocked by automatic approval review's usage limit; the same read-only inspection later succeeded.
 

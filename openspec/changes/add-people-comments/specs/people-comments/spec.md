@@ -35,8 +35,20 @@ Producer feedback and pending submissions SHALL never appear in public feeds, ra
 - **WHEN** the verified producer approves a pending Producer comment
 - **THEN** it moves only to the private inbox and never becomes readable through public requests.
 
-### Requirement: Verified email-link owner sign-in
-A discreet Producer Sign-in entry SHALL request a Firebase email sign-in link only for the owner address and complete authentication from that link. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `lucaessey.github.io` with an HTTPS `/DFP/` return URL. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
+### Requirement: Verified owner sign-in
+A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option alongside Firebase email links for the owner. Only a Firebase-verified `lucaessey@gmail.com` identity using Google or email-link/password SHALL pass protected rules and backend checks. A typed email, account hint, local flag, unverified email or different account SHALL never authorize Producer. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `lucaessey.github.io` with an HTTPS `/DFP/` return URL. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
+
+#### Scenario: Google sign-in while email delivery is unavailable
+- **WHEN** the owner chooses Sign in with Google and completes the Google account flow
+- **THEN** the game verifies the same owner through Firebase and protected reads, restores the session on reload, sends no email, and preserves gameplay progress; another Google account remains denied.
+
+#### Scenario: Google window is cancelled or blocked
+- **WHEN** the sign-in window closes or the browser prevents it from opening
+- **THEN** no new Producer access is granted and the UI explains how to retry; repeated taps cannot create overlapping requests.
+
+#### Scenario: Email request accepted without confirmed delivery
+- **WHEN** Firebase accepts an email-link request
+- **THEN** the UI distinguishes request acceptance from inbox delivery and explains that the resend countdown only limits repeated requests.
 
 #### Scenario: An email is typed without a verified link
 - **WHEN** someone supplies the owner email but has not completed authentication

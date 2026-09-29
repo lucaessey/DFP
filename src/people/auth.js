@@ -16,6 +16,7 @@ async function initialize(){
     listen:fn=>sdk.onAuthStateChanged(auth,fn),
     anonymous:()=>anonymous||=(sdk.signInAnonymously(auth).finally(()=>{anonymous=null;})),
     send:(email,url)=>sdk.sendSignInLinkToEmail(auth,email,{url,handleCodeInApp:true}),
+    google:()=>{const provider=new sdk.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account',login_hint:'lucaessey@gmail.com'});return sdk.signInWithPopup(auth,provider,sdk.browserPopupRedirectResolver);},
     complete:(email,link)=>sdk.signInWithEmailLink(auth,email,link),
     isLink:link=>sdk.isSignInWithEmailLink(auth,link),
     logout:()=>sdk.signOut(auth)

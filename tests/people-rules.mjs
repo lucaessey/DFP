@@ -20,6 +20,14 @@ try{
   pass('Private, pending, owner-only metadata and internal data deny ordinary and unverified accounts');
   for(const path of ['private/all','private/5','pending/all','pending/5','ownerPublic/all'])await assertSucceeds(read(owner,path));
   await assertFails(read(owner,'internal/records'));pass('Verified owner reads only bounded authorized inboxes, not internal metadata');
+  const googleOwner=env.authenticatedContext('google-owner',{email:'lucaessey@gmail.com',email_verified:true,firebase:{sign_in_provider:'google.com'}}).database();
+  for(const path of ['private/all','private/5','pending/all','pending/5','ownerPublic/all'])await assertSucceeds(read(googleOwner,path));
+  await assertFails(read(googleOwner,'internal/records'));
+  for(const claims of [{email:'other@gmail.com',email_verified:true,firebase:{sign_in_provider:'google.com'}},{email:'lucaessey@gmail.com',email_verified:false,firebase:{sign_in_provider:'google.com'}},{email:'lucaessey@gmail.com',email_verified:true,firebase:{sign_in_provider:'custom'}}]){
+    const otherIdentity=env.authenticatedContext('denied-google',claims).database();for(const path of ['private/all','pending/all','ownerPublic/all'])await assertFails(read(otherIdentity,path));
+  }
+  for(const path of ['public/all/new','private/all/new','pending/all/new','internal/admin'])await assertFails(set(ref(googleOwner,'peopleComments/'+path),pub));
+  pass('Only the verified Google owner can read private inboxes; Google clients still cannot write or grant roles');
   for(const db of [no,anon,other,unverified,owner])for(const path of ['public/all/new','private/all/new','pending/all/new','internal/admin','ownerPublic/all/new'])await assertFails(set(ref(db,'peopleComments/'+path),pub));
   pass('All browser identities, including owner, are denied direct publication and privilege writes');
   for(const path of ['','public','private','pending','internal'])await assertFails(get(ref(anon,'peopleComments/'+path)));

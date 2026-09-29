@@ -33,6 +33,14 @@
 - [ ] 5.5 Verify requesting and completing a real owner email link on the deployed repaired game; requesting was confirmed on the live repaired site, but owner completion and session restoration are still pending.
 - [ ] 5.6 Connect an already-authorized trusted backend and verify live public/private submissions across sessions. Do not activate a new service or billing without authorization; leave this unchecked if no authorized backend exists.
 
+## 6. Approved Google sign-in option
+
+- [x] 6.1 Add Google sign-in alongside email links, truthful email delivery/cooldown messages, single-flight and cancellation/error handling.
+- [x] 6.2 Update shared owner checks and protected rules to allow only the same verified Google owner; test other/unverified accounts and denied browser writes.
+- [x] 6.3 Test popup success/cancellation, session reload, email-link compatibility, phone layout and preserved offline progress.
+- [ ] 6.4 Enable the approved Google provider in the existing Spark project, publish matching tested rules and deploy the frontend.
+- [ ] 6.5 Verify the live Google account flow with the owner; record any user sign-in step still pending separately from emulator results.
+
 ## Activation (external prerequisites, not claimed complete)
 
 Production Firebase rules, providers, authorized domain and Spark plan were confirmed; final read-only rule probes passed. Live Worker deployment, server secrets, frontend API connection and a real two-session/owner-email smoke test remain required before this feature can be described as operational. They depend on the Cloudflare setup and credentials explicitly deferred in the request. No paid service is authorized. See PEOPLE_COMMENTS.md for the complete verification and activation record.
