@@ -38,7 +38,7 @@
 - [x] 6.1 Add Google sign-in alongside email links, truthful email delivery/cooldown messages, single-flight and cancellation/error handling.
 - [x] 6.2 Update shared owner checks and protected rules to allow only the same verified Google owner; test other/unverified accounts and denied browser writes.
 - [x] 6.3 Test popup success/cancellation, session reload, email-link compatibility, phone layout and preserved offline progress.
-- [ ] 6.4 Enable the approved Google provider in the existing Spark project, publish matching tested rules and deploy the frontend.
+- [x] 6.4 Enable the approved Google provider in the existing Spark project, publish matching tested rules and deploy the frontend.
 - [ ] 6.5 Verify the live Google account flow with the owner; record any user sign-in step still pending separately from emulator results.
 
 ## Activation (external prerequisites, not claimed complete)
