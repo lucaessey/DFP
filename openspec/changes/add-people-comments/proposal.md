@@ -2,27 +2,25 @@
 
 ## Why
 
-DFP's purchased Email inbox currently contains only 40 fictional reviews. Players need a separate shared feedback channel and the producer needs a genuinely private, authenticated moderation inbox without changing gameplay or requiring paid services.
+Players need a working feedback channel, and the producer needs a private inbox without another hosting service or billing. On September 29 the owner stopped Cloudflare setup and explicitly chose Firebase-only submissions with manual approval.
 
 ## What Changes
 
-- Add paginated People Comments beside the fictional categories, exact star filters, public/private audience explanations, a validated 500-character form and recoverable local drafts.
-- Add discreet Firebase email-link sign-in and a fourth Producer app visible only after the verified owner is authorized online. Support private feedback, moderation, read status, hiding public comments and reports.
-- Use the existing DFP game Firebase project `dfp-game-e2926`, Spark only. Isolate public, private, pending and internal data; deny direct client publication.
-- Prepare a free Cloudflare Worker with trusted language checks, Firebase token validation, spam controls and retry-safe actions. Keep activation explicit until the backend is deployed and verified.
-- Preserve computer purchases, fictional reviews, local saves, offline gameplay and all existing economy rules.
-- Repair the deployed sign-in dependency on an unconfigured moderation endpoint: Firebase email authentication and protected read-only inbox access must work independently, while all publication/moderation writes still require an authorized trusted service. Improve timeout/retry feedback and save-preserving PWA update checks.
-
-- Add the user-approved Google sign-in option alongside email links. Accept only the same verified owner through Firebase rules and trusted backend checks; explain that email request acceptance and resend cooldowns do not confirm inbox delivery.
+- Keep People Comments, the 1–500-character form, 1–5-star rating, exact filters, pagination and local drafts.
+- Send Producer comments directly to a protected private inbox. Hold every Everyone submission privately until the verified producer approves it.
+- Use anonymous Firebase authentication for ordinary players. Enforce validation, quotas, immutable submissions, retry receipts and owner-only moderation in Realtime Database rules.
+- Keep Google and email-link sign-in for the verified `lucaessey@gmail.com` owner. Other accounts cannot read private content or publish anything.
+- Remove the frontend dependency on a Cloudflare endpoint. Use the existing `dfp-game-e2926` Spark project and no administrative credentials in the game.
+- Preserve existing records, game saves, purchases, outfits, floors and offline gameplay.
 
 ## Capabilities
 
 ### New Capabilities
-- `people-comments`: Public player reviews, submission privacy, pagination, filtering, moderation, owner access and offline behavior.
+- `people-comments`: Shared player feedback, private delivery, producer approval, filtering, verified owner access and offline drafts.
 
 ### Modified Capabilities
-None. Main specs have not been archived from `build-dfp-game`; its existing basement-computer requirements remain preserved.
+None. Existing game and computer requirements remain preserved.
 
 ## Impact
 
-Touches the computer UI and startup email-link handling, adds Firebase Auth, a Worker backend and database rules, and introduces emulator/backend/browser privacy tests. No game-save migration or new purchase is required. Cloudflare account access, server secrets and deployment remain activation steps unless separately available and approved. Existing Firebase rules and data must be inspected and preserved before replacing legacy access rules.
+Changes the feedback client, Firebase rules and privacy tests. Retains previous Worker code only as inactive historical implementation; it is neither deployed nor required. The approved manual review replaces automatic language checks. Publish tested Firebase rules and the static game, then distinguish live verification from emulator checks.

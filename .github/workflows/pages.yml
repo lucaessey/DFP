@@ -24,9 +24,6 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build:pages
-        env:
-          # Leave unset until the free Worker has been connected and verified.
-          VITE_COMMENTS_API_URL: ${{ vars.DFP_COMMENTS_API_URL }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

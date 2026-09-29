@@ -1,0 +1,51 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "peopleComments": {
+      "public": {
+        "$stars": {
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".indexOn": [
+            "createdAt"
+          ]
+        }
+      },
+      "private": {
+        "$stars": {
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".indexOn": [
+            "createdAt"
+          ]
+        }
+      },
+      "pending": {
+        "$stars": {
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".indexOn": [
+            "createdAt"
+          ]
+        }
+      },
+      "ownerPublic": {
+        "$stars": {
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".indexOn": [
+            "createdAt"
+          ]
+        }
+      },
+      "internal": {
+        ".read": false,
+        ".write": false,
+        "records": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id','uid','fingerprint','text','rating','audience','status','createdAt','sortKey','revision']) && newData.child('id').val() == $id && ((!data.exists() && newData.child('revision').val() == 1) || (data.exists() && newData.child('revision').val() == data.child('revision').val() + 1 && newData.child('uid').val() == data.child('uid').val() && newData.child('fingerprint').val() == data.child('fingerprint').val() && newData.child('audience').val() == data.child('audience').val() && newData.child('text').val() == data.child('text').val() && newData.child('rating').val() == data.child('rating').val() && newData.child('createdAt').val() == data.child('createdAt').val() && newData.child('sortKey').val() == data.child('sortKey').val()))"
+          }
+        }
+      },
+      ".read": "auth != null && auth.uid == 'dfp-comments-worker' && auth.token.comments_worker == true",
+      ".write": "auth != null && auth.uid == 'dfp-comments-worker' && auth.token.comments_worker == true"
+    }
+  }
+}

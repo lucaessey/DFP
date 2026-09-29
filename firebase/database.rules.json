@@ -8,44 +8,189 @@
           ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
           ".indexOn": [
             "createdAt"
-          ]
+          ],
+          "$key": {
+            ".write": "((auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')))",
+            ".validate": "newData.hasChildren([\"id\",\"text\",\"rating\",\"createdAt\"]) && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('sortKey').val() == $key && ($stars == 'all' || $stars == newData.child('rating').val() + '') && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() == 'published' && newData.child('id').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('id').val() && newData.child('text').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('text').val() && newData.child('rating').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('rating').val() && newData.child('createdAt').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('createdAt').val() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('audience').val() == 'everyone'",
+            "id": {},
+            "text": {},
+            "rating": {},
+            "createdAt": {},
+            "$other": {
+              ".validate": false
+            }
+          }
         }
       },
       "private": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21 && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
           ".indexOn": [
             "createdAt"
-          ]
+          ],
+          "$key": {
+            ".write": "((auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))) || (auth != null && !data.exists() && newData.exists() && !root.child('peopleComments/internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('uid').val() == auth.uid)",
+            ".validate": "newData.hasChildren([\"id\",\"text\",\"rating\",\"createdAt\",\"audience\",\"status\",\"read\",\"revision\",\"reason\",\"reported\"]) && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('sortKey').val() == $key && ($stars == 'all' || $stars == newData.child('rating').val() + '') && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() == 'producer' && newData.child('id').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('id').val() && newData.child('text').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('text').val() && newData.child('rating').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('rating').val() && newData.child('createdAt').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('createdAt').val() && newData.child('audience').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('audience').val() && newData.child('status').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() && newData.child('read').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('read').val() && newData.child('revision').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('revision').val() && newData.child('reason').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reason').val() && newData.child('reported').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reported').val()",
+            "id": {},
+            "text": {},
+            "rating": {},
+            "createdAt": {},
+            "audience": {},
+            "status": {},
+            "read": {},
+            "revision": {},
+            "reason": {},
+            "reported": {},
+            "$other": {
+              ".validate": false
+            }
+          }
         }
       },
       "pending": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21 && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
           ".indexOn": [
             "createdAt"
-          ]
+          ],
+          "$key": {
+            ".write": "((auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))) || (auth != null && !data.exists() && newData.exists() && !root.child('peopleComments/internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('uid').val() == auth.uid)",
+            ".validate": "newData.hasChildren([\"id\",\"text\",\"rating\",\"createdAt\",\"audience\",\"status\",\"read\",\"revision\",\"reason\",\"reported\"]) && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('sortKey').val() == $key && ($stars == 'all' || $stars == newData.child('rating').val() + '') && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() == 'pending' && newData.child('id').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('id').val() && newData.child('text').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('text').val() && newData.child('rating').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('rating').val() && newData.child('createdAt').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('createdAt').val() && newData.child('audience').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('audience').val() && newData.child('status').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() && newData.child('read').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('read').val() && newData.child('revision').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('revision').val() && newData.child('reason').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reason').val() && newData.child('reported').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reported').val()",
+            "id": {},
+            "text": {},
+            "rating": {},
+            "createdAt": {},
+            "audience": {},
+            "status": {},
+            "read": {},
+            "revision": {},
+            "reason": {},
+            "reported": {},
+            "$other": {
+              ".validate": false
+            }
+          }
         }
       },
       "ownerPublic": {
         "$stars": {
-          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21",
+          ".read": "($stars == 'all' || $stars.matches(/^[1-5]$/)) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 21 && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
           ".indexOn": [
             "createdAt"
-          ]
-        }
-      },
-      "internal": {
-        ".read": false,
-        ".write": false,
-        "records": {
-          "$id": {
-            ".validate": "newData.hasChildren(['id','uid','fingerprint','text','rating','audience','status','createdAt','sortKey','revision']) && newData.child('id').val() == $id && ((!data.exists() && newData.child('revision').val() == 1) || (data.exists() && newData.child('revision').val() == data.child('revision').val() + 1 && newData.child('uid').val() == data.child('uid').val() && newData.child('fingerprint').val() == data.child('fingerprint').val() && newData.child('audience').val() == data.child('audience').val() && newData.child('text').val() == data.child('text').val() && newData.child('rating').val() == data.child('rating').val() && newData.child('createdAt').val() == data.child('createdAt').val() && newData.child('sortKey').val() == data.child('sortKey').val()))"
+          ],
+          "$key": {
+            ".write": "((auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')))",
+            ".validate": "newData.hasChildren([\"id\",\"text\",\"rating\",\"createdAt\",\"audience\",\"status\",\"read\",\"revision\",\"reason\",\"reported\"]) && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).exists() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('sortKey').val() == $key && ($stars == 'all' || $stars == newData.child('rating').val() + '') && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() == 'published' && newData.child('id').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('id').val() && newData.child('text').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('text').val() && newData.child('rating').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('rating').val() && newData.child('createdAt').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('createdAt').val() && newData.child('audience').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('audience').val() && newData.child('status').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() && newData.child('read').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('read').val() && newData.child('revision').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('revision').val() && newData.child('reason').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reason').val() && newData.child('reported').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('reported').val() && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('audience').val() == 'everyone'",
+            "id": {},
+            "text": {},
+            "rating": {},
+            "createdAt": {},
+            "audience": {},
+            "status": {},
+            "read": {},
+            "revision": {},
+            "reason": {},
+            "reported": {},
+            "$other": {
+              ".validate": false
+            }
           }
         }
       },
-      ".read": "auth != null && auth.uid == 'dfp-comments-worker' && auth.token.comments_worker == true",
-      ".write": "auth != null && auth.uid == 'dfp-comments-worker' && auth.token.comments_worker == true"
+      "internal": {
+        "records": {
+          "$id": {
+            ".read": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
+            ".write": "auth != null && newData.exists() && (!data.exists() || (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')))",
+            ".validate": "newData.hasChildren([\"id\",\"uid\",\"fingerprint\",\"text\",\"rating\",\"audience\",\"status\",\"createdAt\",\"sortKey\",\"revision\"]) && $id.matches(/^[a-f0-9]{48}$/) && newData.child('id').val() == $id && newData.child('text').isString() && newData.child('text').val().matches(/^([\ud800-\udbff][\udc00-\udfff]|[^\ud800-\udfff]){1,500}$/) && newData.child('text').val().replace(\" \", '').replace(\"\\t\", '').replace(\"\\n\", '').replace(\"\\r\", '').replace(\" \", '').replace(\"​\", '').replace(\"‌\", '').replace(\"‍\", '').replace(\"﻿\", '').length > 0 && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5 && newData.child('rating').val() % 1 == 0 && (newData.child('audience').val() == 'everyone' || newData.child('audience').val() == 'producer') && (newData.child('audience').val() != 'producer' || newData.child('status').val() != 'published') && ((!data.exists() && newData.hasChildren(['requestId','requestedAt','acknowledged','read','reason','reported']) && newData.child('uid').val() == auth.uid && newData.child('requestId').val().matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.child('requestedAt').val() >= now - 300000 && newData.child('requestedAt').val() <= now + 300000 && newData.child('sortKey').val() == newData.child('requestedAt').val() + '_' + $id && newData.child('createdAt').val() == now && newData.child('revision').val() == 1 && newData.child('read').val() == false && newData.child('reported').val() == false && newData.child('acknowledged').val() == (newData.child('audience').val() == 'producer') && newData.child('status').val() == (newData.child('audience').val() == 'producer' ? 'producer' : 'pending') && newData.parent().parent().parent().child('submissionLimits').child(auth.uid).child('lastId').val() == $id && newData.parent().parent().parent().child('submissionLimits').child(auth.uid).child('lastAt').val() == now && newData.parent().parent().parent().child('receipts').child(auth.uid).child(newData.child('requestId').val()).child('id').val() == $id && newData.parent().parent().parent().child('receipts').child(auth.uid).child(newData.child('requestId').val()).child('fingerprint').val() == newData.child('fingerprint').val() && newData.parent().parent().parent().child(newData.child('audience').val() == 'producer' ? 'private' : 'pending').child('all').child(newData.child('sortKey').val()).child('id').val() == $id && newData.parent().parent().parent().child(newData.child('audience').val() == 'producer' ? 'private' : 'pending').child(newData.child('rating').val() + '').child(newData.child('sortKey').val()).child('id').val() == $id) || (data.exists() && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && newData.child('id').val() == data.child('id').val() && newData.child('uid').val() == data.child('uid').val() && newData.child('fingerprint').val() == data.child('fingerprint').val() && newData.child('text').val() == data.child('text').val() && newData.child('rating').val() == data.child('rating').val() && newData.child('audience').val() == data.child('audience').val() && newData.child('createdAt').val() == data.child('createdAt').val() && newData.child('sortKey').val() == data.child('sortKey').val() && newData.child('revision').val() == data.child('revision').val() + 1 && newData.child('updatedAt').val() == now && newData.child('actionId').val().matches(/^[a-zA-Z0-9_-]{16,80}$/) && ((data.child('status').val() == 'pending' && (newData.child('status').val() == 'rejected' || newData.child('status').val() == (data.child('audience').val() == 'producer' ? 'producer' : 'published'))) || (data.child('status').val() == 'producer' && newData.child('status').val() == 'producer' && newData.child('read').val() == true) || (data.child('status').val() == 'published' && newData.child('status').val() == 'hidden'))))",
+            "id": {},
+            "uid": {},
+            "fingerprint": {
+              ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9]{64}$/)"
+            },
+            "text": {},
+            "rating": {},
+            "audience": {},
+            "status": {},
+            "createdAt": {},
+            "sortKey": {},
+            "revision": {},
+            "requestId": {},
+            "requestedAt": {},
+            "acknowledged": {},
+            "read": {
+              ".validate": "newData.isBoolean()"
+            },
+            "reason": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "reported": {
+              ".validate": "newData.isBoolean()"
+            },
+            "actionId": {},
+            "lastAction": {},
+            "updatedAt": {},
+            "actions": {
+              ".validate": "data.parent().exists() && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))"
+            },
+            "reports": {
+              ".validate": "data.parent().exists() && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))"
+            },
+            "moderationVersion": {
+              ".validate": "data.parent().exists() && (auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "receipts": {
+        "$uid": {
+          "$request": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && auth.uid == $uid && !data.exists() && newData.exists()",
+            ".validate": "$request.matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.hasChildren(['id','fingerprint','status','createdAt']) && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('uid').val() == $uid && newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('requestId').val() == $request && newData.child('id').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('id').val() && newData.child('fingerprint').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('fingerprint').val() && newData.child('status').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('status').val() && newData.child('createdAt').val() == newData.parent().parent().parent().child('internal/records').child(newData.child('id').val()).child('createdAt').val()",
+            "id": {},
+            "fingerprint": {},
+            "status": {},
+            "createdAt": {},
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
+      "submissionLimits": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid && newData.exists()",
+          ".validate": "newData.hasChildren(['lastId','lastAt','hourStart','hourCount','dayStart','dayCount']) && newData.child('lastId').isString() && newData.child('lastAt').val() == now && (!data.exists() || data.child('lastAt').val() <= now - 30000) && newData.child('hourCount').isNumber() && newData.child('hourCount').val() <= 6 && ((!data.child('hourStart').exists() || data.child('hourStart').val() <= now - 3600000) ? (newData.child('hourStart').val() == now && newData.child('hourCount').val() == 1) : (newData.child('hourStart').val() == data.child('hourStart').val() && newData.child('hourCount').val() == data.child('hourCount').val() + 1)) && newData.child('dayCount').isNumber() && newData.child('dayCount').val() <= 20 && ((!data.child('dayStart').exists() || data.child('dayStart').val() <= now - 86400000) ? (newData.child('dayStart').val() == now && newData.child('dayCount').val() == 1) : (newData.child('dayStart').val() == data.child('dayStart').val() && newData.child('dayCount').val() == data.child('dayCount').val() + 1))",
+          "lastId": {},
+          "lastAt": {},
+          "hourStart": {},
+          "hourCount": {},
+          "dayStart": {},
+          "dayCount": {},
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "reports": {
+        "$id": {
+          ".read": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && query.orderByKey && query.limitToLast != null && query.limitToLast <= 1",
+          "$uid": {
+            ".read": "auth != null && auth.uid == $uid",
+            ".write": "auth != null && auth.uid == $uid && !data.exists() && newData.exists() && root.child('peopleComments/internal/records').child($id).child('status').val() == 'published'",
+            ".validate": "newData.hasChildren(['createdAt']) && newData.child('createdAt').val() == now",
+            "createdAt": {},
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -1,6 +1,18 @@
+# Current manual-review update (September 29)
+
+The owner cancelled Cloudflare setup and approved Firebase-only manual review. The former activation instructions and historical statements below are superseded by [PEOPLE_COMMENTS.md](PEOPLE_COMMENTS.md). No Cloudflare service, service-account credential or billing was activated.
+
+The new client sends Producer feedback privately and queues every Everyone comment for the verified owner's approval. Firebase rules enforce authorization, validation, immutable content/audience, atomic projections, rate limits and retry receipts. The unconfigured external API gate is removed. Current local verification: 131 unit tests, 13 rules checks, 11 browser checks, seven Google checks and four email-error checks passed. The matching Firebase rules are published and verified; six read-only live permission checks passed. Static-game publication is being completed. Production test submissions and real owner completion are not yet claimed.
+
+## Historical repair and setup record
+
 # Producer sign-in and comment submission repair
 
 September 29, 2026. Project: **DFP game / dfp-game-e2926**. Database: `https://dfp-game-e2926-default-rtdb.firebaseio.com/`. Producer: `lucaessey@gmail.com`.
+
+## Approved comments activation (September 29)
+
+The owner approved deploying the prepared service on Workers Free and connecting the existing Spark Firebase project. A fresh build-only Worker check passed; the GitHub comments-service variable is still absent, so posting correctly remains disabled. Cloudflare is signed in in the browser, and Wrangler's authorization screen requests only user/account read, Worker scripts write and background refresh access. Authorization has been handed to the owner. The first request expired before its return step; a fresh request was opened. Google Cloud also requires first-use terms review. Automatic approval review initially blocked creating a dedicated comments service account. The owner then explicitly approved only Firebase Realtime Database Admin access for that identity, conditional on no payment. [IAM administration is free](https://cloud.google.com/iam/pricing), and [Spark database usage is not billed](https://firebase.google.com/docs/database/usage/billing); stop if setup asks for billing. No account, credential, Worker or billing change has been created during this activation attempt. Production posting checks remain pending.
 
 ## Google sign-in follow-up (September 29)
 

@@ -1,6 +1,7 @@
 import {CommentError,OWNER_EMAIL,ownerClaims,validateComment,parseFilter,commentPage,PAGE_SIZE} from '../../shared/comments.js';
-import {commentsAPI,returnURL,databaseURL,useEmulators} from './config.js';
+import {returnURL,databaseURL,useEmulators} from './config.js';
 import {bounded,readJSON} from './network.js';
+import {writeComment,databaseRequest} from './database.js';
 const DRAFT='dfp.peopleComments.draft',EMAIL='dfp.producer.email',COOLDOWN='dfp.producer.resendAfter';
 const safeGet=key=>{try{return localStorage.getItem(key);}catch{return null;}};
 const safeSet=(key,value)=>{try{localStorage.setItem(key,value);return true;}catch{return false;}};
@@ -15,7 +16,6 @@ export class CommentsClient {
     document.addEventListener('visibilitychange',()=>{if(document.hidden)this.revoke();else if(this.auth?.user)this.checkOwner();});
     window.addEventListener('online',()=>{if(this.auth?.user)this.checkOwner();});
   }
-  get configured(){try{const url=new URL(commentsAPI);return url.protocol==='https:'||(url.protocol==='http:'&&['127.0.0.1','localhost'].includes(url.hostname)&&['127.0.0.1','localhost'].includes(location.hostname));}catch{return false;}}
   get cooldown(){return Math.max(0,Number(safeGet(COOLDOWN)||0)-Date.now());}
   subscribe(fn){this.listeners.add(fn);return()=>this.listeners.delete(fn);}
   emit(){for(const fn of this.listeners)fn();}
@@ -26,17 +26,13 @@ export class CommentsClient {
   }
   async api(path,{body,authenticated=false,owner=false,signal}={}){
     if(!navigator.onLine)throw new CommentError('offline','Posting and loading comments require an internet connection.',503);
-    if(body&&!this.configured)throw new CommentError('setup','Comments cannot be sent yet because the moderation service is not connected. Your draft is saved on this device.',503);
     try{return await bounded(async requestSignal=>{
       if(!body)return this.readDatabase(path,requestSignal);
-      const headers={'content-type':'application/json'};
-      if(authenticated||owner){
-        const auth=await this.init();requestSignal.throwIfAborted();
-        if(!auth.user){if(owner)throw new CommentError('forbidden','Producer sign-in is required.',403);try{await auth.anonymous();}catch{throw new CommentError('auth','Player sign-in failed. Your comment has not been sent. Check your connection and retry.',503);}}
-        requestSignal.throwIfAborted();headers.authorization=`Bearer ${await auth.user.getIdToken(owner)}`;
-      }
+      const auth=await this.init();requestSignal.throwIfAborted();
+      if(!auth.user){if(owner)throw new CommentError('forbidden','Producer sign-in is required.',403);this.signedOut=false;try{await auth.anonymous();}catch{throw new CommentError('auth','Player sign-in failed. Your comment has not been sent. Check your connection and retry.',503);}}
+      if(owner){const identity=await auth.user.getIdTokenResult(true);if(this.signedOut||!ownerClaims(identity.claims))throw new CommentError('forbidden','Only the verified producer can review comments.',403);}
       requestSignal.throwIfAborted();
-      return readJSON(commentsAPI+path,{method:'POST',headers,body:JSON.stringify(body),signal:requestSignal});
+      return writeComment(path,body,auth.user,requestSignal);
     },{signal});}catch(error){if(owner&&(error.status===401||error.status===403))this.revoke(error.message);throw error;}
   }
   async readDatabase(path,signal){
@@ -58,7 +54,13 @@ export class CommentsClient {
       url.searchParams.set('auth',identity.token);
     }
     const data=await readJSON(url,{signal});
-    return session?{owner:true}:commentPage(data,cursor);
+    if(session)return {owner:true};
+    const page=commentPage(data,cursor);
+    if(owner&&view==='ownerPublic')await Promise.all(page.comments.map(async row=>{
+      const report=await databaseRequest(`reports/${row.id}`,url.searchParams.get('auth'),signal,{query:{orderBy:JSON.stringify('$key'),limitToLast:'1'}});
+      row.reported=!!report;
+    }));
+    return page;
   }
   async checkOwner(){
     const epoch=this.generation;if(this.signingOut||this.signedOut||!this.auth?.user||!navigator.onLine||document.hidden)return false;
@@ -113,9 +115,12 @@ export class CommentsClient {
   saveDraft(draft){return safeSet(DRAFT,JSON.stringify(draft));}
   clearDraft(){safeRemove(DRAFT);}
   async submit(draft,signal){
-    const value=validateComment(draft),result=await this.api('/comments',{body:{...value,requestId:draft.requestId},authenticated:true,signal});
+    if(this.submitting)throw new CommentError('busy','A comment is already being sent. Please wait.');
+    const value=validateComment(draft);this.submitting=true;
+    try{const result=await this.api('/comments',{body:{...value,requestId:draft.requestId},authenticated:true,signal});
     if(!result||!/^[a-f0-9]{48}$/.test(result.id||'')||!['published','producer','pending','rejected','hidden'].includes(result.status))throw new CommentError('receipt','The service did not confirm receipt. Your draft is safe; please retry.',503);
     return result;
+    }finally{this.submitting=false;}
   }
 }
 export function authMessage(e){

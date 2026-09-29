@@ -2,7 +2,7 @@ export const OWNER_EMAIL = 'lucaessey@gmail.com';
 export const COMMENT_LIMIT = 500;
 export const PAGE_SIZE = 20;
 export const PRIVATE_WARNING = 'Only the game’s producer will see this comment. Choose Everyone to share it with all players.';
-export const PUBLIC_WARNING = 'This comment will be visible to all players after it passes the language check.';
+export const PUBLIC_WARNING = 'This comment stays private until the producer approves it for Everyone.';
 export const COMMENT_STATES = {published:'Published',producer:'Sent to Producer',pending:'Awaiting Review',rejected:'Rejected',hidden:'Hidden'};
 export class CommentError extends Error {
   constructor(code,message,status=400){super(message);this.code=code;this.status=status;}

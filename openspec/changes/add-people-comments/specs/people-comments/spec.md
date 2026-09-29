@@ -14,7 +14,7 @@ Purchased Email SHALL retain its fictional categories and add clearly labeled Pe
 - **THEN** only published two-star comments appear in descending order without fetching the entire collection or repeating rows.
 
 ### Requirement: Validated audience-aware submission
-The form SHALL require nonblank text of at most 500 characters, an integer rating from 1 through 5, and Producer or Everyone audience, with remaining allowance, Submit and Cancel. Producer selection SHALL immediately show “Only the game’s producer will see this comment. Choose Everyone to share it with all players.” and require acknowledgement. Everyone SHALL show “This comment will be visible to all players after it passes the language check.” Browser and trusted backend SHALL enforce validation. Submission state SHALL accurately distinguish Sending, Published, Sent to Producer, Awaiting Review and Rejected, with an opportunity to edit rejection. Repeated taps, retries and reloads SHALL NOT duplicate a submission.
+The form SHALL require nonblank text of at most 500 characters, an integer rating from 1 through 5, and Producer or Everyone audience, with remaining allowance, Submit and Cancel. Producer selection SHALL immediately show “Only the game’s producer will see this comment. Choose Everyone to share it with all players.” and require acknowledgement. Everyone SHALL show “This comment stays private until the producer approves it for Everyone.” The browser and Firebase rules SHALL enforce validation. Submission state SHALL accurately distinguish Sending, Published, Sent to Producer, Awaiting Review and Rejected, with an opportunity to edit rejection. Repeated taps, retries and reloads SHALL NOT duplicate a submission.
 
 #### Scenario: Missing private acknowledgement
 - **WHEN** private feedback lacks acknowledgement, text, audience or a valid rating
@@ -25,7 +25,7 @@ The form SHALL require nonblank text of at most 500 characters, an integer ratin
 - **THEN** retrying the same submission returns the existing outcome rather than creating another comment.
 
 ### Requirement: Private producer access
-Producer feedback and pending submissions SHALL never appear in public feeds, rating totals, searches or ordinary-player responses. For ordinary players the Producer audience view SHALL show only the privacy explanation and a way to submit. A fourth Producer app SHALL appear only after online authorization of the authenticated, verified `lucaessey@gmail.com` owner. Inside it, separate private, public and pending views SHALL support exact star filters, mark-read, approve, reject and hide actions. Approving Producer feedback SHALL keep it private. Rules and trusted endpoints SHALL enforce access independently of the UI.
+Producer feedback and pending submissions SHALL never appear in public feeds, rating totals, searches or ordinary-player responses. For ordinary players the Producer audience view SHALL show only the privacy explanation and a way to submit. A fourth Producer app SHALL appear only after online authorization of the authenticated, verified `lucaessey@gmail.com` owner. Inside it, separate private, public and pending views SHALL support exact star filters, mark-read, approve, reject and hide actions. Approving Producer feedback SHALL keep it private. Firebase rules SHALL enforce access independently of the UI.
 
 #### Scenario: Anonymous or other-account access
 - **WHEN** an anonymous account, unverified account or different verified email directly requests private or pending data or moderation
@@ -36,7 +36,7 @@ Producer feedback and pending submissions SHALL never appear in public feeds, ra
 - **THEN** it moves only to the private inbox and never becomes readable through public requests.
 
 ### Requirement: Verified owner sign-in
-A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option alongside Firebase email links for the owner. Only a Firebase-verified `lucaessey@gmail.com` identity using Google or email-link/password SHALL pass protected rules and backend checks. A typed email, account hint, local flag, unverified email or different account SHALL never authorize Producer. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `lucaessey.github.io` with an HTTPS `/DFP/` return URL. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
+A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option alongside Firebase email links for the owner. Only a Firebase-verified `lucaessey@gmail.com` identity using Google or email-link/password SHALL pass protected Firebase rules. A typed email, account hint, local flag, unverified email or different account SHALL never authorize Producer. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `lucaessey.github.io` with an HTTPS `/DFP/` return URL. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
 
 #### Scenario: Google sign-in while email delivery is unavailable
 - **WHEN** the owner chooses Sign in with Google and completes the Google account flow
@@ -58,27 +58,27 @@ A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option
 - **WHEN** the owner signs out or goes offline before a private response arrives
 - **THEN** the private view is cleared and the late response cannot restore its contents.
 
-#### Scenario: Moderation endpoint is not connected
-- **WHEN** Firebase is configured but the comments backend has not been activated
-- **THEN** the owner can still request and complete Firebase email-link authentication and open only inboxes authorized by Firebase rules; submissions and moderation actions clearly report their unavailable service and do not pretend to succeed.
+#### Scenario: No external moderation service
+- **WHEN** Firebase is configured and no Cloudflare endpoint exists
+- **THEN** players can submit privately and the verified producer can review, approve, reject, mark read and hide using protected Firebase rules.
 
 #### Scenario: A network operation stalls
 - **WHEN** authentication, submission or response parsing does not finish within the bounded wait
 - **THEN** the interface restores usable controls, keeps the draft and request identifier, and permits a safe retry without duplicate email sends or publication.
 
-### Requirement: Trusted moderation and reporting
-Both audiences SHALL use identical trusted language checks for profanity, slurs, harassment, threats and inappropriate sexual language, including common disguised spelling. Clearly appropriate feedback SHALL proceed automatically to its chosen audience; clear violations SHALL be rejected with a brief explanation; uncertain or unavailable moderation SHALL remain private pending review. Ordinary criticism and low ratings SHALL be allowed. Public comments SHALL have a report option and explain that automatic checks are imperfect. Moderation retries SHALL not duplicate publication or restore hidden content.
+### Requirement: Manual approval and reporting
+Every Everyone submission SHALL remain private pending review until the verified producer approves it. Producer submissions SHALL go directly to the private inbox and SHALL never become public. The producer SHALL decide whether to approve or reject Everyone submissions; criticism and low ratings SHALL not be automatically rejected. Public comments SHALL have a report option; reports SHALL remain private for the producer and SHALL NOT let ordinary players hide or publish comments. Repeated or stale moderation actions SHALL not duplicate publication or restore hidden content.
 
-#### Scenario: Negative feedback without abuse
-- **WHEN** a player submits appropriate critical feedback with one star
-- **THEN** its rating and criticism do not themselves cause rejection.
+#### Scenario: Negative feedback awaits approval
+- **WHEN** a player submits one-star criticism for Everyone
+- **THEN** it is accepted privately as Awaiting Review and becomes public only after producer approval.
 
-#### Scenario: Uncertain content or unavailable checks
-- **WHEN** the trusted check cannot confidently allow or reject a submission
-- **THEN** it is held privately for the producer with no public copy.
+#### Scenario: Report a published comment
+- **WHEN** an ordinary player reports a public comment
+- **THEN** the producer can see the report flag and decide whether to hide it; the report does not change publication automatically.
 
 ### Requirement: Protected free infrastructure
-The feature SHALL use the existing `dfp-game-e2926` Firebase project and specified Realtime Database on Spark without enabling billing. Public, private, pending and internal abuse metadata SHALL occupy separately protected locations; public responses SHALL omit authentication IDs, emails and moderation metadata. Browser clients SHALL NOT directly publish, approve, edit others' comments or grant roles. Trusted writes SHALL validate all fields, use server timestamps, limit spam and bind idempotency to the authenticated author. Privileged service credentials SHALL exist only in server-side secrets. Existing rules and data SHALL be reviewed and preserved. Without an existing trusted backend, a Workers Free implementation SHALL be prepared; activation prerequisites SHALL be reported honestly.
+The feature SHALL use the existing `dfp-game-e2926` Firebase project and specified Realtime Database on Spark without enabling billing. Public, private, pending, receipts and internal records SHALL occupy separately protected locations; public responses SHALL omit authentication IDs, emails and moderation metadata. Ordinary players SHALL only create their own validated private submission, receipt and quota update; they SHALL NOT publish, approve, modify existing content or grant roles. Only the verified producer SHALL perform review transitions. Rules SHALL validate all fields, use server timestamps, enforce per-UID submission limits and prevent replayed requests. No administrative credential, Cloudflare service or external moderation backend SHALL be required. Existing data and game saves SHALL be preserved.
 
 #### Scenario: Direct write bypass
 - **WHEN** a player directly attempts to publish or approve a record in the database
@@ -88,7 +88,7 @@ The feature SHALL use the existing `dfp-game-e2926` Firebase project and specifi
 Offline gameplay, purchases, fictional mail and existing saves SHALL remain unchanged. Offline posting SHALL explain its connection requirement and preserve unfinished drafts locally without claiming success. Any cached public reviews SHALL be labeled potentially stale. Private feedback SHALL NOT enter the public PWA cache. Local/emulator and deployed verification SHALL be reported separately; shared comments and moderation SHALL NOT be described as operational until connected and verified.
 
 #### Scenario: Two sessions and an offline draft
-- **WHEN** one online test session posts public and private feedback and a second ordinary session reads the feed
+- **WHEN** one online test session submits Everyone and Producer feedback and the verified producer approves the Everyone comment and a second ordinary session reads the feed
 - **THEN** only the public feedback is visible to the second session, while a disconnected unfinished draft remains editable and unposted.
 
 #### Scenario: A newer installed build is available
