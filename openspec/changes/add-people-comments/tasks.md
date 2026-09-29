@@ -31,7 +31,7 @@
 - [x] 5.3 Bound authentication/submission waits, retain failed drafts and stable retry IDs, prevent repeated requests, recover loading controls and explain unavailable moderation without claiming success.
 - [x] 5.4 Provide a save-preserving PWA update check; verify current and upgraded builds, anonymous/private/public/moderation/retry flows and offline gameplay with isolated tests.
 - [ ] 5.5 Verify requesting and completing a real owner email link on the deployed repaired game; requesting was confirmed on the live repaired site, but owner completion and session restoration are still pending.
-- [ ] 5.6 Publish the tested Firebase-only manual-approval rules and frontend, and verify live submission/privacy. Cloudflare activation was cancelled by the owner on September 29; real owner approval remains a separate live check.
+- [ ] 5.6 Publish the tested Firebase-only manual-approval rules and frontend, and verify live submission/privacy. Rules and frontend are published; six live permission probes passed. Live test submissions await the requested explicit approval after automatic review blocked creating test accounts/comments. Cloudflare activation was cancelled by the owner on September 29.
 
 ## 6. Approved Google sign-in option
 
@@ -39,14 +39,14 @@
 - [x] 6.2 Update shared owner checks and protected rules to allow only the same verified Google owner; test other/unverified accounts and denied browser writes.
 - [x] 6.3 Test popup success/cancellation, session reload, email-link compatibility, phone layout and preserved offline progress.
 - [x] 6.4 Enable the approved Google provider in the existing Spark project, publish matching tested rules and deploy the frontend.
-- [ ] 6.5 Verify the live Google account flow with the owner; record any user sign-in step still pending separately from emulator results.
+- [ ] 6.5 Verify the live Google account flow with the owner; record any user sign-in step still pending separately from emulator results. The existing verified owner session restored after the published manual-review update and passed protected reads; a fresh Google sign-in round trip was not observed.
 
 ## 7. Approved Firebase-only manual review
 
 - [x] 7.1 Replace the external submission dependency with atomic Firebase submissions, private receipts, rule-enforced quotas and verified-owner review; preserve existing records and progress.
 - [x] 7.2 Test malicious direct requests, public/private UI submission, approval/rejection/hiding/reporting, retries, filters, sessions, saves and offline reload with emulators.
-- [ ] 7.3 Update documentation, build and publish the static game and matching rules; record actual live checks and remaining owner interaction honestly.
+- [x] 7.3 Update documentation, build and publish the static game and matching rules; record actual live checks and remaining owner interaction honestly.
 
 ## Activation
 
-The owner cancelled Cloudflare setup and chose manual approval on September 29. No Cloudflare deployment, service account, secret or billing setup is required. Previously completed backend tasks above record historical implementation, not the currently selected architecture. Deploy and test the new rules and Firebase-only client. Live owner sign-in/completion remains distinct from successful emulator verification.
+The owner cancelled Cloudflare setup and chose manual approval on September 29. No Cloudflare deployment, service account, secret or billing setup is required. Previously completed backend tasks above record historical implementation, not the currently selected architecture. The tested rules and Firebase-only client are published; the installed update preserved progress and the existing verified owner session. Live submission/approval and a fresh owner sign-in round trip remain distinct from successful emulator verification.
