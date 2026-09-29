@@ -1,6 +1,6 @@
 # People Comments and Producer
 
-Implementation and local verification: September 28, 2026 (Pacific).
+Initial implementation: September 28, 2026 (Pacific). Repair verification: September 29, 2026. See [the repair report](PEOPLE_COMMENTS_REPAIR.md) for current causes, checks and remaining activation work.
 
 **The feature is implemented locally. Shared comments and moderation are not yet live.** Cloudflare is not authenticated on this computer, no Worker has been deployed, and no server credentials have been provisioned. The normal build therefore displays an honest connection/setup message, preserves drafts, and does not accept unconfirmed posts. No paid service or billing upgrade was enabled.
 
@@ -8,7 +8,7 @@ Implementation and local verification: September 28, 2026 (Pacific).
 
 The existing paid Email app now includes People Comments beside the 40 fictional reviews. Public comments have dates, exact 1–5-star filters and 20-comment pages. The footer keeps Add Comment accessible while scrolling. The form validates 500 Unicode characters, rating and audience, displays the requested privacy wording, and requires acknowledgement for Producer feedback. Drafts stay on the device until sent or explicitly discarded.
 
-The fourth computer app, Producer, appears only after Firebase authentication and an online backend authorization check for verified `lucaessey@gmail.com`. It separates private feedback, public comments and pending moderation, with star filters, mark-read, approve, reject and hide actions. Private approval retains the original audience. Public reports move comments into private review. Signing out, losing authorization, going offline or backgrounding clears private views; late responses cannot refill them.
+The fourth computer app, Producer, appears only after Firebase authentication and a fresh Firebase token and a protected, bounded Realtime Database read for verified `lucaessey@gmail.com`. It separates private feedback, public comments and pending moderation, with star filters, mark-read, approve, reject and hide actions. Sign-in is also available in Settings, without buying the basement. Public and private inbox reads work independently of the moderation API; write actions require the connected trusted service. Private approval retains the original audience. Public reports move comments into private review. Signing out, losing authorization, going offline or backgrounding clears private views; late responses cannot refill them.
 
 Game simulation, save schema, purchases, earnings, outfits, employees, security minigame and fictional messages are unchanged. No private inbox data is placed in local storage or the PWA cache. Firebase manages authentication persistence; only an unfinished comment draft is stored by this feature. The interface warns about private drafts on shared devices and provides Discard draft.
 
@@ -46,6 +46,8 @@ Each accepted mutation atomically updates its canonical record and reader projec
 The language check runs on the server for both audiences. It normalizes common substitutions and rejects recognized profanity, slurs, harassment, threats and sexual abuse. Ordinary criticism and low ratings can pass. Unknown language, unsupported wording or classifier failures remain private pending review. This conservative English ruleset has false positives and cannot detect every abusive meaning; it is not an AI moderation service or a complete safety guarantee. Public reporting and Producer review provide follow-up moderation.
 
 ## Remaining activation steps — requires account access and approval
+
+These are conditional instructions for the already-prepared implementation, not approval to create a new service. First connect an existing authorized backend if one exists. If none exists, obtain explicit approval before any Cloudflare deployment or service-account provisioning. Firebase sign-in and protected inbox reading do not require these steps.
 
 1. Confirm a Cloudflare account on **Workers Free**, authenticate Wrangler to that account, and approve deploying this feature. No Cloudflare account was created and no terms were accepted during implementation. The configuration uses a SQLite Durable Object, which is available on Free. Exceeding free quotas can make the service unavailable; do not upgrade plans automatically. [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/).
 2. Provision a dedicated service account in **dfp-game-e2926** with the Firebase Realtime Database Admin product role (`roles/firebasedatabase.admin`), rather than project-wide Editor/Owner access. Store its JSON key securely outside this repository. This key is privileged; do not paste it into chat, frontend code, GitHub variables or logs. [Firebase product roles](https://firebase.google.com/docs/projects/iam/roles-predefined-product).
@@ -100,7 +102,7 @@ npm run spec:comments
 
 The comments browser suite resets its disposable emulator feedback and writes pagination fixtures through the same service. Do not point it at a production database. Restart the local API between repeated suites to reset test-only rate-limit memory. Production quotas persist in Durable Object storage.
 
-## Actual results
+## Initial implementation results (September 28)
 
 | Verification | Result |
 | --- | --- |

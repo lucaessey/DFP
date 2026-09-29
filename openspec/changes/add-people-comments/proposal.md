@@ -11,6 +11,7 @@ DFP's purchased Email inbox currently contains only 40 fictional reviews. Player
 - Use the existing DFP game Firebase project `dfp-game-e2926`, Spark only. Isolate public, private, pending and internal data; deny direct client publication.
 - Prepare a free Cloudflare Worker with trusted language checks, Firebase token validation, spam controls and retry-safe actions. Keep activation explicit until the backend is deployed and verified.
 - Preserve computer purchases, fictional reviews, local saves, offline gameplay and all existing economy rules.
+- Repair the deployed sign-in dependency on an unconfigured moderation endpoint: Firebase email authentication and protected read-only inbox access must work independently, while all publication/moderation writes still require an authorized trusted service. Improve timeout/retry feedback and save-preserving PWA update checks.
 
 ## Capabilities
 

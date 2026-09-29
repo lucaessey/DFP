@@ -46,6 +46,14 @@ A discreet Producer Sign-in entry SHALL request a Firebase email sign-in link on
 - **WHEN** the owner signs out or goes offline before a private response arrives
 - **THEN** the private view is cleared and the late response cannot restore its contents.
 
+#### Scenario: Moderation endpoint is not connected
+- **WHEN** Firebase is configured but the comments backend has not been activated
+- **THEN** the owner can still request and complete Firebase email-link authentication and open only inboxes authorized by Firebase rules; submissions and moderation actions clearly report their unavailable service and do not pretend to succeed.
+
+#### Scenario: A network operation stalls
+- **WHEN** authentication, submission or response parsing does not finish within the bounded wait
+- **THEN** the interface restores usable controls, keeps the draft and request identifier, and permits a safe retry without duplicate email sends or publication.
+
 ### Requirement: Trusted moderation and reporting
 Both audiences SHALL use identical trusted language checks for profanity, slurs, harassment, threats and inappropriate sexual language, including common disguised spelling. Clearly appropriate feedback SHALL proceed automatically to its chosen audience; clear violations SHALL be rejected with a brief explanation; uncertain or unavailable moderation SHALL remain private pending review. Ordinary criticism and low ratings SHALL be allowed. Public comments SHALL have a report option and explain that automatic checks are imperfect. Moderation retries SHALL not duplicate publication or restore hidden content.
 
@@ -70,3 +78,7 @@ Offline gameplay, purchases, fictional mail and existing saves SHALL remain unch
 #### Scenario: Two sessions and an offline draft
 - **WHEN** one online test session posts public and private feedback and a second ordinary session reads the feed
 - **THEN** only the public feedback is visible to the second session, while a disconnected unfinished draft remains editable and unposted.
+
+#### Scenario: A newer installed build is available
+- **WHEN** the player checks for an update and chooses Save and update
+- **THEN** the game saves current progress before activating the new worker and reloading, without deleting balances, purchases, drafts or authentication persistence.

@@ -24,6 +24,15 @@
 - [x] 4.2 Verify existing game saves, computer purchases, offline gameplay, responsive screenshots and production builds; record actual results and limitations.
 - [x] 4.3 Deliver matching rules, free-tier setup/rollback instructions and activation checklist; keep live deployment and real owner-email verification explicitly pending until the required account access/secrets/approval are supplied.
 
+## 5. Sign-in and submission repair
+
+- [x] 5.1 Reproduce the disabled flows, inspect deployment/backend configuration, Firebase providers/domain/rules and PWA update behavior; record observed failures.
+- [x] 5.2 Remove the unnecessary moderation-service dependency from Firebase email sign-in; verify owner access with protected Firebase reads, restore sessions, support explicit sign-out and preserve private-data boundaries.
+- [x] 5.3 Bound authentication/submission waits, retain failed drafts and stable retry IDs, prevent repeated requests, recover loading controls and explain unavailable moderation without claiming success.
+- [x] 5.4 Provide a save-preserving PWA update check; verify current and upgraded builds, anonymous/private/public/moderation/retry flows and offline gameplay with isolated tests.
+- [ ] 5.5 Verify requesting and completing a real owner email link on the deployed repaired game; record any owner action still required.
+- [ ] 5.6 Connect an already-authorized trusted backend and verify live public/private submissions across sessions. Do not activate a new service or billing without authorization; leave this unchecked if no authorized backend exists.
+
 ## Activation (external prerequisites, not claimed complete)
 
 Production Firebase rules, providers, authorized domain and Spark plan were confirmed; final read-only rule probes passed. Live Worker deployment, server secrets, frontend API connection and a real two-session/owner-email smoke test remain required before this feature can be described as operational. They depend on the Cloudflare setup and credentials explicitly deferred in the request. No paid service is authorized. See PEOPLE_COMMENTS.md for the complete verification and activation record.

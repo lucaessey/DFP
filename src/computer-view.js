@@ -17,7 +17,7 @@ export class ComputerView {
   window.addEventListener('online',()=>this.update());
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.game){this.gameError('Game paused while DFP was away. Relaunch to continue; your DFP purchases are saved.');this.save();}});
  }
- open(){if(!this.state.basement.computer.owned)return;this.opened=true;this.navigate('desktop');if(commentsClient.configured)commentsClient.init().then(()=>commentsClient.checkOwner()).catch(()=>{});}
+ open(){if(!this.state.basement.computer.owned)return;this.opened=true;this.navigate('desktop');commentsClient.init().then(()=>commentsClient.checkOwner()).catch(()=>{});}
  close(){if(!this.opened)return;this.people.close();this.closeSecurity();this.unloadGame();this.opened=false;this.root.hidden=true;this.save();this.onClose();}
  update(){
   this.root.querySelector('#computer-balance').textContent=`${this.state.money<0?'−':''}$${Math.abs(this.state.money).toLocaleString('en-US')}`;

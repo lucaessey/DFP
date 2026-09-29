@@ -2,7 +2,7 @@
 
 ## Context
 
-DFP is a Vite/Three.js static PWA on `https://lucaessey.github.io/DFP/`. Game progress is device-local, schema six. ComputerView renders local fictional email and never handles network feedback. Firebase console inspection confirmed DFP game / `dfp-game-e2926`, existing DFP web app `1:531541340277:web:86f49995e07b03db47c83c`, and published root rules denying reads and writes. No backend is configured in the repository. See proposal.md for motivation.
+DFP is a Vite/Three.js static PWA on `https://lucaessey.github.io/DFP/`. Game progress is device-local, schema six. ComputerView renders local fictional email and never handles network feedback. Initial Firebase console inspection confirmed DFP game / `dfp-game-e2926`, existing DFP web app `1:531541340277:web:86f49995e07b03db47c83c`, and root rules denying reads and writes. The namespace rules added by the initial implementation were re-inspected September 29 and match the repository. No moderation backend address is configured in the Pages build. See proposal.md for motivation.
 
 ## Goals / Non-Goals
 
@@ -31,6 +31,12 @@ Non-goals: cloud game saves, display names, public profiles, public rating total
 
 Back up inspected published rules. Validate local rules with the Firebase emulator before publishing a namespace-only rules addition. Preserve all pre-existing data; do not import old Real/Funny content or expose it. Confirm anonymous/email-link providers and authorized domain. Deploy the Worker on a confirmed Free account with least-privilege Firebase service credentials in secrets; configure its HTTPS URL in the frontend. Run two-session live public/private and real owner-link smoke checks before describing the feature as active. Rollback disables the frontend API URL and restores backed-up rules without deleting stored submissions or local game saves.
 
+## Repair decisions
+
+The repair rechecks live configuration rather than treating earlier local tests as activation. Email-link requests and session restoration use Firebase directly, independently of `VITE_COMMENTS_API_URL`. When the moderation endpoint is absent, fresh Firebase authentication plus a protected bounded database read authorizes the Producer app; its read-only inboxes use the existing owner-only rules. No client publication or moderation writes are introduced. The UI explains that submission/actions require a connected trusted service. It does not infer receipt from a browser-only language check.
+
+Bound the whole network operation, including SDK authentication and response parsing, and preserve one in-flight operation and stable idempotency key across retries. A timeout cannot permit a late authentication callback to restore a signed-out private view. Keep sign-in link tokens transient and out of logs. Add a visible PWA update check that saves before activation/reload and does not clear storage or caches containing game progress.
+
 ## Open Questions
 
-The Cloudflare account and deployment approval, and the server-side service credential provision, remain activation prerequisites explicitly deferred by the user. Live email delivery must be verified with the owner when ready.
+An existing authorized backend URL has been requested but not supplied. The Cloudflare account and deployment approval, and the server-side service credential provision, remain activation prerequisites explicitly deferred by the user. Live email delivery must be verified with the owner when ready.

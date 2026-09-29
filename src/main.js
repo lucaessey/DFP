@@ -18,6 +18,7 @@ const loaded = loadGame(localStorage), state = loaded.state, sound = new Sound()
 try { if (!localStorage.getItem(SAVE_KEY) && !localStorage.getItem(BACKUP_KEY)) state.settings.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { state.settings.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; }
 let writable = loaded.writable, activeTab = 'home', filterFloor = 0, target = null, paused = false, last = 0, accumulator = 0, lastSave = 0, lastRevision = -1, lastUI = 0, installPrompt = null, registration = null, offlineReady = false, updateReady = false, saveWarning = loaded.warning, lockBlocked = false;
 let inBasement=false;
+let checkingUpdate=false,updateMessage='';
 const keys = new Set(), joystick = { x: 0, y: 0 }, app = document.querySelector('#app');
 let sessionReady = !navigator.locks;
 const money = n => `${n<0?'−':''}$${Math.abs(Math.floor(n)).toLocaleString('en-US')}`;
@@ -138,7 +139,26 @@ function upgradesDialog() {
 }
 function settingsDialog() {
   const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  showDialog(`<span class="eyebrow">YOUR LITTLE CORNER</span><h2>Make yourself at home.</h2><div class="setting-row"><span>${icon('sound')} Kitchen sounds</span><button data-action="sound" class="toggle ${state.settings.sound ? 'on' : ''}" aria-label="Toggle sound" aria-pressed="${state.settings.sound}"></button></div><div class="setting-row"><span>${icon('star')} Reduced motion</span><button data-action="motion" class="toggle ${state.settings.reducedMotion ? 'on' : ''}" aria-label="Toggle reduced motion" aria-pressed="${state.settings.reducedMotion}"></button></div><div class="setting-row"><span>${icon('bolt')} Reduced effects</span><button data-action="effects" class="toggle ${state.settings.reducedEffects ? 'on' : ''}" aria-label="Toggle reduced effects" aria-pressed="${!!state.settings.reducedEffects}"></button></div><p class="fine-print">Lighter shadows and fewer effects for smoother play.</p><div class="settings-section"><h3>A home on your home screen.</h3><p>${ios ? 'In Safari, tap Share, then Add to Home Screen.' : installPrompt ? 'Install DFP for its own window and easy access.' : 'Use your browser’s Install app or Add to Home Screen menu when available. Installation requires HTTPS or localhost.'}</p><button class="outline-button" data-action="install">${icon('download')} ${installPrompt ? 'Install DFP' : 'Installation guidance'}</button><p class="offline-status">${offlineReady ? '● Ready to play offline' : import.meta.env.DEV ? 'Development preview · offline mode is available in the production build.' : 'Downloading the ingredients for offline play…'}</p>${updateReady ? '<button class="dark-button" data-action="update">Save & update DFP</button>' : ''}</div><div class="settings-section"><h3>Saved right here.</h3><p>Progress is device-local, in this browser. Clearing browser data removes it. Player feedback uses separate online accounts; gameplay has no cloud saves. Your team earns only while the game is active.</p>${saveWarning ? `<p class="warning-text">${html(saveWarning)}</p>` : ''}<button class="outline-button" data-action="export">${icon('download')} Export local save</button></div><p class="fine-print">DFP · Deep Fried Pixels · v1.0<br>Original art and sound. Always freshly fried.</p>`);
+  showDialog(`<span class="eyebrow">YOUR LITTLE CORNER</span><h2>Make yourself at home.</h2><div class="setting-row"><span>${icon('sound')} Kitchen sounds</span><button data-action="sound" class="toggle ${state.settings.sound ? 'on' : ''}" aria-label="Toggle sound" aria-pressed="${state.settings.sound}"></button></div><div class="setting-row"><span>${icon('star')} Reduced motion</span><button data-action="motion" class="toggle ${state.settings.reducedMotion ? 'on' : ''}" aria-label="Toggle reduced motion" aria-pressed="${state.settings.reducedMotion}"></button></div><div class="setting-row"><span>${icon('bolt')} Reduced effects</span><button data-action="effects" class="toggle ${state.settings.reducedEffects ? 'on' : ''}" aria-label="Toggle reduced effects" aria-pressed="${!!state.settings.reducedEffects}"></button></div><p class="fine-print">Lighter shadows and fewer effects for smoother play.</p><div class="settings-section"><h3>A home on your home screen.</h3><p>${ios ? 'In Safari, tap Share, then Add to Home Screen.' : installPrompt ? 'Install DFP for its own window and easy access.' : 'Use your browser’s Install app or Add to Home Screen menu when available. Installation requires HTTPS or localhost.'}</p><button class="outline-button" data-action="install">${icon('download')} ${installPrompt ? 'Install DFP' : 'Installation guidance'}</button><p class="offline-status">${offlineReady ? '● Ready to play offline' : import.meta.env.DEV ? 'Development preview · offline mode is available in the production build.' : 'Downloading the ingredients for offline play…'}</p><button class="outline-button" data-action="check-update" ${checkingUpdate?'disabled':''}>Check for updates</button><p id="game-update-status" role="status">${html(updateMessage)}</p><button class="dark-button" data-action="update" ${updateReady?'':'hidden'}>Save & update DFP</button></div><div class="settings-section"><h3>Producer account</h3><p>Verify your email to read private player feedback in the basement computer.</p><button class="outline-button" data-action="producer-signin">Producer Sign-in</button></div><div class="settings-section"><h3>Saved right here.</h3><p>Progress is device-local, in this browser. Clearing browser data removes it. Player feedback uses separate online accounts; gameplay has no cloud saves. Your team earns only while the game is active.</p>${saveWarning ? `<p class="warning-text">${html(saveWarning)}</p>` : ''}<button class="outline-button" data-action="export">${icon('download')} Export local save</button></div><p class="fine-print">DFP · Deep Fried Pixels · v1.0<br>Original art and sound. Always freshly fried.</p>`);
+}
+function updateStatus(){
+  const status=document.querySelector('#game-update-status'),button=document.querySelector('[data-action="check-update"]'),activate=document.querySelector('[data-action="update"]');
+  if(status)status.textContent=updateMessage;
+  if(button)button.disabled=checkingUpdate;
+  if(activate)activate.hidden=!updateReady;
+}
+async function checkGameUpdate(){
+  if(checkingUpdate)return;
+  if(!navigator.onLine){updateMessage='Connect to check for a new version. Your saved game stays here.';updateStatus();return;}
+  if(!registration){updateMessage=import.meta.env.DEV?'Updates are available in the installed or published game.':'Offline setup is not ready yet. Try again after it finishes.';updateStatus();return;}
+  checkingUpdate=true;updateMessage='Checking for updates…';updateStatus();
+  let timer;
+  try{
+    await Promise.race([registration.update(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('timeout')),15000);})]);
+    updateReady=!!registration.waiting;
+    updateMessage=updateReady?'A new version is ready. Save & update to use it.':registration.installing?'Downloading the new version…':'You have the latest version available.';
+  }catch{updateMessage='The update check could not finish. Your saved game is safe; try again online.';}
+  finally{clearTimeout(timer);checkingUpdate=false;updateStatus();}
 }
 function unlockProgress(cost,label){return `<div class="unlock-progress-wrap"><progress class="unlock-progress" max="${cost}" value="${Math.min(cost,state.money)}" aria-label="Progress toward ${html(label)}"></progress><small>${money(Math.min(cost,state.money))} / ${money(cost)}</small></div>`;}
 function drinksDialog(){const f=FLOORS[state.floor];showDialog(`<span class="eyebrow">YOUR DRINKS AREA</span><h2>Unlock Drinks Section</h2><p>${state.floor===0?'Pixel Pop drinks':'House wine'} gets its own dispenser, stacking counter and service circle. Guests collect food first, then drinks, and pay once.</p>${unlockProgress(f.sectionCost,'drinks section')}<p>${state.floor===0?'Requires Crispy Controller.':'Requires Pixel Tower or Pocket Crunch.'}</p><button class="dark-button" data-action="buy-drinks-section">Unlock Drinks Section · ${money(f.sectionCost)}</button>`);}
@@ -202,6 +222,8 @@ app.addEventListener('click', event => {
   if (action === 'install') { if (installPrompt) { installPrompt.prompt(); installPrompt = null; } else toast(iosInstallText()); }
   if (action === 'export') { const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem(BACKUP_KEY) || JSON.stringify(state); const url = URL.createObjectURL(new Blob([raw], {type:'application/json'})); const a = document.createElement('a'); a.href = url; a.download = 'dfp-local-save.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
   if (action === 'update' && save()) registration?.waiting?.postMessage({ type: 'ACTIVATE' });
+  if(action==='check-update')checkGameUpdate();
+  if(action==='producer-signin'){dialog.close();stopMovement();mountSignInCompletion(true);}
   if (action === 'reload') location.reload();
 });
 function iosInstallText() { return /iPad|iPhone|iPod/.test(navigator.userAgent) ? 'Safari → Share → Add to Home Screen' : 'Browser menu → Install DFP / Add to Home Screen. Try the production preview if unavailable.'; }
@@ -249,14 +271,15 @@ if(navigator.locks) navigator.locks.request('dfp-session',{ifAvailable:true},loc
 else window.addEventListener('storage', e=>{if(e.key===SAVE_KEY){lockBlocked=true;document.querySelector('#session-block').hidden=false;}});
 window.addEventListener('beforeinstallprompt', e=>{e.preventDefault();installPrompt=e;});
 if('serviceWorker' in navigator && import.meta.env.PROD) {
-  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {scope:import.meta.env.BASE_URL}).then(async reg=>{
+  navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, {scope:import.meta.env.BASE_URL,updateViaCache:'none'}).then(async reg=>{
     registration=reg;
-    await navigator.serviceWorker.ready; offlineReady=true;
     updateReady=!!reg.waiting;
-    reg.addEventListener('updatefound',()=>{const worker=reg.installing;worker?.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller){updateReady=true;toast('A fresh batch is ready. Update in Settings.');}});});
+    const watch=()=>{const worker=reg.installing;worker?.addEventListener('statechange',()=>{if(worker.state==='installed'&&navigator.serviceWorker.controller){updateReady=true;updateMessage='A new version is ready. Save & update to use it.';updateStatus();toast('A fresh batch is ready. Update in Settings.');}});};
+    reg.addEventListener('updatefound',watch);watch();updateStatus();
+    await navigator.serviceWorker.ready; offlineReady=true;
   }).catch(()=>{saveWarning='Offline download did not finish. Stay online and reload to try again.';});
   let reloading=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!reloading&&updateReady){reloading=true;location.reload();}});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!reloading&&updateReady&&save()){reloading=true;location.reload();}});
 }
 refreshHome(); requestAnimationFrame(frame); if(loaded.warning)toast(loaded.warning);
 if(state.vr&&!state.vr.done)vrDialog(true);

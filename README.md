@@ -10,7 +10,7 @@ Food and drinks now have separate sections, counters and queues. Drinks unlock f
 
 The Elevator also offers an independent **$200 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md) and [the computer apps and test report](COMPUTER.md).
 
-People Comments and the verified owner's Producer app are implemented and tested locally. Live feedback still needs the free Cloudflare backend and server secrets; until connected, players can prepare local drafts. Existing fictional reviews and offline gameplay remain available. See [setup, privacy and verification results](PEOPLE_COMMENTS.md).
+Producer email-link sign-in and protected inbox reading use Firebase independently of the moderation backend; sign-in is available in Settings and the basement computer. Live comment submission and moderation still need a connected, authorized backend. Players can preserve drafts until it is connected. Existing fictional reviews and offline gameplay remain available. See the [repair results and remaining setup](PEOPLE_COMMENTS_REPAIR.md) and [backend documentation](PEOPLE_COMMENTS.md).
 
 ## Run locally
 

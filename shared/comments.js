@@ -30,4 +30,9 @@ export function parseFilter(search){
 export function ownerClaims(claims){
   return claims?.email===OWNER_EMAIL&&claims.email_verified===true&&claims.firebase?.sign_in_provider==='password';
 }
+export function commentPage(data,cursor){
+  const entries=Object.entries(data||{}),rows=entries.filter(([key])=>!cursor||key<cursor).sort(([a],[b])=>b.localeCompare(a));
+  const page=rows.slice(0,PAGE_SIZE);
+  return {comments:page.map(([key,value])=>({...value,key})),next:entries.length>PAGE_SIZE&&page.length?page.at(-1)[0]:null};
+}
 export function escapeHTML(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}

@@ -10,4 +10,5 @@ export const firebaseConfig={
 };
 export const commentsAPI=(import.meta.env.VITE_COMMENTS_API_URL||'').replace(/\/$/,'');
 export const useEmulators=import.meta.env.MODE==='test-comments'&&['localhost','127.0.0.1'].includes(location.hostname);
+export const databaseURL=useEmulators?'http://127.0.0.1:9000':firebaseConfig.databaseURL;
 export const returnURL=useEmulators?location.origin+'/':'https://lucaessey.github.io/DFP/';

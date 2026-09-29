@@ -1,4 +1,4 @@
-import {CommentError,validateComment,requestKey,PAGE_SIZE} from '../shared/comments.js';
+import {CommentError,validateComment,requestKey,PAGE_SIZE,commentPage} from '../shared/comments.js';
 import {moderate} from './moderation.js';
 
 export async function digest(text){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(b=>b.toString(16).padStart(2,'0')).join('');}
@@ -22,9 +22,7 @@ export class CommentService {
   constructor({db,limits,now=()=>Date.now(),classify=moderate}){Object.assign(this,{db,limits,now,classify});}
   async list(view,{stars,cursor}){
     const data=await this.db.list(`${view}/${stars}`,PAGE_SIZE+1,cursor);
-    const rows=Object.entries(data||{}).filter(([key])=>!cursor||key<cursor).sort(([a],[b])=>b.localeCompare(a));
-    const page=rows.slice(0,PAGE_SIZE);
-    return {comments:page.map(([key,value])=>({...value,key})),next:Object.keys(data||{}).length>PAGE_SIZE&&page.length?page.at(-1)[0]:null};
+    return commentPage(data,cursor);
   }
   async submit(input,identity){
     const value=validateComment(input),key=requestKey(input.requestId);
