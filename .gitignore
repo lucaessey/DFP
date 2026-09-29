@@ -12,3 +12,10 @@ artifacts/3d-upgrade/*
 !artifacts/3d-upgrade/comparison-state.json
 .DS_Store
 *.log
+.firebase/
+.wrangler/
+worker/.wrangler/
+worker/artifacts/
+.dev.vars*
+worker/.dev.vars*
+*-service-account*.json

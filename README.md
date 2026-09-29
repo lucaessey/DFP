@@ -1,6 +1,6 @@
 # DFP — Deep Fried Pixels
 
-A mobile-first, original 3D restaurant management game. Four floors, visible autonomous employees, outfits, and a playable VR arcade. No accounts, ads, purchases, or external runtime services.
+A mobile-first, original 3D restaurant management game. Four floors, visible autonomous employees, outfits, and a playable VR arcade. Offline gameplay needs no account or real-money purchase.
 
 Characters now share a rounded charcoal base with a featureless head, thick limbs and mitten hands. The original uniform has a red collared shirt and cap; all five outfits and role clothing use the same animated rig. All four floors now share chunky purple counters, cream and peach floors, orange accents, animated goods, green cash bundles and rounded mobile controls. See [world changes and verification](WORLD_UPGRADE.md) and the [character checkpoint](CHARACTER_UPGRADE.md).
 
@@ -9,6 +9,8 @@ Characters now share a rounded charcoal base with a featureless head, thick limb
 Food and drinks now have separate sections, counters and queues. Drinks unlock for $180/$220, and table prices are halved once. See [changes and test results](DRINKS_SECTIONS.md).
 
 The Elevator also offers an independent **$200 basement**. Furnish its 3D lounge and install security to watch the highest unlocked floor, spot stealing and catch robbers. See [basement rules and verification](BASEMENT_SECURITY.md) and [the computer apps and test report](COMPUTER.md).
+
+People Comments and the verified owner's Producer app are implemented and tested locally. Live feedback still needs the free Cloudflare backend and server secrets; until connected, players can prepare local drafts. Existing fictional reviews and offline gameplay remain available. See [setup, privacy and verification results](PEOPLE_COMMENTS.md).
 
 ## Run locally
 
