@@ -33,6 +33,20 @@ function pay(s, floor, actor, base, receipt, petEligible=true) {
   changed(s); emit(s, `+$${amount}`, 'money', { x: actor.x, y: actor.y, floor }); return amount;
 }
 export { pay as collectPayment };
+// Rank owned staff only. Keeping tied destination staff makes repeated fills stable.
+export function bestEmployeeAssignments(s, floor) {
+  if(!s.floors[floor]?.unlocked)return [];
+  const best=[...s.employees].sort((a,b)=>upgradeCount(b.upgrades)-upgradeCount(a.upgrades)||Number(b.floor===floor)-Number(a.floor===floor)||a.id-b.id).slice(0,B.floorStaffCap);
+  const chosen=new Set(best.map(e=>e.id));
+  const incoming=best.filter(e=>e.floor!==floor).map(e=>({id:e.id,from:e.floor,to:floor}));
+  const outgoing=s.employees.filter(e=>e.floor===floor&&!chosen.has(e.id)).sort((a,b)=>a.id-b.id);
+  // Each replacement occupies a slot just vacated by an incoming employee.
+  return [...incoming,...outgoing.map((e,i)=>({id:e.id,from:floor,to:incoming[i].from}))];
+}
+function transferEmployee(s, employee, floor) {
+  returnBag(s,employee,employee.floor);
+  Object.assign(employee,newActor(),{floor});
+}
 export function command(s, c) {
   const fail = message => ({ ok: false, message });
   if (c.token && s.transactions.includes(c.token)) return fail('Already completed');
@@ -114,7 +128,14 @@ export function command(s, c) {
       if (!employee || !fs.unlocked) return fail('Assignment unavailable');
       if (employee.floor === f) return fail('Already assigned here');
       if (floorCount(s, f) >= B.floorStaffCap) return fail('Floor has reached 12 employees');
-      apply = () => { returnBag(s, employee, employee.floor); Object.assign(employee, newActor(), { floor: f }); }; break;
+      apply = () => transferEmployee(s,employee,f); break;
+    }
+    case 'fill-best': {
+      if(!fs.unlocked)return fail('Unlock this floor first');
+      if(!s.employees.length)return fail('Hire an employee first');
+      const assignments=bestEmployeeAssignments(s,f);
+      if(!assignments.length)return fail('Your best team is already here');
+      apply=()=>{for(const move of assignments)transferEmployee(s,s.employees.find(e=>e.id===move.id),move.to);};break;
     }
     case 'upgrade': {
       if (!fs.unlocked || !UPGRADE_TYPES.includes(c.category)) return fail('Upgrade unavailable');
