@@ -6,3 +6,9 @@
 
 @media(max-height:800px){.pet-selected{position:static}}
 @media(max-height:480px){#app{min-height:100dvh}}
+
+/* Remote access follows the visible personal-upgrade control at each layout. */
+#pet-security-shortcut{width:100%;min-height:44px;font-size:11px;flex-shrink:0}
+#pet-security-mobile{display:none;position:absolute;right:0;bottom:48px;min-height:38px;padding:8px 10px;font-size:10px;background:#f8f7e9}
+@media(max-width:950px),(max-height:620px) and (min-width:651px){#pet-security-mobile:not([hidden]){display:flex}}
+@media(max-height:620px) and (min-width:651px){.has-camera-pet #drinks-section{right:155px;top:auto;bottom:56px;max-width:135px}}

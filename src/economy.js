@@ -5,7 +5,8 @@ import {petBonus} from './pets.js';
 // Only the final collected amount receives the new multiplier.
 export function paymentQuote(state, floor, actor, base, petEligible=true) {
   const fs=state.floors[floor];
-  const subtotal=Math.round(base*(1+B.playerProfitBonus*fs.upgrades.profit+(actor.upgrades?.profit||0)*B.employeeProfitBonus));
+  const petLevels=petEligible&&actor.id===undefined?petBonus(state,'profitLevels'):0;
+  const subtotal=Math.round(base*(1+B.playerProfitBonus*(fs.upgrades.profit+petLevels)+(actor.upgrades?.profit||0)*B.employeeProfitBonus));
   const cents=(fs.bonusCents??0)+subtotal*B.earningsBoostPercent;
   const ordinary=(subtotal+Math.floor(cents/100))*B.earningsMultiplier;
   const percent=petEligible&&actor.id===undefined?petBonus(state,'income'):0;

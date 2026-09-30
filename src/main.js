@@ -13,7 +13,7 @@ import { Renderer, drawPortrait } from './renderer.js';
 import { icon } from './icons.js';
 import { Sound } from './audio.js';
 import {PetShop} from './pet-shop.js';
-import {petById} from './pets.js';
+import {petById,petSecurityAccess} from './pets.js';
 import {mountSignInCompletion} from './people/view.js';
 
 const loaded = loadGame(localStorage), state = loaded.state, sound = new Sound();
@@ -33,7 +33,7 @@ app.innerHTML = `
   <footer class="bottom-shell"><div class="save-status"><i id="save-dot"></i><span id="save-status">Saved on this device</span></div><nav class="bottom-nav" aria-label="Main navigation">${[['elevator','elevator','Elevator'],['home','home','Home'],['outfits','shirt','Outfits'],['employees','people','Employees'],['pets','paw','Pets']].map(([id,i,label]) => `<button data-tab="${id}" class="nav-tab ${id === 'home' ? 'active' : ''}" aria-current="${id === 'home' ? 'page' : 'false'}">${icon(i)}<span>${label}</span>${id === 'home' ? '<i></i>' : ''}</button>`).join('')}</nav><div class="made-with">FRESHLY FRIED. <span>ALWAYS PLAYFUL.</span></div></footer>
   <div id="toast" role="status" aria-live="polite"></div><dialog id="dialog"><div id="dialog-content"></div></dialog><div id="session-block" hidden><div class="card"><h2>DFP is open in another tab.</h2><p>Keep playing there, or close that tab and reload this one.</p><button class="dark-button" data-action="reload">Reload DFP</button></div></div>`;
 const canvas = document.querySelector('#game'), renderer = new Renderer(canvas), dialog = document.querySelector('#dialog');
-const basement=new BasementView(state,{purchase:act,save,notify:toast,watchAllowed:()=>!paused&&!lockBlocked&&sessionReady&&!dialog.open&&activeTab==='home'&&inBasement});
+const basement=new BasementView(state,{purchase:act,save,notify:toast,watchAllowed:()=>!paused&&!lockBlocked&&sessionReady&&!dialog.open&&activeTab==='home'&&(inBasement||basement.remote)});
 const petShop=new PetShop(state,act);
 renderer.onCue=kind=>sound.play(kind,state.settings.sound);
 mountSignInCompletion();
@@ -68,6 +68,7 @@ function tutorial() {
 }
 function refreshHome() {
   petShop.refresh();
+  refreshPetSecurity();
   document.documentElement.dataset.motion=state.settings.reducedMotion?'reduced':'full';
   document.querySelectorAll('.unlock-progress').forEach(p=>{p.value=Math.min(state.money,Number(p.max));p.nextElementSibling.textContent=`${money(p.value)} / ${money(p.max)}`;});
   const f = FLOORS[state.floor], fs = state.floors[state.floor], t = tutorial();
@@ -113,6 +114,22 @@ function refreshHome() {
   let areaButton=document.querySelector('#area-button');if(!areaButton){areaButton=document.createElement('button');areaButton.id='area-button';areaButton.dataset.action='area';areaButton.className='small-button';document.querySelector('.play-area').append(areaButton);}
   areaButton.textContent=state.player.x>WORLD.diningStart?'← Kitchen':'Dining area →';
   let stopButton=document.querySelector('#stop-movement');if(!stopButton){stopButton=document.createElement('button');stopButton.id='stop-movement';stopButton.dataset.action='stop';stopButton.setAttribute('aria-label','Stop walking');stopButton.innerHTML=icon('stop');document.querySelector('.play-area').append(stopButton);}stopButton.hidden=!target||surfacePointer!==null;
+}
+function refreshPetSecurity(){
+  const access=petSecurityAccess(state);
+  document.querySelector('.play-area').classList.toggle('has-camera-pet',access.visible);
+  for(const [id,anchor] of [['pet-security-shortcut','.upgrade-card'],['pet-security-mobile','.upgrade-mobile']]){
+    let button=document.getElementById(id);
+    if(!button){button=document.createElement('button');button.id=id;button.dataset.action='pet-security';button.className='outline-button pet-security-shortcut';document.querySelector(anchor).before(button);}
+    button.hidden=!access.visible;button.title=access.message;button.setAttribute('aria-disabled',String(!access.ready));button.textContent=access.ready?'Security Camera':'Security Camera · Locked';
+  }
+}
+function openPetSecurity(button){
+  if(lockBlocked||!sessionReady||paused||dialog.open||activeTab!=='home'||inBasement||basement.monitoring)return;
+  const access=petSecurityAccess(state);if(!access.ready){toast(access.message,'error');return;}
+  stopMovement();
+  // Keep the live player, floor and world camera in place; only the feed overlays them.
+  basement.open({remote:true,onReturn:()=>{refreshHome();const source=button.getClientRects().length?button:document.querySelector('#pet-security-mobile').getClientRects().length?document.querySelector('#pet-security-mobile'):canvas;source.focus({preventScroll:true});}});
 }
 function selectTab(tab) {
   activeTab = tab; stopMovement();
@@ -200,6 +217,7 @@ app.addEventListener('click', event => {
   if (['employees','elevator'].includes(action)) selectTab(action);
   if (action === 'settings') settingsDialog();
   if (action === 'upgrades') upgradesDialog();
+  if (action === 'pet-security') openPetSecurity(button);
   if (action === 'menu') menuDialog();
   if(action==='drinks-section'){if(state.floor<2){if(state.floors[state.floor].section)target={...LAYOUTS[state.floor].find(st=>st.id===(state.floor===0?'drink':'wine')).pad};else drinksDialog();}}
   if(action==='buy-drinks-section'){if(state.floor<2&&act({type:'section'}))dialog.close();}
@@ -261,14 +279,15 @@ function frame(timestamp) {
     accumulator += delta;
     while(accumulator>=B.step) {
       const x=joystick.x + (keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0), y=joystick.y+(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0);
-      step(state,B.step,{x:activeTab==='home'&&!dialog.open&&!inBasement?x:0,y:activeTab==='home'&&!dialog.open&&!inBasement?y:0,target:activeTab==='home'&&!dialog.open&&!inBasement?target:null,pausedPlayer:activeTab!=='home'||dialog.open||inBasement,monitoring:basement.watching});
+      const playing=activeTab==='home'&&!dialog.open&&!inBasement&&!basement.monitoring;
+      step(state,B.step,{x:playing?x:0,y:playing?y:0,target:playing?target:null,pausedPlayer:!playing,monitoring:basement.watching});
       if(target&&Math.hypot(state.player.x-target.x,state.player.y-target.y)<0.12)target=null;
       accumulator-=B.step;
     }
     for(const event of state.events.splice(0)) {renderer.feedback(event,state.time);sound.play(event.kind,state.settings.sound);if(event.kind==='trash')toast(event.text);if(event.kind==='money'){document.querySelector('#balance').textContent=money(state.money);if(!state.settings.reducedMotion){const balance=document.querySelector('.balance');balance.getAnimations().forEach(a=>a.cancel());balance.animate([{transform:'scale(1)'},{transform:'scale(1.055)',offset:.35},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});}}}
     if(state.revision!==lastRevision || state.time-lastSave>2)save();
   }
-  if(activeTab==='home'&&!paused){if(inBasement)basement.draw();else renderer.draw(state,state.time);}
+  if(activeTab==='home'&&!paused){if(inBasement||basement.monitoring)basement.draw();else renderer.draw(state,state.time);}
   if(activeTab==='pets'&&!paused)petShop.draw(timestamp);
   refreshVR();
   if(timestamp-lastUI>200){refreshHome();lastUI=timestamp;}

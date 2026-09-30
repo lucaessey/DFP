@@ -1,3 +1,4 @@
+import {BALANCE as B} from './config.js';
 // The catalogue is the single source for prices, descriptions and gameplay effects.
 const pet=(id,name,price,color,accent,motion,abilities)=>Object.freeze({id,name,price,color,accent,motion,abilities:Object.freeze(abilities)});
 export const PETS=Object.freeze([
@@ -31,20 +32,30 @@ export const PETS=Object.freeze([
  pet('manta','Star Manta',1700,'#556cac','#a8e5f0','float',{income:20,serve:[3.5,10]}),
  pet('phoenix','Saffron Phoenix',1850,'#ffc14f','#ed7c63','float',{prep:35,clean:[3.5,10],speed:15}),
  pet('whale','Cosmic Whale',2000,'#afa1e6','#fff2b8','float',{capacity:3,income:25,cash:[4,6]}),
+ pet('camera','Lens Buddy',5555,'#f0eedb','#51c9cf','roll',{security:1,speedLevels:5,capacity:5,profitLevels:5}),
 ]);
 export const petById=id=>PETS.find(p=>p.id===id);
 export const newPets=()=>({owned:[],equipped:null,cooldowns:{cash:0,serve:0,clean:0},incomeCents:0});
 export const equippedPet=s=>s.pets?.owned.includes(s.pets.equipped)?petById(s.pets.equipped):null;
 export const petBonus=(s,key)=>equippedPet(s)?.abilities[key]??0;
+export function petSecurityAccess(s){
+ const visible=!!petBonus(s,'security');
+ const ready=visible;
+ const message=visible?'Open security here. Back returns to this same spot. No basement purchases required.':'Equip Lens Buddy to use remote security.';
+ return {visible,ready,message};
+}
 export function petAbilities(p){
  const a=p.abilities,lines=[];
  if(a.speed)lines.push(`Player movement speed +${a.speed}%`);
+ if(a.speedLevels)lines.push(`+${a.speedLevels} temporary speed upgrades (+${Math.round(a.speedLevels*B.playerSpeedBonus*100)}% base movement speed)`);
  if(a.capacity)lines.push(`Player carrying capacity +${a.capacity} item${a.capacity===1?'':'s'}`);
  if(a.income)lines.push(`Ordinary player earnings +${a.income}% (food, drinks, gifts and arcade cash; excludes employees, VR and security)`);
+ if(a.profitLevels)lines.push(`+${a.profitLevels} temporary profit upgrades (+${Math.round(a.profitLevels*B.playerProfitBonus*100)}% base ordinary player earnings; excludes employees, VR and security)`);
  if(a.prep)lines.push(`Player food/drink preparation rate +${a.prep}%; active Takeout fryer +${a.prep}% within 3 units`);
  if(a.cash)lines.push(`Collect 1 earned payment or arcade cash pile within ${a.cash[0]} units every ${a.cash[1]}s (all four floors)`);
  if(a.serve)lines.push(`Serve 1 already-stacked food/drink item within ${a.serve[0]} units every ${a.serve[1]}s (food counters on all four floors)`);
  if(a.clean)lines.push(`Clean 1 dirty table within ${a.clean[0]} units every ${a.clean[1]}s (all four floors; after guests finish)`);
+ if(a.security)lines.push('Remote Security Camera button above personal upgrades while equipped: catches pay $100 through this button; basement computer catches pay $15. Wrong selections and escapes cost $5. No basement, computer or security purchase required. Back returns to your original floor and position.');
  return lines;
 }
 export function validatePets(p){return !!p&&Array.isArray(p.owned)&&p.owned.length<=PETS.length&&new Set(p.owned).size===p.owned.length&&p.owned.every(id=>petById(id))&&(p.equipped===null||p.owned.includes(p.equipped))&&Number.isInteger(p.incomeCents)&&p.incomeCents>=0&&p.incomeCents<100&&['cash','serve','clean'].every(k=>Number.isFinite(p.cooldowns?.[k])&&p.cooldowns[k]>=0&&p.cooldowns[k]<=60);}

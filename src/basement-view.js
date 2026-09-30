@@ -2,11 +2,11 @@ import * as T from 'three';
 import {Renderer} from './renderer.js';
 import {ComputerView} from './computer-view.js';
 import {COMPUTER_PRICE} from './computer.js';
-import {equippedPet} from './pets.js';
+import {equippedPet,petSecurityAccess} from './pets.js';
 import {petModel,animatePet} from './pet-models.js';
 import {box,ball,cylinder,group,lettering,character} from './scene-assets.js';
 import {FLOORS,OUTFITS} from './config.js';
-import {BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,highestFloor,ensureSecurityRound,securitySelect} from './security.js';
+import {BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,highestFloor,ensureSecurityRound,securitySelect,securityCatchReward} from './security.js';
 
 const price=n=>`${n<0?'−':''}$${Math.abs(n).toLocaleString('en-US')}`;
 export function basementCard(s,visiting){return `<article class="floor-card basement-card ${s.basement.unlocked?'':'locked'}"><div class="floor-illustration"><span class="floor-number">B1</span><span class="basement-emblem">⌂</span><span class="floor-card-badge">${s.basement.unlocked?'YOUR LOUNGE':'LOCKED · AVAILABLE FROM THE START'}</span></div><div class="floor-card-body"><h2>The Basement</h2><p>A comfy little lounge. A watchful eye upstairs.</p><div class="floor-detail">Independent of upper floors · ${s.basement.security.owned?'Security ready':'Furnish your space'}</div><button class="dark-button" data-action="${s.basement.unlocked?'basement-visit':'basement-buy'}">${s.basement.unlocked?(visiting?'Back to the lounge':'Visit basement'):`Unlock basement · ${price(BASEMENT_PRICE)}`}</button></div></article>`;}
@@ -64,27 +64,42 @@ export class BasementView{
   this.overlay.addEventListener('click',e=>{let b=e.target.closest('[data-person]');if(!b)return;
    // Enlarged phone targets can overlap; pick the nearest visible body center.
    if(e.detail){let closest=Infinity;for(const candidate of this.people.values()){if(candidate.disabled)continue;const rect=candidate.getBoundingClientRect(),d=Math.hypot(e.clientX-rect.x-rect.width/2,e.clientY-rect.y-rect.height/2);if(d<closest){closest=d;b=candidate;}}}
-   const result=securitySelect(s,{roundId:Number(b.dataset.round),person:b.dataset.person,watching:this.watching});if(result.ok){this.save();this.update();}});
+   const result=securitySelect(s,{roundId:Number(b.dataset.round),person:b.dataset.person,watching:this.watching,remote:this.remote});if(result.ok){this.save();this.update();}});
   window.addEventListener('blur',()=>{this.focused=false;if(this.monitoring)this.save();});window.addEventListener('focus',()=>{this.focused=true;});
   window.addEventListener('keydown',e=>{if(!this.monitoring)return;if(e.key==='Escape'){e.preventDefault();this.close();return;}if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-'].includes(e.key)){e.preventDefault();const f=this.feed.securityFocus;if(e.key==='ArrowLeft')f.x=Math.max(3,f.x-1);if(e.key==='ArrowRight')f.x=Math.min(25,f.x+1);if(e.key==='ArrowUp')f.y=Math.max(2,f.y-1);if(e.key==='ArrowDown')f.y=Math.min(15,f.y+1);if(e.key==='+')this.zoom(1);if(e.key==='-')this.zoom(-1);}});
  }
- get watching(){return this.monitoring&&this.focused&&this.watchAllowed();}
+ get watching(){return this.monitoring&&this.focused&&this.watchAllowed()&&(!this.remote||petSecurityAccess(this.state).ready);}
  show(visible){this.view.hidden=!visible;if(!visible){this.computer.close();this.close(false);}else{this.lounge??=new LoungeRenderer(this.view.querySelector('canvas'));this.update();}}
  update(){
   const s=this.state,b=s.basement,key=JSON.stringify([b.furniture,b.security.owned,b.computer.owned]);this.computer.update();
   if(this.shopKey!==key){this.shopKey=key;this.view.querySelector('#furniture-shop').innerHTML=FURNITURE.map(p=>`<button class="furniture-offer ${b.furniture[p.id]?'owned':''}" data-action="basement-furniture" data-id="${p.id}" ${b.furniture[p.id]?'disabled':''}><span>${p.name}</span><b>${b.furniture[p.id]?'✓ Owned':price(p.cost)}</b></button>`).join('');const buy=this.view.querySelector('#computer-buy');buy.disabled=b.computer.owned;buy.textContent=b.computer.owned?'✓ Computer owned':`Buy computer · ${price(COMPUTER_PRICE)}`;this.view.querySelector('#computer-hint').textContent=b.computer.owned?'Tap the turquoise computer to open your desktop.':b.security.owned?'Your security system is already owned. Buy the computer to access its cameras.':'A permanent desk and computer for your lounge.';const tv=this.view.querySelector('#lounge-tv');tv.hidden=!b.furniture.tv;tv.textContent='TV · Lounge furnishing';this.view.querySelector('#lounge-computer').hidden=!b.computer.owned;}
   if(this.monitoring){const sec=b.security,r=sec.round;document.querySelector('#security-floor').textContent=`${highestFloor(s)+1} · ${FLOORS[highestFloor(s)].name}`;document.querySelector('#security-balance').textContent=price(s.money);const status=document.querySelector('#security-status');status.textContent=!this.watching?'Paused · your timer is safe':r?.phase==='active'?`Suspicious activity · ${Math.ceil(r.remaining)}s`:'All quiet · watching for unusual activity';status.dataset.phase=r?.phase||'waiting';
-   if(sec.result&&this.resultId!==sec.result.id){this.resultId=sec.result.id;const msg={catches:'Caught! +$15',escapes:'Robber escaped. −$5',wrong:'That person was innocent. −$5'}[sec.result.kind];document.querySelector('#security-feedback').textContent=msg;document.querySelector('#security-feedback').dataset.kind=sec.result.kind;}
+   this.overlay.querySelector('.security-info span').textContent=`Catch +$${securityCatchReward(s,this.remote)} · Wrong person / escape −$5`;
+   if(sec.result&&this.resultId!==sec.result.id){this.resultId=sec.result.id;const msg={catches:`Caught! +$${sec.result.amount}`,escapes:'Robber escaped. −$5',wrong:'That person was innocent. −$5'}[sec.result.kind];document.querySelector('#security-feedback').textContent=msg;document.querySelector('#security-feedback').dataset.kind=sec.result.kind;}
   }
  }
- open(){if(!this.state.basement.computer.owned||!this.state.basement.security.owned){this.notify('Buy all four furnishings, then install security.');return;}ensureSecurityRound(this.state);this.monitoring=true;this.overlay.hidden=false;this.overlay.classList.remove('tv-on');void this.overlay.offsetWidth;this.overlay.classList.add('tv-on');this.feed??=new Renderer(this.overlay.querySelector('canvas'),{security:true});this.feed.last=0;this.resultId=this.state.basement.security.result?.id;document.querySelector('#security-feedback').textContent='Look for reaching, stolen goods and a dark sack. Tap the person stealing.';this.save();this.update();this.overlay.querySelector('[data-action="security-exit"]').focus({preventScroll:true});return true;}
- close(toComputer=true){if(!this.monitoring)return;this.monitoring=false;this.overlay.hidden=true;this.save();if(toComputer&&this.computer.opened)this.computer.navigate('desktop');}
+ open({remote=false,onReturn=null}={}){
+  if(this.monitoring)return false;
+  if(remote&&!petSecurityAccess(this.state).ready){this.notify(petSecurityAccess(this.state).message);return false;}
+  if(!remote&&(!this.state.basement.computer.owned||!this.state.basement.security.owned)){this.notify('Buy all four furnishings, then install security.');return false;}
+  ensureSecurityRound(this.state);this.remote=remote;this.returnToPlayer=remote?onReturn:null;this.monitoring=true;
+  const back=this.overlay.querySelector('[data-action="security-exit"]');back.textContent=remote?'Back to Game':'Back to Computer';back.setAttribute('aria-label',back.textContent);
+  this.overlay.querySelector('[data-action="security-dfp"]').hidden=remote;
+  this.overlay.hidden=false;this.overlay.classList.remove('tv-on');void this.overlay.offsetWidth;this.overlay.classList.add('tv-on');this.feed??=new Renderer(this.overlay.querySelector('canvas'),{security:true});this.feed.last=0;this.resultId=this.state.basement.security.result?.id;document.querySelector('#security-feedback').textContent='Look for reaching, stolen goods and a dark sack. Tap the person stealing.';this.save();this.update();back.focus({preventScroll:true});return true;
+ }
+ close(toComputer=true){
+  if(!this.monitoring)return;
+  const remote=this.remote,onReturn=this.returnToPlayer;this.remote=false;this.returnToPlayer=null;this.monitoring=false;this.overlay.hidden=true;this.save();
+  if(!toComputer)return;
+  if(remote){onReturn?.();return;}
+  if(this.computer.opened)this.computer.navigate('desktop');
+ }
  zoom(direction){this.feed.securityZoom=Math.max(.85,Math.min(1.65,this.feed.securityZoom+direction*.2));}
  action(action,id){
   if(action==='basement-furniture')this.purchase({type:'furniture',id});
   if(action==='basement-computer-buy')this.purchase({type:'computer'});
   if(action==='basement-computer')this.computer.open();
-  if(action==='security-dfp')this.computer.close();
+  if(action==='security-dfp'){if(this.remote)this.close();else this.computer.close();}
   if(action==='security-exit')this.close();
   if(action==='security-zoom')this.zoom(id==='in'?1:-1);
   if(action==='security-camera'){const positions={work:{x:6,y:3.5},service:{x:8,y:10},dining:{x:20,y:8}};this.feed.securityFocus={...positions[id]};this.overlay.querySelectorAll('[data-action="security-camera"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===id)));document.querySelector('#camera-number').textContent=({work:1,service:2,dining:3})[id];}

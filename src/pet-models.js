@@ -39,6 +39,14 @@ export function petModel(p){
  case 'axolotl':quad();for(const side of [-1,1])for(let i=0;i<3;i++){const g=orb(a,side*.43,.6+i*.17,.27,.36,.12,.14);g.rotation.z=side*(i-1)*.55;}tail(c,0,.4,-.64,.23,.39,.7);break;
  case 'dragon':orb(c,0,.53,-.1,.73,.75,.72);orb(c,0,.98,.27,.6,.61,.65);orb(c,0,.89,.63,.51,.32,.44);feet();cone('#ffeab0',-.2,1.34,.16,.14,.35);cone('#ffeab0',.2,1.34,.16,.14,.35);eyes(1.07,.54);wing(-1,a,.65);wing(1,a,.65);tail(c,0,.29,-.71,.23,.23,.79);for(const z of [-.35,-.65,-.92])cone(a,0,.51,z,.19,.27);break;
  case 'jellyfish':orb(c,0,.98,0,1,.64,.9);orb(a,0,.79,0,.9,.17,.81);eyes(1,.43,.21);for(let i=0;i<6;i++){const t=i*Math.PI/3;tail(a,Math.sin(t)*.29,.39,Math.cos(t)*.29,.11,.67,.12);}break;
+ case 'camera':
+  cube(a,0,.25,-.03,.72,.22,.7);cube(dark,0,.52,-.13,.15,.43,.18);
+  cube(c,0,.86,.02,.86,.54,1.02);cube(c,0,1.16,.1,1.02,.1,1.22);
+  cube(dark,0,.86,.545,.7,.41,.06);orb(a,0,.87,.59,.36,.36,.15);orb(dark,0,.87,.68,.23,.23,.06);orb('#c8fbff',-.055,.925,.716,.075,.075,.02);
+  orb('#f87d75',.27,1.01,.59,.075);cube(dark,-.33,1.27,-.3,.045,.25,.045);orb(a,-.33,1.42,-.3,.1);
+  for(const x of [-.39,.39])for(const z of [-.23,.23])orb(dark,x,.16,z,.17,.29,.29);
+  for(const z of [-.26,-.08,.1])cube(a,.438,.87,z,.02,.18,.055);
+  break;
  case 'crab':orb(c,0,.45,0,1,.56,.72);for(const x of [-.22,.22]){orb(c,x,.81,.21,.1,.4,.1);orb(dark,x,.98,.21,.12);}for(const side of [-1,1]){for(let i=0;i<3;i++){const l=orb(c,side*.57,.22,-.28+i*.25,.55,.12,.13);l.rotation.z=side*.3;legs.push(l);}orb(c,side*.66,.65,.37,.41,.47,.36);orb(a,side*.83,.8,.47,.19,.28,.22);}break;
  case 'unicorn':orb(c,0,.43,-.04,.69,.59,.92);feet();orb(c,0,.84,.23,.4,.73,.42);orb(c,0,1.1,.4,.48,.52,.56);eyes(1.16,.66,.14);cone(a,0,1.51,.33,.17,.5);for(let i=0;i<4;i++)orb(['#ed91bd','#9ad8de','#b2df7a','#fbd27e'][i],0,1.25-i*.13,.05,.3,.3,.27);tail('#e59ac8',0,.48,-.61,.24,.6,.28);break;
  case 'dino':orb(c,0,.57,-.04,.75,.87,.66);orb(c,0,1.07,.32,.65,.58,.7);orb(c,0,1.01,.63,.62,.4,.41);eyes(1.2,.52,.23);feet(false);for(const side of [-1,1])orb(c,side*.37,.65,.21,.17,.3,.2);tail(c,0,.28,-.64,.37,.3,.88);for(const z of [-.1,-.4,-.7])cone(a,0,.87+z*.6,z,.26,.37);break;

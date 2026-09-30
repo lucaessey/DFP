@@ -23,3 +23,15 @@
 - [x] 4.3 Deliver the full collection table, implementation summary and evidence, leaving any unverified tasks unchecked.
 
 Verification: `PETS.md` records the full table, 150 passing unit/regression tests, 11 passing production-browser checks, successful production/Pages builds and strict validation. `artifacts/pets/index.html` contains the inspected collection and gameplay screenshots; `report.json` records zero browser errors and measured preview costs. Physical-device FPS was not benchmarked. Publication uses the existing GitHub Pages workflow after pushing to `main`.
+
+## 5. Security-camera pet extension
+
+- [x] 5.1 Add Lens Buddy to the catalogue, exact descriptions, original camera model and shop; verify purchase/equip/persistence, five speed/profit upgrade bonuses, five carrying slots, version-8 migration and model behavior.
+- [x] 5.2 Add the equipped-only shortcut above desktop/mobile personal upgrades without requiring basement purchases, a shared remote security feed, paused player work and direct Back/Escape return to unchanged gameplay; preserve ordinary computer navigation.
+- [x] 5.3 Verify no-basement/unowned/unequipped cases, remote rewards and timing, return position/cargo, desktop/mobile layout, offline reload and ordinary computer return; run relevant regressions/build/spec checks and record evidence.
+- [x] 5.4 Rebalance Lens Buddy to $5,555 with five temporary speed/profit upgrades and five carrying slots; verify prices, exact effects, descriptions and safe 13-item saves after unequipping.
+- [x] 5.5 Pay exactly $100 only for catches made through the equipped pet shortcut above player upgrades; retain $15 computer catches and $5 penalties, update visible feedback, migrate historical totals safely, and test both entry routes/reload/duplicate inputs.
+
+Camera extension and rebalance verification: 155 passing unit/regression tests, six passing focused browser checks with zero page errors, visually inspected model/desktop/phone/landscape evidence in `artifacts/camera-pet/`, successful production build and strict validation. See `PETS.md` for the confirmed $5,555 price, +5 speed/carry/profit upgrades, purchase-free remote security and version-8 save compatibility. Full 13-item bags survive switching/unequipping and reload without changing balances or permanent upgrades. Not published.
+
+Shortcut reward verification: all 159 unit/regression tests and six focused browser checks passed, with zero page errors. The same equipped pet pays/displays $100 through the player-upgrade shortcut and $15 through the basement computer. Tests cover unchanged $5 penalties, inactive/unequipped denial, duplicate/reload rejection, mixed reward totals and version-8-to-9 migration without revaluing historical payments. Production build and both relevant strict OpenSpec checks passed. Screenshots `remote-catch-100.png` and `computer-catch-15.png` were inspected. Not published.

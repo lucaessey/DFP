@@ -16,8 +16,8 @@ function ready(f=0){const s=newGame();s.money=100000;for(let i=1;i<4;i++)command
 function customer(s,needs,state='waiting'){const fs=s.floors[s.floor];fs.arrival=0;step(s,.05,{pausedPlayer:true});const c=fs.customers[0];Object.assign(c,{needs,delivered:needs.map(()=>state==='payment'),state,purpose:'food',paid:false});Object.assign(c,customerQueue(fs,s.floor,c));fs.arrival=100;return c;}
 function near(s,id,offset=1){const st=LAYOUTS[s.floor].find(v=>v.id===id);Object.assign(s.player,{x:st.pad.x+offset,y:st.pad.y,action:'',progress:0});return st;}
 
-test('catalogue contains 30 distinct fully modelled pets, exact descriptions and increasing $20–$2000 prices',()=>{
- assert.equal(PETS.length,30);assert.equal(new Set(PETS.map(p=>p.id)).size,30);assert.equal(PETS[0].price,20);assert.equal(PETS.at(-1).price,2000);
+test('catalogue contains 31 distinct fully modelled pets, exact descriptions and increasing $20–$5555 prices',()=>{
+ assert.equal(PETS.length,31);assert.equal(new Set(PETS.map(p=>p.id)).size,31);assert.equal(PETS[0].price,20);assert.equal(PETS.at(-1).price,5555);
  for(const [i,p]of PETS.entries()){if(i)assert.ok(p.price>PETS[i-1].price);assert.ok(petAbilities(p).length);const m=petModel(p);assert.equal(m.root.userData.petId,p.id);let count=0;m.root.traverse(o=>{if(o.isMesh)count++;});assert.ok(count>6&&count<65,`${p.name}: ${count} parts`);const bounds=new T.Box3().setFromObject(m.root);assert.ok(bounds.max.y<2&&bounds.min.y>-.08,p.name);assert.ok(bounds.max.x-bounds.min.x<2.5);animatePet(m,.05,1,true,false,3);const y=m.body.position.y;animatePet(m,.05,1.2,true,false,3);assert.notEqual(m.body.position.y,y,p.name);animatePet(m,.05,2,true,true,3);assert.equal(m.body.rotation.z,0);}
 });
 test('all prices deduct once, preserve ownership across reload and reject poor, duplicate and unowned equipment',()=>{
@@ -25,11 +25,11 @@ test('all prices deduct once, preserve ownership across reload and reject poor, 
  const s=newGame();s.money=55;assert.equal(command(s,{type:'pet-buy',id:'chick'}).ok,false);s.money=70;buy(s,'chick');assert.equal(s.money,50);
 });
 test('schema-six migration preserves all progress, starts empty, validates pet data and protects newer saves',()=>{
- const old=ready();command(old,{type:'hire',id:0});command(old,{type:'outfit',id:'chef'});old.version=6;delete old.pets;const before=structuredClone(old),s=decode(JSON.stringify(old));assert.equal(s.version,7);assert.deepEqual(s.pets,newPets());for(const key of ['money','floors','basement','player','employees','outfit','outfits'])assert.deepEqual(s[key],before[key]);
- for(const mutate of [p=>p.owned=['fake'],p=>p.owned=['cat','cat'],p=>p.equipped='cat',p=>p.incomeCents=100,p=>p.cooldowns.cash=-1]){const t=structuredClone(s);mutate(t.pets);assert.equal(validateSave(t),false);}assert.throws(()=>decode(JSON.stringify({...s,version:8})),/FUTURE_VERSION/);
+ const old=ready();command(old,{type:'hire',id:0});command(old,{type:'outfit',id:'chef'});old.version=6;delete old.pets;const before=structuredClone(old),s=decode(JSON.stringify(old));assert.equal(s.version,9);assert.deepEqual(s.pets,newPets());for(const key of ['money','floors','basement','player','employees','outfit','outfits'])assert.deepEqual(s[key],before[key]);
+ for(const mutate of [p=>p.owned=['fake'],p=>p.owned=['cat','cat'],p=>p.equipped='cat',p=>p.incomeCents=100,p=>p.cooldowns.cash=-1]){const t=structuredClone(s);mutate(t.pets);assert.equal(validateSave(t),false);}assert.throws(()=>decode(JSON.stringify({...s,version:10})),/FUTURE_VERSION/);
 });
 test('each equipped passive bonus is exact, independent of permanent upgrades and never affects employees',()=>{
- for(const p of PETS){let s=ready();s.floors[0].upgrades={speed:2,capacity:2,profit:1};command(s,{type:'hire',id:0});const e=s.employees[0];e.upgrades={speed:2,capacity:2,profit:2};const upgrades=structuredClone(s.floors[0].upgrades),staffSpeed=speed(s,e,0),staffCap=capacity(s,e,0),staffPay=paymentQuote(s,0,e,100).amount;buy(s,p.id);assert.equal(speed(s,s.player,0),B.speed*1.3*(1+(p.abilities.speed||0)/100));assert.equal(capacity(s,s.player,0),5+(p.abilities.capacity||0));assert.equal(speed(s,e,0),staffSpeed);assert.equal(capacity(s,e,0),staffCap);assert.equal(paymentQuote(s,0,e,100).amount,staffPay);s=decode(encode(s));command(s,{type:'pet-unequip'});command(s,{type:'pet-equip',id:p.id});assert.deepEqual(s.floors[0].upgrades,upgrades);assert.equal(petBonus(s,'speed'),p.abilities.speed||0);command(s,{type:'pet-unequip'});assert.equal(capacity(s,s.player,0),5);assert.equal(speed(s,s.player,0),B.speed*1.3);}
+ for(const p of PETS){let s=ready();s.floors[0].upgrades={speed:2,capacity:2,profit:1};command(s,{type:'hire',id:0});const e=s.employees[0];e.upgrades={speed:2,capacity:2,profit:2};const upgrades=structuredClone(s.floors[0].upgrades),staffSpeed=speed(s,e,0),staffCap=capacity(s,e,0),staffPay=paymentQuote(s,0,e,100).amount;buy(s,p.id);assert.equal(speed(s,s.player,0),B.speed*(1+B.playerSpeedBonus*(2+(p.abilities.speedLevels||0)))*(1+(p.abilities.speed||0)/100));assert.equal(capacity(s,s.player,0),5+(p.abilities.capacity||0));assert.equal(speed(s,e,0),staffSpeed);assert.equal(capacity(s,e,0),staffCap);assert.equal(paymentQuote(s,0,e,100).amount,staffPay);s=decode(encode(s));command(s,{type:'pet-unequip'});command(s,{type:'pet-equip',id:p.id});assert.deepEqual(s.floors[0].upgrades,upgrades);assert.equal(petBonus(s,'speed'),p.abilities.speed||0);command(s,{type:'pet-unequip'});assert.equal(capacity(s,s.player,0),5);assert.equal(speed(s,s.player,0),B.speed*1.3);}
 });
 test('all income pets add exactly their percent once after upgrades with remainder, pure previews and reloads',()=>{
  for(const p of PETS.filter(p=>p.abilities.income)){let s=ready(),ordinary=ready();s.floors[0].upgrades.profit=ordinary.floors[0].upgrades.profit=3;buy(s,p.id);let extra=0,base=0;
@@ -76,7 +76,7 @@ test('resting companions move out of the player silhouette when a safe side posi
   assert.equal(behindPlayer(p,player),false);assert.ok(walkable(floor,p.x,p.y,p.radius));assert.ok(distance(p,player)<2);
  }
 });
-test('all 30 body clearances stay outside furniture while following a player across each expanded floor',()=>{
+test('all 31 body clearances stay outside furniture while following a player across each expanded floor',()=>{
  for(const def of PETS){const model=petModel(def);for(let floor=0;floor<4;floor++){
   const player={x:6.5,y:5.5,path:[],pathKey:''},p=newFollower(floor,player,[],model.clearance);
   for(let i=0;i<160;i++){followPath(player,floor,{x:20,y:7},.1,3);followPet(p,floor,player,[player],.1);assert.ok(walkable(floor,p.x,p.y,model.clearance),`${def.name} floor ${floor+1} clearance`);}
