@@ -1,3 +1,5 @@
+import {newActivity,expansionSpawn,expansionStatus,expansionInteract,expansionGoal,expansionTick,expansionPet} from './expansion.js';
+import {UMBRELLA_COST} from './expansion-config.js';
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, ITEMS, WORLD, TABLE_COUNT, FLOOR_FOODS, tableCost, tableSeat, stationOpen, stationPrice, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
 import { paymentQuote } from './economy.js';
 import { LAYOUT_VERSION, checkoutQueue, shopWaiting, shelfApproach, tableApproach, tableWaiting, arcadeSeat, arcadeWaiting } from './config.js';
@@ -11,10 +13,10 @@ import {findPath} from './navigation.js';
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 9, pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 10, pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
-    floors: FLOORS.map((f, i) => ({ unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
+    floors: FLOORS.map((f, i) => ({ ...(i>=4?{activity:newActivity()}:{}), unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
   };
 }
 function random(s) { s.seed = (Math.imul(1664525, s.seed) + 1013904223) >>> 0; return s.seed / 4294967296; }
@@ -71,9 +73,13 @@ export function command(s, c) {
       if(!s.basement.computer.owned||!game||s.basement.computer.games[game.id])return fail('Game unavailable or already owned');
       cost=game.cost;apply=()=>{s.basement.computer.games[game.id]=true;};break;
     }
+    case 'umbrella': {
+      const index=Number(c.id);if(f!==7||!fs.tables[index]?.owned||fs.activity.umbrellas[index])return fail('Buy this rooftop table first, or umbrella already owned');
+      cost=UMBRELLA_COST;apply=()=>{fs.activity.umbrellas[index]=true;};break;
+    }
     case 'table': {
       const index=Number(c.id),table=fs.tables[index];
-      if(!fs.unlocked||!Number.isInteger(index)||!table||table.owned)return fail('Table unavailable or already owned');
+      if(f===10||!fs.unlocked||!Number.isInteger(index)||!table||table.owned)return fail('Table unavailable or already owned');
       cost=tableCost(f,index);apply=()=>{table.owned=true;};break;
     }
     case 'return-stock': apply = () => returnBag(s, s.player, s.floor); break;
@@ -90,6 +96,8 @@ export function command(s, c) {
       if(!product||!fs.unlocked||fs.products[product.id])return fail('Item unavailable or already unlocked');
       if(product.id==='wine'&&!fs.products.tower&&!fs.products.handheld)return fail('Unlock a console meal first');
       if(product.id==='drink'&&!fs.products.controller)return fail('Unlock Crispy Controller first');
+      if(product.id==='packing'&&!fs.products.processor)return fail('Buy the processor first');
+      if(product.section&&f>=4){const prerequisites={milkshake:['waffle','icecream','cake'],vip:['tickets'],charging:['robotmeal'],smoothie:['terracemeal'],stage:['admission'],playground:['cafemeal'],belts:['processor','packing']}[product.id];if(!prerequisites.some(id=>fs.products[id])||(product.id==='belts'&&!fs.products.packing))return fail('Open the main equipment first');}
       cost=product.cost;apply=()=>{fs.products[product.id]=true;if(product.section)fs.section=true;
         if(product.id==='drink')for(const customer of fs.customers)if(customer.state==='waiting'&&customer.delivered.every(v=>!v)&&!customer.needs.includes('drink')&&random(s)<B.drinkOrderChance){if(customer.needs.length<B.maxOrderItems){customer.needs.push('drink');customer.delivered.push(false);}else customer.needs[customer.needs.length-1]='drink';}
       };break;
@@ -131,7 +139,7 @@ export function command(s, c) {
   if (c.token) { s.transactions.push(c.token); s.transactions = s.transactions.slice(-128); }
   changed(s); return { ok: true, cost };
 }
-function returnBag(s, a, f) { for (const item of a.bag) s.floors[f].stock[item]++; a.bag = []; }
+function returnBag(s, a, f) { for (const item of a.bag) s.floors[f].stock[item]++; a.bag = []; a.cold=[]; }
 function take(a, item) { const i = a.bag.indexOf(item); if (i < 0) return false; a.bag.splice(i, 1); return true; }
 const missing = c => c.needs.filter((v, i) => !c.delivered[i]);
 function recordSale(s,f,c){if(!c.counted){s.served++;s.floors[f].served++;c.counted=true;changed(s);}}
@@ -159,7 +167,9 @@ function customerOrder(s, items, drink = null) {
   while(needs.length<count)needs.push(extras[Math.floor(random(s)*extras.length)]);
   return needs;
 }
+const expansionHooks={pay,changed,emit,take,collect:collectItem,order:customerOrder,capacity,returnBag};
 function spawnCustomer(s, f) {
+  if(f>=4)return expansionSpawn(s,f,expansionHooks);
   const fs = s.floors[f];let needs,purpose='food';
   if(f===0){if(!fs.products.controller)return;needs=customerOrder(s,['controller'],fs.products.drink?'drink':null);}
   if(f===1){const meals=['tower','handheld'].filter(id=>fs.products[id]);if(!meals.length)return;needs=customerOrder(s,meals,fs.products.wine?'wine':null);}
@@ -171,6 +181,7 @@ function spawnCustomer(s, f) {
 export function stationStatus(s, f, st) {
   const fs = s.floors[f];
   if (!stationOpen(s,f,st)) return `Unlock · $${stationPrice(st)}`;
+  if(f>=4){const status=expansionStatus(s,f,st);if(status!==null)return status;}
   if (st.kind === 'trash') return 'Discard carried items · no refund';
   if (st.id === 'prep') return `${fs.stock.raw} ready to fry`;
   if (st.id === 'fry') return fs.cooking ? `Frying ${Math.max(1, Math.ceil(fs.fry))}s` : 'Start a batch';
@@ -186,6 +197,7 @@ export function stationStatus(s, f, st) {
 }
 function interact(s, f, a, st) {
   const fs = s.floors[f]; if (!stationOpen(s,f,st)) return;
+  if(f>=4&&expansionInteract(s,f,a,st,expansionHooks))return;
   if(st.kind==='table'){
     const table=fs.tables[Number(st.id.slice(5))];
     if(table.state==='dirty'){table.state='free';table.customer=null;table.meal=null;changed(s);emit(s,'Sparkling clean!','clean',{x:st.pad.x,y:st.pad.y,floor:f});}return;
@@ -235,6 +247,7 @@ function interact(s, f, a, st) {
 }
 export function workerGoal(s, f, a) {
   const fs = s.floors[f];
+  if(f>=4){const goal=expansionGoal(s,f,a,expansionHooks);if(goal!==undefined)return goal;}
   const shopDemand=f===2?fs.customers.find(c=>c.purpose==='shop'&&c.state==='browsing'&&fs.shelves[missing(c)[0]]===0):null;
   const dirty=fs.tables.findIndex(t=>t.owned&&t.state==='dirty');if(dirty>=0)return `table${dirty}`;
   if(f===2&&fs.customers.some(c=>c.state==='checkout'))return 'checkout';
@@ -247,7 +260,7 @@ export function workerGoal(s, f, a) {
   if(cargo)return isDrink(cargo)?'drinkStack':'stack';
   if(c&&needed.length){
     const item=needed[0];if(a.bag.length>=capacity(s,a,f))returnBag(s,a,f);
-    if(f!==0||item==='drink')return fs.products[item]?item:null;
+    if(f!==0||item==='drink')return fs.products[item]?(item==='robotmeal'?'robotPickup':item):null;
   }
   if(f===1)return null;
   if(f===0){
@@ -365,12 +378,12 @@ export function petTasks(s,dt,active=true){
     const [range,cooldown]=ability;
     const nearby=LAYOUTS[f].filter(st=>stationOpen(s,f,st)&&distance(a,st.pad)<=range).sort((x,y)=>distance(a,x.pad)-distance(a,y.pad));
     for(const st of nearby){
-      const candidate=kind==='clean'?st.kind==='table'&&fs.tables[Number(st.id.slice(5))].state==='dirty':kind==='serve'?st.kind==='counter':st.kind==='counter'||st.kind==='checkout'||st.kind==='arcade';
+      const candidate=f>=4&&['table','delivery','playground'].includes(st.kind)?true:kind==='clean'?st.kind==='table'&&fs.tables[Number(st.id.slice(5))].state==='dirty':kind==='serve'?st.kind==='counter':st.kind==='counter'||st.kind==='checkout'||st.kind==='arcade';
       if(!candidate)continue;
       const path=findPath(f,a,st.pad);if(!path.length&&distance(a,st.pad)>.1)continue;
       let length=0,prev=a;for(const p of path){length+=distance(prev,p);prev=p;}if(length>range+1)continue;
-      let done=false;
-      if(kind==='clean'){interact(s,f,a,st);done=true;}
+      let done=f>=4&&kind!=='clean'?expansionPet(s,f,a,st,kind,expansionHooks):false;
+      if(kind==='clean'&&st.kind==='table'&&fs.tables[Number(st.id.slice(5))].state==='dirty'){interact(s,f,a,st);done=true;}
       if(st.kind==='counter'){
         const c=serviceCustomers(fs,f,st.id)[0];if(!c||distance(c,customerQueue(fs,f,c))>=.6)continue;
         if(kind==='cash'&&c.state==='payment'&&!c.paid&&c.delivered.every(Boolean)){interact(s,f,a,st);done=true;}
@@ -401,12 +414,13 @@ export function step(s, dt = B.step, input = {}) {
     const length = Math.hypot(dx, dy); dx /= Math.max(1, length); dy /= Math.max(1, length);
     move(a, dx * speed(s, a, s.floor) * dt, dy * speed(s, a, s.floor) * dt, s.floor);
   } else if (input.target) followPath(a, s.floor, input.target, dt, speed(s, a, s.floor));
-  for (let f = 0; f < 4; f++) {
+  for (let f = 0; f < FLOORS.length; f++) {
     const fs = s.floors[f]; if (!fs.unlocked) continue;
     fs.arrival -= dt;
     if (fs.arrival <= 0 && fs.customers.filter(c => c.state !== 'leaving').length < B.maxCustomers) { spawnCustomer(s, f); fs.arrival = B.arrivalTime + random(s) * 2; }
     if (fs.cooking) { const boost=f===s.floor&&!input.pausedPlayer&&!(s.vr&&!s.vr.done)&&distance(a,LAYOUTS[0].find(st=>st.id==='fry').pad)<=3?petBonus(s,'prep'):0;fs.fry -= dt*(1+boost/100); if (fs.fry <= 0) { fs.cooking = false; fs.fry = 0; fs.stock.controller += B.batch; } }
-    customersTick(s, f, dt);
+    if(f>=4)expansionTick(s,f,dt,expansionHooks);
+    if(![5,7,8,9,10].includes(f))customersTick(s, f, dt);
     if (f === s.floor && !input.pausedPlayer) workActor(s, f, a, dt, false);
     for (const employee of s.employees.filter(e => e.floor === f)) workActor(s, f, employee, dt, true);
   }

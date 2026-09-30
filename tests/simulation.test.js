@@ -6,13 +6,13 @@ import { findPath, walkable, distance } from '../src/navigation.js';
 import { validateSave, encode, decode, loadGame, saveGame, SAVE_KEY, BACKUP_KEY } from '../src/storage.js';
 
 const tick = (s, seconds, input = {pausedPlayer:true}) => { for(let i=0;i<seconds/B.step;i++)step(s,B.step,input); };
-function rich(products=true) { const s=newGame(); s.money=100000; for(let i=1;i<4;i++)assert.ok(command(s,{type:'floor',floor:i}).ok); if(products)for(const p of PRODUCTS)assert.ok(command(s,{type:'product',floor:p.floor,id:p.id}).ok); return s; }
+function rich(products=true) { const s=newGame(); s.money=1000000; for(let i=1;i<FLOORS.length;i++)assert.ok(command(s,{type:'floor',floor:i}).ok); if(products)for(const p of PRODUCTS)assert.ok(command(s,{type:'product',floor:p.floor,id:p.id}).ok); return s; }
 function at(s,f,id,seconds=1) { if(s.floor!==f)command(s,{type:'visit',floor:f}); const p=LAYOUTS[f].find(st=>st.id===id).pad; Object.assign(s.player,p,{action:'',progress:0}); tick(s,seconds,{}); }
 const memory = () => { const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),removeItem:k=>m.delete(k)}; };
 
 test('fresh game and every station path are valid and accessible',()=>{
   const s=newGame();assert.ok(validateSave(s));assert.equal(s.money,120);
-  for(let f=0;f<4;f++)for(const st of LAYOUTS[f]){assert.ok(walkable(f,st.pad.x,st.pad.y),`${f} ${st.id} pad`);assert.ok(findPath(f,s.player,st.pad).length,`${f} ${st.id} path`);}
+  for(let f=0;f<FLOORS.length;f++)for(const st of LAYOUTS[f]){assert.ok(walkable(f,st.pad.x,st.pad.y),`${f} ${st.id} pad`);assert.ok(findPath(f,s.player,st.pad).length,`${f} ${st.id} path`);}
 });
 test('keyboard direction moves screen-right and collision prevents crossing furniture',()=>{
   const s=newGame();const old={...s.player};tick(s,1,{x:1});assert.ok(s.player.x>old.x&&s.player.y<old.y);
@@ -35,7 +35,7 @@ test('drinks occur near 80 percent and unlocking refreshes only untouched orders
   let drinks=0;for(let i=0;i<1000;i++){s.floors[0].customers=[];s.floors[0].arrival=0;step(s,.05,{pausedPlayer:true});if(s.floors[0].customers[0].needs.includes('drink'))drinks++;}assert.ok(drinks>750&&drinks<850,`drink frequency ${drinks}/1000`);
 });
 test('existing saves gain empty counter stacks without losing progress',()=>{
-  const s=newGame();s.version=2;s.money=543;s.served=7;s.tutorial=4;s.floors.forEach(f=>delete f.counter);const restored=decode(JSON.stringify(s));assert.equal(restored.money,543);assert.equal(restored.served,7);assert.equal(restored.tutorial,5);assert.ok(Object.values(restored.floors[0].counter).every(n=>n===0));
+  const s=newGame();s.floors=s.floors.slice(0,4);s.version=2;s.money=543;s.served=7;s.tutorial=4;s.floors.forEach(f=>delete f.counter);const restored=decode(JSON.stringify(s));assert.equal(restored.money,543);assert.equal(restored.served,7);assert.equal(restored.tutorial,5);assert.ok(Object.values(restored.floors[0].counter).every(n=>n===0));
 });
 test('insufficient funds reject every purchase without mutations',()=>{
   const s=newGame();s.money=0;
@@ -47,10 +47,10 @@ test('floor progression is sequential and unlocks cannot be purchased twice',()=
 test('transaction tokens prevent duplicate charges even after serialization',()=>{
   const s=newGame();s.money=500;assert.ok(command(s,{type:'upgrade',category:'speed',token:'one'}).ok);const restored=decode(encode(s));assert.equal(command(restored,{type:'upgrade',category:'speed',token:'one'}).ok,false);assert.equal(restored.money,410);assert.equal(restored.floors[0].upgrades.speed,1);
 });
-test('exactly 20 unique hires, five per origin, one assignment each',()=>{
+test('exactly 55 unique hires, five per origin, one assignment each',()=>{
   const s=rich();for(const def of ROSTER)assert.ok(command(s,{type:'hire',id:def.id,floor:def.origin}).ok);
-  assert.equal(s.employees.length,20);for(let f=0;f<4;f++)assert.equal(s.employees.filter(e=>e.floor===f).length,5);
-  const cash=s.money;assert.equal(command(s,{type:'hire',id:0}).ok,false);assert.equal(command(s,{type:'hire',id:20}).ok,false);assert.equal(s.money,cash);
+  assert.equal(s.employees.length,ROSTER.length);for(let f=0;f<FLOORS.length;f++)assert.equal(s.employees.filter(e=>e.floor===f).length,5);
+  const cash=s.money;assert.equal(command(s,{type:'hire',id:0}).ok,false);assert.equal(command(s,{type:'hire',id:ROSTER.length}).ok,false);assert.equal(s.money,cash);
 });
 test('assignment rejects a thirteenth employee and a locked destination',()=>{
   const s=rich();for(const def of ROSTER)command(s,{type:'hire',id:def.id,floor:def.origin});for(let id=5;id<12;id++)assert.ok(command(s,{type:'assign',id,floor:0}).ok);
@@ -103,7 +103,7 @@ test('save validation rejects impossible balances, rosters, states and upgrades'
   for(const corrupt of [s=>s.money=-1,s=>s.money=Infinity,s=>s.floors[0].upgrades.speed=6,s=>s.floors[0].customers=[{id:1}],s=>s.player.bag=['unknown'],s=>s.floor=3,s=>s.floors[0].stock.raw=NaN]){const s=newGame();corrupt(s);assert.equal(validateSave(s),false);assert.throws(()=>encode(s));}
 });
 test('version-one migration adds defaults and unknown future saves are preserved',()=>{
-  const s=newGame();s.version=1;delete s.settings;delete s.outfits;delete s.outfit;const migrated=decode(JSON.stringify(s));assert.equal(migrated.version,9);assert.equal(migrated.outfit,'uniform');
+  const s=newGame();s.floors=s.floors.slice(0,4);s.version=1;delete s.settings;delete s.outfits;delete s.outfit;const migrated=decode(JSON.stringify(s));assert.equal(migrated.version,10);assert.equal(migrated.outfit,'uniform');
   const storage=memory();const future=JSON.stringify({version:109});storage.setItem(SAVE_KEY,future);const result=loadGame(storage);assert.equal(result.writable,false);assert.equal(storage.getItem(SAVE_KEY),future);
   const futureLayout=JSON.stringify({...newGame(),layoutVersion:99});storage.setItem(SAVE_KEY,futureLayout);assert.equal(loadGame(storage).writable,false);assert.equal(storage.getItem(SAVE_KEY),futureLayout);
 });

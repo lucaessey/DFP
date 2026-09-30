@@ -5,7 +5,7 @@ export {damp,angleTowards} from './character-motion.js';
 
 
 export function visualWalkable(floor,x,y,actor) {
-  if(actor?.state==='dining'&&actor.table!==null){const seat=tableSeat(actor.table);if(Math.hypot(x-seat.x,y-seat.y)<.12)return true;}
+  if(['dining','service','payment'].includes(actor?.state)&&actor.table!==null){const seat=tableSeat(actor.table);if(Math.hypot(x-seat.x,y-seat.y)<.12)return true;}
   return walkable(floor,x,y,.3);
 }
 

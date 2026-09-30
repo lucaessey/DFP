@@ -1,4 +1,13 @@
 const shapes = {
+  icecream:'<path d="m7 12 5 10 5-10M7 12a4 4 0 0 1-2-7 4 4 0 0 1 7-3 4 4 0 0 1 7 3 4 4 0 0 1-2 7zM9 15l5 3"/>',
+  popcorn:'<path d="m5 10 2 12h10l2-12zM8 10l1 12m3-12v12m4-12-1 12M5 10a3 3 0 0 1-1-5 3 3 0 0 1 5-2 3 3 0 0 1 6 0 3 3 0 0 1 5 2 3 3 0 0 1-1 5"/>',
+  cake:'<path d="M3 11h18v10H3zM5 7h14v4M7 7V3m5 4V3m5 4V3M3 15q3 4 6 0 3 4 6 0 3 4 6 0"/>',
+  movie:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 8 6 4-6 4zM5 4v16M19 4v16"/>',
+  robot:'<rect x="4" y="7" width="16" height="14" rx="4"/><path d="M12 7V2M8 17h8M1 11v6m22-6v6"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/>',
+  trophy:'<path d="M7 3h10v7a5 5 0 0 1-10 0zM7 5H3v3c0 4 4 4 4 4m10-7h4v3c0 4-4 4-4 4M12 15v6m-5 0h10"/>',
+  box:'<path d="m2 7 10-5 10 5v11l-10 5-10-5zM2 7l10 5 10-5M12 12v11M7 4l10 5"/>',
+  ticket:'<path d="M2 6h20v4a2 2 0 0 0 0 4v4H2v-4a2 2 0 0 0 0-4zM15 6v12"/>',
   paw: '<ellipse cx="6" cy="7" rx="2.3" ry="3"/><ellipse cx="12" cy="4.5" rx="2.3" ry="3"/><ellipse cx="18" cy="7" rx="2.3" ry="3"/><path d="M5 17c0-3 4-7 7-7s7 4 7 7c0 5-4 2-7 2s-7 3-7-2Z"/>',
   email: '<rect x="2" y="5" width="20" height="15" rx="3"/><path d="m3 6 9 7 9-7"/>',
   shield: '<path d="m12 2 8 3v6c0 5-5 9-8 11-3-2-8-6-8-11V5Z"/><path d="m8 12 3 3 5-6"/>',

@@ -24,7 +24,7 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: stack, serve, pay, seat, eat, then manua
 test('table purchases are atomic, independent per floor, limited to six and persistent',()=>{
   const prices=[[10,19,29,38,47,56],[17,26,35,44,54,63],[24,33,42,51,60,69],[30,39,49,58,67,76]];
   const s=setup(3);for(let f=0;f<4;f++)for(let i=0;i<6;i++){const cash=s.money;assert.equal(tableCost(f,i),prices[f][i]);assert.ok(command(s,{type:'table',floor:f,id:i}).ok);assert.equal(s.money,cash-prices[f][i]);assert.equal(command(s,{type:'table',floor:f,id:i}).ok,false);}
-  assert.equal(command(s,{type:'table',id:6}).ok,false);assert.ok(decode(encode(s)).floors.every(f=>f.tables.every(t=>t.owned)));assert.ok(s.floors.every(f=>Object.values(f.upgrades).every(n=>n===0)));
+  assert.equal(command(s,{type:'table',id:6}).ok,false);assert.ok(decode(encode(s)).floors.slice(0,4).every(f=>f.tables.every(t=>t.owned)));assert.ok(s.floors.every(f=>Object.values(f.upgrades).every(n=>n===0)));
   const poor=setup(0);poor.money=0;const before=structuredClone(poor);assert.equal(command(poor,{type:'table',id:0}).ok,false);assert.deepEqual(poor,before);
 });
 
@@ -42,8 +42,8 @@ for(let f=0;f<4;f++)test(`floor ${f+1}: employees automatically serve and clean 
 
 test('real schema-three save migrates balances, employee cargo, old dining tables and counter stock',()=>{
   const old=JSON.parse(readFileSync(new URL('../artifacts/3d-upgrade/comparison-state.json',import.meta.url)));old.floors[1].unlocked=true;old.floors[1].tables[0].state='dirty';const cash=old.money,cargo=[...old.player.bag],counter=old.floors[0].counter.controller;
-  const s=decode(JSON.stringify(old));assert.equal(s.version,9);assert.equal(s.money,cash);assert.deepEqual(s.player.bag,cargo);assert.equal(s.floors[0].counter.controller,counter);assert.equal(s.employees.length,old.employees.length);
-  assert.deepEqual(s.floors.map(f=>f.tables.filter(t=>t.owned).length),[0,2,0,0]);assert.equal(s.floors[1].tables[0].state,'dirty');assert.equal(s.floors[2].products.snack2,false);assert.ok(validateSave(s));
+  const s=decode(JSON.stringify(old));assert.equal(s.version,10);assert.equal(s.money,cash);assert.deepEqual(s.player.bag,cargo);assert.equal(s.floors[0].counter.controller,counter);assert.equal(s.employees.length,old.employees.length);
+  assert.deepEqual(s.floors.slice(0,4).map(f=>f.tables.filter(t=>t.owned).length),[0,2,0,0]);assert.equal(s.floors[1].tables[0].state,'dirty');assert.equal(s.floors[2].products.snack2,false);assert.ok(validateSave(s));
 });
 
 test('unfinished legacy dining orders retain delivered food and collect their bill only once',()=>{

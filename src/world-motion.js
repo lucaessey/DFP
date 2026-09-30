@@ -29,12 +29,12 @@ export function stationCue(state,f,st){
 
 export function carryLayout(items){
  const visible=items.slice(0,4),columns=items.length>2?2:1,heights=[0,0];
- const parts=visible.map((kind,i)=>{const col=i%columns,p={kind,x:columns===2?(col?.245:-.245):0,y:heights[col],scale:.72};heights[col]+=(['drink','tower','wine','souvenir'].includes(kind)?.59:.22)*.72;return p;});
+ const parts=visible.map((kind,i)=>{const col=i%columns,p={kind,x:columns===2?(col?.245:-.245):0,y:heights[col],scale:.72};heights[col]+=(['drink','tower','wine','souvenir','milkshake','smoothie','popcorn','icecream','sealedbox','ingredient'].includes(kind)?.59:.22)*.72;return p;});
  return {parts,columns,height:Math.max(...heights),quantity:items.length,overflow:items.length>4};
 }
 
 export function collectionPoint(f,x,z){
- const st=LAYOUTS[f].filter(s=>['counter','checkout','arcade','vr'].includes(s.kind)).sort((a,b)=>Math.hypot(a.pad.x-x,a.pad.y-z)-Math.hypot(b.pad.x-x,b.pad.y-z))[0];
+ const st=LAYOUTS[f].filter(s=>['counter','checkout','arcade','vr','table','delivery','admit','playground'].includes(s.kind)).sort((a,b)=>Math.hypot(a.pad.x-x,a.pad.y-z)-Math.hypot(b.pad.x-x,b.pad.y-z))[0];
  if(!st||Math.hypot(st.pad.x-x,st.pad.y-z)>1.5)return {x,y:.9,z,station:null};
  return {x:st.x+st.w/2+(st.kind==='counter'?1.25:st.kind==='arcade'?.45:0),y:st.kind==='arcade'?.3:1.17,z:st.y+st.d/2+(st.kind==='arcade'?.65:0),station:st.id};
 }

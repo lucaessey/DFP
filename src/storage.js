@@ -1,29 +1,32 @@
+import {EXPANSION_ITEMS} from './expansion-config.js';
+import {newActivity,validateActivity} from './expansion.js';
 import {nearestWalkable} from './navigation.js';
 import {LAYOUT_VERSION,tableSeat,arcadeSeat} from './config.js';
 import { newGame } from './simulation.js';
 import {newBasement,validateBasement} from './security.js';
 import {newComputer} from './computer.js';
 import {newPets,validatePets} from './pets.js';
-import { ITEMS, OUTFITS, UPGRADE_TYPES, PRODUCTS, BALANCE, WORLD, TABLE_COUNT, upgradeCount } from './config.js';
+import { ITEMS, OUTFITS, UPGRADE_TYPES, PRODUCTS, BALANCE, WORLD, TABLE_COUNT, FLOORS, ROSTER, upgradeCount } from './config.js';
 export const SAVE_KEY = 'dfp.save';
 export const BACKUP_KEY = 'dfp.backup';
 const finite = (n, min = 0, max = 1e12) => typeof n === 'number' && Number.isFinite(n) && n >= min && n <= max;
 const integer = (n, min = 0, max = 1e12) => Number.isInteger(n) && finite(n, min, max);
 const uValid = (u, cap) => u && UPGRADE_TYPES.every(k => integer(u[k], 0, cap));
 const point = p => p && finite(p.x, 0, WORLD.width) && finite(p.y, 0, WORLD.depth);
-const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= (a.id===undefined?13:8) && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string';
+const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= (a.id===undefined?13:8) && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string' && (a.cold===undefined||Array.isArray(a.cold)&&a.cold.length<=13&&a.cold.every(n=>finite(n,0,30)));
 export function validateSave(s) {
-  if (!s || s.version !== 9 || !validatePets(s.pets) || !validateBasement(s.basement,s.pets.owned.includes('camera')) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
+  if (!s || s.version !== 10 || !validatePets(s.pets) || !validateBasement(s.basement,s.pets.owned.includes('camera')) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
   if(s.layoutVersion!==undefined&&(!integer(s.layoutVersion,1,LAYOUT_VERSION)))return false;
-  if (!integer(s.floor, 0, 3) || !actorValid(s.player) || !Array.isArray(s.floors) || s.floors.length !== 4) return false;
+  if (!integer(s.floor, 0, FLOORS.length-1) || !actorValid(s.player) || !Array.isArray(s.floors) || s.floors.length !== FLOORS.length) return false;
   if (!integer(s.tutorial, 0, 5) || !s.settings || typeof s.settings.sound !== 'boolean' || typeof s.settings.reducedMotion !== 'boolean') return false;
   if (s.settings.reducedEffects !== undefined && typeof s.settings.reducedEffects !== 'boolean') return false;
   if (!Array.isArray(s.transactions) || s.transactions.length > 128 || !s.transactions.every(t => typeof t === 'string' && t.length < 100)) return false;
   if (!Array.isArray(s.outfits) || !s.outfits.includes('uniform') || new Set(s.outfits).size !== s.outfits.length || !s.outfits.every(id => OUTFITS.some(o => o.id === id)) || !s.outfits.includes(s.outfit)) return false;
-  if (!Array.isArray(s.employees) || s.employees.length > 20 || new Set(s.employees.map(e => e.id)).size !== s.employees.length) return false;
+  if (!Array.isArray(s.employees) || s.employees.length > ROSTER.length || new Set(s.employees.map(e => e.id)).size !== s.employees.length) return false;
   const customerIds = new Set();
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < FLOORS.length; i++) {
     const f = s.floors[i];
+    if(i>=4&&!validateActivity(f?.activity))return false;
     if (!f || typeof f.unlocked !== 'boolean' || typeof f.section !== 'boolean' || !uValid(f.upgrades, 5) || upgradeCount(f.upgrades) > 5 || !f.stock || !['raw', ...ITEMS].every(k => integer(f.stock[k], 0, 100000))) return false;
     if (!finite(f.fry, 0, 100) || typeof f.cooking !== 'boolean' || !finite(f.arrival, -1e8, 100) || !integer(f.revenue) || !integer(f.served)) return false;
     if (f.bonusCents !== undefined && !integer(f.bonusCents, 0, 99)) return false;
@@ -34,18 +37,19 @@ export function validateSave(s) {
     if(f.section!==f.products[PRODUCTS.find(p=>p.floor===i&&p.section).id])return false;
     if (!Array.isArray(f.customers) || f.customers.length > 30) return false;
     for (const c of f.customers) {
-      if (!integer(c.id, 1, s.nextId - 1) || customerIds.has(c.id) || !point(c) || !['waiting','waitingTable','toTable','seating','ordering','service','dining','payment','leaving','browsing','checkout','playing'].includes(c.state)||!['food','shop','arcade'].includes(c.purpose)||typeof c.counted!=='boolean') return false;
+      if (!integer(c.id, 1, s.nextId - 1) || customerIds.has(c.id) || !point(c) || !['waiting','waitingTable','toTable','seating','ordering','service','dining','payment','leaving','browsing','checkout','playing'].includes(c.state)||!['food','shop','arcade','movie','esports','terrace','cafe'].includes(c.purpose)||typeof c.counted!=='boolean') return false;
       if (!Array.isArray(c.needs) || c.needs.length > 3 || !c.needs.every(n => ITEMS.includes(n)) || !Array.isArray(c.delivered) || c.needs.length !== c.delivered.length || !c.delivered.every(d => typeof d === 'boolean') || typeof c.paid !== 'boolean' || !finite(c.timer)) return false;
       if (!Array.isArray(c.path) || c.path.length > 500 || !c.path.every(point) || typeof c.pathKey !== 'string' || !Array.isArray(c.bag)) return false;
       if (c.table !== null && !integer(c.table, 0, TABLE_COUNT-1) || c.machine !== null && !integer(c.machine, 0, 2)) return false;
+      if(i>=4&&c.purpose!=='food'&&(!c.receipts||!['admission','food','play'].every(k=>c.receipts[k]&&typeof c.receipts[k].paid==='boolean')||typeof c.fault!=='boolean'||typeof c.faultDone!=='boolean'||typeof c.playReady!=='boolean'||typeof c.premium!=='boolean'))return false;
       customerIds.add(c.id);
     }
-    if (!Array.isArray(f.tables)||f.tables.length!==TABLE_COUNT||!f.tables.every((t,index)=>typeof t.owned==='boolean'&&['free','reserved','occupied','dirty'].includes(t.state)&&(t.owned||t.state==='free')&&(t.meal===null||ITEMS.includes(t.meal))&&(['reserved','occupied'].includes(t.state)?f.customers.some(c=>c.id===t.customer&&c.table===index&&['toTable','dining'].includes(c.state)):t.customer===null)))return false;
+    if (!Array.isArray(f.tables)||f.tables.length!==TABLE_COUNT||!f.tables.every((t,index)=>typeof t.owned==='boolean'&&['free','reserved','occupied','dirty'].includes(t.state)&&(t.owned||t.state==='free')&&(t.meal===null||ITEMS.includes(t.meal))&&(['reserved','occupied'].includes(t.state)?f.customers.some(c=>c.id===t.customer&&c.table===index&&['toTable','dining','ordering','service','payment'].includes(c.state)):t.customer===null)))return false;
     if (!Array.isArray(f.machines) || f.machines.length !== 3 || !f.machines.every(m => integer(m.quarters) && finite(m.timer) && (m.customer === null || f.customers.some(c => c.id === m.customer)))) return false;
     if (s.employees.filter(e => e.floor === i).length > BALANCE.floorStaffCap) return false;
   }
   if (!s.floors[0].unlocked || !s.floors[s.floor].unlocked) return false;
-  for (const e of s.employees) if (!integer(e.id, 0, 19) || !integer(e.floor, 0, 3) || !s.floors[e.floor].unlocked || !s.floors[Math.floor(e.id / 5)].unlocked || !actorValid(e) || !uValid(e.upgrades, 3)) return false;
+  for (const e of s.employees) if (!integer(e.id, 0, ROSTER.length-1) || !integer(e.floor, 0, FLOORS.length-1) || !s.floors[e.floor].unlocked || !s.floors[Math.floor(e.id / 5)].unlocked || !actorValid(e) || !uValid(e.upgrades, 3)) return false;
   if (s.vr !== null && (!s.vr || !integer(s.vr.id, 1) || !integer(s.vr.lane, 0, 2) || !finite(s.vr.time, 0, 26) || !integer(s.vr.lives, 0, 3) || !integer(s.vr.score) || typeof s.vr.done !== 'boolean' || typeof s.vr.paid !== 'boolean' || !finite(s.vr.spawn) || !Array.isArray(s.vr.obstacles) || !s.vr.obstacles.every(o => integer(o.lane, 0, 2) && finite(o.y, -1, 2)))) return false;
   return true;
 }
@@ -82,6 +86,10 @@ export function migrate(s) {
   if(s?.version===6){s.pets=newPets();s.version=7;}
   if(s?.version===7)s.version=8;
   if(s?.version===8&&s.basement?.security){s.basement.security.remoteCatches??=0;s.version=9;}
+  if(s?.version===9&&s.floors?.length===4){
+    const fresh=newGame();for(const fs of s.floors){for(const item of EXPANSION_ITEMS){fs.stock[item]??=0;fs.counter[item]??=0;}}
+    s.floors.push(...fresh.floors.slice(4));s.version=10;
+  }
   if (!validateSave(s)) throw new Error('Invalid save data');
   if((s.layoutVersion??1)<LAYOUT_VERSION){
     const relocate=(actor,floor,position)=>{Object.assign(actor,position??nearestWalkable(floor,actor),{path:[],pathKey:'',moving:false});if(actor.action!==undefined){actor.action='';actor.progress=0;}};
@@ -97,7 +105,7 @@ export function encode(s) { if (!validateSave(s)) throw new Error('Save failed v
 export function decode(raw) {
   const envelope = JSON.parse(raw); let data = envelope;
   if (typeof envelope.data === 'string') { if (checksum(envelope.data) !== envelope.checksum) throw new Error('Checksum mismatch'); data = JSON.parse(envelope.data); }
-  if (data?.version > 9 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
+  if (data?.version > 10 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
   return migrate(data);
 }
 export function loadGame(storage) {

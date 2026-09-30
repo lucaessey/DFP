@@ -49,14 +49,14 @@ export function petAbilities(p){
  if(a.speed)lines.push(`Player movement speed +${a.speed}%`);
  if(a.speedLevels)lines.push(`+${a.speedLevels} temporary speed upgrades (+${Math.round(a.speedLevels*B.playerSpeedBonus*100)}% base movement speed)`);
  if(a.capacity)lines.push(`Player carrying capacity +${a.capacity} item${a.capacity===1?'':'s'}`);
- if(a.income)lines.push(`Ordinary player earnings +${a.income}% (food, drinks, gifts and arcade cash; excludes employees, VR and security)`);
+ if(a.income)lines.push(`Ordinary player earnings +${a.income}% (food, drinks, gifts, admissions, deliveries and arcade cash; excludes employees, VR and security)`);
  if(a.profitLevels)lines.push(`+${a.profitLevels} temporary profit upgrades (+${Math.round(a.profitLevels*B.playerProfitBonus*100)}% base ordinary player earnings; excludes employees, VR and security)`);
- if(a.prep)lines.push(`Player food/drink preparation rate +${a.prep}%; active Takeout fryer +${a.prep}% within 3 units`);
- if(a.cash)lines.push(`Collect 1 earned payment or arcade cash pile within ${a.cash[0]} units every ${a.cash[1]}s (all four floors)`);
- if(a.serve)lines.push(`Serve 1 already-stacked food/drink item within ${a.serve[0]} units every ${a.serve[1]}s (food counters on all four floors)`);
- if(a.clean)lines.push(`Clean 1 dirty table within ${a.clean[0]} units every ${a.clean[1]}s (all four floors; after guests finish)`);
+ if(a.prep)lines.push(`Player food/drink preparation rate +${a.prep}%; including loading/packing; active Takeout fryer +${a.prep}% within 3 units`);
+ if(a.cash)lines.push(`Collect 1 earned payment or arcade cash pile within ${a.cash[0]} units every ${a.cash[1]}s (all business floors)`);
+ if(a.serve)lines.push(`Serve 1 already-stacked food/drink item within ${a.serve[0]} units every ${a.serve[1]}s (counters and seated guests; new seated guests require prepared food in your hands)`);
+ if(a.clean)lines.push(`Clean 1 dirty table within ${a.clean[0]} units every ${a.clean[1]}s (all business floors; after guests finish)`);
  if(a.security)lines.push('Remote Security Camera button above personal upgrades while equipped: catches pay $100 through this button; basement computer catches pay $15. Wrong selections and escapes cost $5. No basement, computer or security purchase required. Back returns to your original floor and position.');
  return lines;
 }
 export function validatePets(p){return !!p&&Array.isArray(p.owned)&&p.owned.length<=PETS.length&&new Set(p.owned).size===p.owned.length&&p.owned.every(id=>petById(id))&&(p.equipped===null||p.owned.includes(p.equipped))&&Number.isInteger(p.incomeCents)&&p.incomeCents>=0&&p.incomeCents<100&&['cash','serve','clean'].every(k=>Number.isFinite(p.cooldowns?.[k])&&p.cooldowns[k]>=0&&p.cooldowns[k]<=60);}
-export const preparationStation=st=>['prep','fryer','drinks','wine','tower','handheld','snack'].includes(st.kind);
+export const preparationStation=st=>['prep','fryer','drinks','wine','tower','handheld','snack','prepare','robot','processor','packer','seal'].includes(st.kind);

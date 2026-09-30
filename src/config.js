@@ -1,3 +1,4 @@
+import {EXPANSION,EXPANSION_PRODUCTS,EXPANSION_PRICES,EXPANSION_ITEMS,expansionLayouts} from './expansion-config.js';
 export const LAYOUT_VERSION=3;
 export const WORLD = Object.freeze({width:28,depth:18,entrance:{x:26.5,y:16.5},diningStart:14.5,kitchen:{x:6.5,y:5.5},dining:{x:20,y:7},camera:{minX:5,maxX:23,minY:4,maxY:14}});
 export const DECOR=[{x:.55,y:10.5,r:.35},{x:14,y:.6,r:.35},{x:27,y:9,r:.35}];
@@ -5,7 +6,7 @@ export const TABLE_COUNT=6;
 // Halve the released one-third prices once; whole-dollar prices round upward at .5.
 export const tableCost=(floor,index)=>Math.round(Math.round((60+floor*40+index*55)/3)/2);
 export const tableSeat=index=>({x:15.5+(index%2)*6,y:4+Math.floor(index/2)*4.5});
-export const FLOOR_FOODS=[['controller','drink'],['tower','handheld','wine'],['snack2'],['snack3']];
+export const FLOOR_FOODS=[['controller','drink'],['tower','handheld','wine'],['snack2'],['snack3'],...EXPANSION.map(f=>f.foods)];
 export const BALANCE = Object.freeze({
   startCash: 120, step: 0.05, speed: 2.9, employeeSpeed: 2.3,
   capacity: 3, employeeCapacity: 2, playerCap: 5, employeeCap: 3,
@@ -14,7 +15,7 @@ export const BALANCE = Object.freeze({
   earningsBoostPercent: 20, earningsMultiplier: 5,
   actionTime: 0.65, fryTime: 2.4, diningTime: 6, arcadeTime: 6,
   arrivalTime: 4.8, maxCustomers: 6, maxOrderItems: 3, batch: 3, stockCap: 18, drinkOrderChance: 0.8,
-  prices: { controller: 1, drink: 3, tower: 6, handheld: 6, wine: 4, souvenir: 5, keychain: 3, snack2:3, snack3:4 },
+  prices: { controller: 1, drink: 3, tower: 6, handheld: 6, wine: 4, souvenir: 5, keychain: 3, snack2:3, snack3:4, ...EXPANSION_PRICES },
   quarters: 3, vrTime: 25, vrBaseReward: 3, vrDodgeReward: 1,
 });
 export const FLOORS = [
@@ -23,6 +24,7 @@ export const FLOORS = [
   { id: 2, name: 'The Gift Stop', short: 'Gift shop', eyebrow: 'TAKE A LITTLE DFP HOME.', description: 'Good taste. Great souvenirs.', cost: 1600, section: 'Mini keychains', sectionCost: 500, color: '#6596b1', pale: '#e2edf2', icon: 'gift' },
   { id: 3, name: 'Insert Coin', short: 'Arcade', eyebrow: 'ONE MORE ROUND.', description: 'A new kind of high score.', cost: 3000, section: 'VR playground', sectionCost: 850, color: '#9d79c5', pale: '#eee4f5', icon: 'arcade' },
 ];
+FLOORS.push(...EXPANSION.map((f,i)=>({...f,id:i+4,eyebrow:'YOUR PIXEL EMPIRE GROWS.'})));
 export const PRODUCTS = [
   {id:'controller',floor:0,name:'Crispy Controller',cost:50,description:'Open the prep, fryer, and pickup stations.',icon:'controller'},
   {id:'drink',floor:0,name:'Pixel Pop',cost:180,description:'Open the drinks bar. 80% of guests add a drink.',icon:'wine',section:true},
@@ -38,6 +40,7 @@ export const PRODUCTS = [
   {id:'snack2',floor:2,name:'Shop Crunch',cost:180,description:'Crispy controller snacks at the gift-shop food counter.',icon:'controller'},
   {id:'snack3',floor:3,name:'Arcade Crunch',cost:220,description:'A crispy controller snack between games.',icon:'controller'},
 ];
+PRODUCTS.push(...EXPANSION_PRODUCTS);
 export const productOpen = (s,f,id) => !!s.floors[f].products[id];
 export const stationOpen = (s,f,st) => st.kind==='table'?!!s.floors[f].tables[Number(st.id.slice(5))]?.owned:!st.product || productOpen(s,f,st.product);
 export const stationPrice = st => st.tableCost??PRODUCTS.find(p=>p.id===st.product)?.cost??0;
@@ -64,11 +67,12 @@ for(let f=0;f<4;f++){
   if(f>=2)LAYOUTS[f].push(station('snack'+f,'SNACKS',12,1,1.3,1.2,'snack',13,3.5,{product:'snack'+f}));
   for(let i=0;i<TABLE_COUNT;i++){const seat=tableSeat(i);LAYOUTS[f].push(station('table'+i,'TABLE '+String(i+1).padStart(2,'0'),seat.x+.6,seat.y-.75,1.8,1.5,'table',seat.x+1.5,seat.y+1.5,{tableCost:tableCost(f,i)}));}
 }
-export const serviceQueue=(index=0,floor=0)=>floor<2?{x:5,y:10.5+index*1.1}:{x:5+index*1.4,y:10.5};
+LAYOUTS.push(...expansionLayouts(station,tableSeat,tableCost));
+export const serviceQueue=(index=0,floor=0)=>(floor<2||floor===4)?{x:5,y:10.5+index*1.1}:{x:5+index*1.4,y:10.5};
 export const drinkQueue=(index=0)=>({x:12.4,y:8.2+index*1.4});
-export const isDrink=item=>item==='drink'||item==='wine';
+export const isDrink=item=>['drink','wine','milkshake','smoothie'].includes(item);
 export const serviceItems=(floor,id)=>FLOOR_FOODS[floor].filter(item=>isDrink(item)===['drinkStack','drinkCounter'].includes(id));
-export const customerCounter=(floor,c)=>floor<2&&c.needs.some(isDrink)&&!c.needs.some((item,i)=>!isDrink(item)&&!c.delivered[i])?'drinkCounter':'counter';
+export const customerCounter=(floor,c)=>(floor<2||floor===4)&&c.needs.some(isDrink)&&!c.needs.some((item,i)=>!isDrink(item)&&!c.delivered[i])?'drinkCounter':'counter';
 export const serviceCustomers=(fs,floor,id)=>fs.customers.filter(c=>c.purpose==='food'&&['waiting','payment'].includes(c.state)&&customerCounter(floor,c)===id);
 export const customerQueue=(fs,floor,c)=>{const id=customerCounter(floor,c),index=serviceCustomers(fs,floor,id).indexOf(c);return id==='drinkCounter'?drinkQueue(index):serviceQueue(index,floor);};
 export const checkoutQueue=(index=0)=>({x:2.5+index*1.4,y:14});
@@ -78,9 +82,10 @@ export const tableApproach=index=>{const seat=tableSeat(index);return {x:seat.x-
 export const tableWaiting=index=>({x:15.5+index*1.4,y:16});
 export const arcadeSeat=index=>({...LAYOUTS[3].find(st=>st.id==='machine'+index).pad});
 export const arcadeWaiting=index=>({x:2+index*1.5,y:5});
+NAMES.push('Maple','Berry','Crumble','Frost','Peach','Reel','Dolly','Pip','Scout','Flick','Bolt','Chip','Sprocket','Ada','Gizmo','Sage','Fern','Skye','Basil','Willow','Ace','Dash','Echo','Riven','Quinn','Bean','Luna','Mochi','Biscuit','Hazel','Rivet','Indy','Dex','Tess','Otto');
 export const ROSTER = NAMES.map((name, id) => ({ id, name, origin: Math.floor(id / 5), cost: 100 + Math.floor(id / 5) * 85 + (id % 5) * 65, color: ['#72a599', '#d68aaf', '#e9b950', '#729ec3', '#b98dce'][id % 5] }));
 export const UPGRADE_TYPES = ['speed', 'capacity', 'profit'];
-export const ITEMS = ['controller', 'drink', 'tower', 'handheld', 'wine', 'souvenir', 'keychain','snack2','snack3'];
+export const ITEMS = ['controller', 'drink', 'tower', 'handheld', 'wine', 'souvenir', 'keychain','snack2','snack3',...EXPANSION_ITEMS];
 export const floorCount = (s, floor) => s.employees.filter(e => e.floor === floor).length;
 export const upgradeCount = (u) => u.speed + u.capacity + u.profit;
 export const playerUpgradeCost = (s, f) => 90 + upgradeCount(s.floors[f].upgrades) * 65 + f * 30;

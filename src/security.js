@@ -1,4 +1,4 @@
-import {LAYOUTS,WORLD} from './config.js';
+import {LAYOUTS,WORLD,FLOORS,ITEMS} from './config.js';
 import {followPath} from './navigation.js';
 import {newComputer,validateComputer} from './computer.js';
 import {petSecurityAccess} from './pets.js';
@@ -18,7 +18,7 @@ function nextRound(sec){sec.round={id:sec.nextId++,phase:'waiting',remaining:1+M
 const hasSecurity=s=>s.basement.security.owned||petSecurityAccess(s).ready;
 export const securityCatchReward=(s,remote=false)=>remote&&petSecurityAccess(s).ready?100:15;
 export function ensureSecurityRound(s){if(!hasSecurity(s))return false;if(!s.basement.security.round){nextRound(s.basement.security);s.revision++;}return true;}
-function stationFor(f){return LAYOUTS[f].find(p=>p.id===['pickup','tower','shelf','machine1'][f]);}
+function stationFor(f){return LAYOUTS[f].find(p=>p.id===(['pickup','tower','shelf','machine1'][f]??FLOORS[f].robbable));}
 export function robberActor(f){const st=stationFor(f);return {x:st.pad.x+.7,y:st.pad.y+1.4,bag:[],action:'',progress:0,path:[],pathKey:'',moving:false,facing:1};}
 function adjust(s,amount,kind){
  const sec=s.basement.security;
@@ -35,7 +35,7 @@ export function securityTick(s,dt,watching=false){
   if(r.remaining<=1e-8){r.phase='active';r.remaining=10;r.robber=robberActor(f);s.revision++;}
  }else{
   const a=r.robber,st=stationFor(f),age=10-r.remaining;
-  followPath(a,f,st.pad,dt,1.25);a.action='';a.bag=age>2?[['controller','tower','souvenir','quarter'][f]]:[];
+  followPath(a,f,st.pad,dt,1.25);a.action='';a.bag=age>2?[(['controller','tower','souvenir','quarter'][f]??FLOORS[f].foods[0]??'sealedbox')]:[];
   if(r.remaining<=1e-8){adjust(s,-5,'escapes');nextRound(sec);}
  }
 }
@@ -60,7 +60,7 @@ export function validateBasement(b,cameraOwned=false){
  if(!int(sec.remoteCatches,0,sec.catches)||(sec.remoteCatches>0&&!cameraOwned)||sec.rewards!==sec.catches*15+sec.remoteCatches*85||sec.penalties!==(sec.escapes+sec.wrong)*5)return false;
  if(sec.result!==null&&(!sec.result||!int(sec.result.id)||!['catches','escapes','wrong'].includes(sec.result.kind)||(sec.result.kind==='catches'?![15,100].includes(sec.result.amount):sec.result.amount!==-5)||(sec.result.amount===100&&sec.remoteCatches===0)))return false;
  const r=sec.round;if(r===null)return true;
- if((!sec.owned&&!cameraOwned)||!int(r.id,1,sec.nextId-1)||!['waiting','active'].includes(r.phase)||!Number.isFinite(r.remaining)||r.remaining<0||r.remaining>(r.phase==='waiting'?30:10)||!int(r.floor,0,3)||!Array.isArray(r.selected)||r.selected.length>1000||r.selected.some(k=>typeof k!=='string'||!/^staff-\d+$|^guest-\d+$/.test(k))||new Set(r.selected).size!==r.selected.length)return false;
+ if((!sec.owned&&!cameraOwned)||!int(r.id,1,sec.nextId-1)||!['waiting','active'].includes(r.phase)||!Number.isFinite(r.remaining)||r.remaining<0||r.remaining>(r.phase==='waiting'?30:10)||!int(r.floor,0,FLOORS.length-1)||!Array.isArray(r.selected)||r.selected.length>1000||r.selected.some(k=>typeof k!=='string'||!/^staff-\d+$|^guest-\d+$/.test(k))||new Set(r.selected).size!==r.selected.length)return false;
  if(r.phase==='waiting')return r.robber===null;
- const a=r.robber;return !!a&&Number.isFinite(a.x)&&a.x>=0&&a.x<=WORLD.width&&Number.isFinite(a.y)&&a.y>=0&&a.y<=WORLD.depth&&Array.isArray(a.bag)&&a.bag.length<=1&&a.bag.every(v=>['controller','tower','souvenir','quarter'].includes(v))&&Array.isArray(a.path)&&a.path.length<=500&&a.path.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))&&typeof a.pathKey==='string';
+ const a=r.robber;return !!a&&Number.isFinite(a.x)&&a.x>=0&&a.x<=WORLD.width&&Number.isFinite(a.y)&&a.y>=0&&a.y<=WORLD.depth&&Array.isArray(a.bag)&&a.bag.length<=1&&a.bag.every(v=>[...ITEMS,'quarter'].includes(v))&&Array.isArray(a.path)&&a.path.length<=500&&a.path.every(p=>Number.isFinite(p.x)&&Number.isFinite(p.y))&&typeof a.pathKey==='string';
 }

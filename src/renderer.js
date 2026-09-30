@@ -1,4 +1,6 @@
+import {expansionMotion,expansionWorldMotion,guestPet} from './expansion-visuals.js';
 import {serviceItems,isDrink} from './config.js';
+import {walkable} from './navigation.js';
 import * as T from 'three';
 import { LAYOUTS, OUTFITS, ROSTER, WORLD } from './config.js';
 import { stationStatus } from './simulation.js';
@@ -10,8 +12,8 @@ import {equippedPet} from './pets.js';
 import {petModel,animatePet} from './pet-models.js';
 import {newFollower,followPet} from './pet-follower.js';
 
-const itemNames={controller:'Controller',drink:'Drink',tower:'Tower',handheld:'Handheld',wine:'Wine',souvenir:'DFP bag',keychain:'Keychain',snack2:'Shop Crunch',snack3:'Arcade Crunch'},v=new T.Vector3();
-const stationIcons={prep:'prep',fryer:'fry',pickup:'pickup',drinks:'wine',wine:'wine',tower:'controller',handheld:'controller',snack:'controller',counter:'serve',stack:'stack',trash:'trash',table:'table',stock:'bag',keyStock:'gift',shelf:'gift',keyShelf:'gift',checkout:'coin',arcade:'arcade',vr:'arcade'};
+const itemNames={controller:'Controller',drink:'Drink',tower:'Tower',handheld:'Handheld',wine:'Wine',souvenir:'DFP bag',keychain:'Keychain',snack2:'Shop Crunch',snack3:'Arcade Crunch',waffle:'Waffle',icecream:'Ice cream',cake:'Cake',milkshake:'Milkshake',popcorn:'Popcorn',robotmeal:'Robot meal',terracemeal:'Terrace meal',smoothie:'Smoothie',esnack:'Snack',cafemeal:'Café meal',treat:'Treat'},v=new T.Vector3();
+const stationIcons={prepare:'prep',admit:'ticket',usher:'arrow',host:'people',robot:'robot',supply:'bag',robotPickup:'pickup',charger:'bolt',premium:'star',water:'wine',playground:'paw',processor:'fry',factoryPickup:'pickup',packer:'box',seal:'box',delivery:'coin',belt:'arrow',prep:'prep',fryer:'fry',pickup:'pickup',drinks:'wine',wine:'wine',tower:'controller',handheld:'controller',snack:'controller',counter:'serve',stack:'stack',trash:'trash',table:'table',stock:'bag',keyStock:'gift',shelf:'gift',keyShelf:'gift',checkout:'coin',arcade:'arcade',vr:'arcade'};
 export class Renderer {
   constructor(canvas,options={}) {
     this.security=!!options.security;this.securityFocus={x:6,y:3.5};this.securityZoom=1;
@@ -20,7 +22,7 @@ export class Renderer {
     this.gl.setClearColor('#eaf0df',0);this.gl.outputColorSpace=T.SRGBColorSpace;this.gl.toneMapping=T.ACESFilmicToneMapping;this.gl.toneMappingExposure=1.35;this.gl.shadowMap.enabled=true;this.gl.shadowMap.type=T.PCFSoftShadowMap;
     this.scene.add(new T.HemisphereLight('#fff8e7','#cfabc5',2.4));
     this.sun=new T.DirectionalLight('#fff1d3',3.4);this.sun.position.set(-3,22,12);this.sun.castShadow=true;this.sun.shadow.mapSize.set(1024,1024);Object.assign(this.sun.shadow.camera,{left:-22,right:22,top:22,bottom:-22,near:.5,far:55});this.sun.shadow.normalBias=.035;this.sun.shadow.bias=-.0003;this.sun.target.position.set(WORLD.width/2,0,WORLD.depth/2);this.scene.add(this.sun,this.sun.target);
-    this.actors=new Map();this.labels=new Map();this.customerLabels=new Map();this.quantityLabels=new Map();this.effects=[];this.particles=[];this.transfers=[];this.floor=-1;this.roomKey='';this.last=0;this.follow={x:6,z:5};this.samples=[];this.renderSamples=[];
+    this.actors=new Map();this.labels=new Map();this.customerLabels=new Map();this.quantityLabels=new Map();this.effects=[];this.melts=[];this.particles=[];this.transfers=[];this.floor=-1;this.roomKey='';this.last=0;this.follow={x:6,z:5};this.samples=[];this.renderSamples=[];
     this.layer=document.createElement('div');this.layer.className='world-ui';this.layer.setAttribute('aria-label','Workstations');canvas.parentElement.append(this.layer);this.ray=new T.Raycaster();this.ground=new T.Plane(new T.Vector3(0,1,0),0);
     canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;canvas.parentElement.classList.add('graphics-paused');});
     canvas.addEventListener('webglcontextrestored',()=>{this.contextLost=false;canvas.parentElement.classList.remove('graphics-paused');this.last=0;});
@@ -34,13 +36,13 @@ export class Renderer {
     const zoom=this.security?this.securityZoom:1;Object.assign(this.camera,{left:-width/2/zoom,right:width/2/zoom,top:height/2/zoom,bottom:-height/2/zoom});this.camera.updateProjectionMatrix();return true;
   }
   rebuild(state) {
-    const key=`${state.floor}/${JSON.stringify(state.floors[state.floor].products)}/${state.floors[state.floor].tables.map(t=>t.owned)}`;if(key===this.roomKey)return;
+    const key=`${state.floor}/${JSON.stringify(state.floors[state.floor].products)}/${state.floors[state.floor].tables.map(t=>t.owned)}/${JSON.stringify(state.floors[state.floor].activity?.umbrellas)}`;if(key===this.roomKey)return;
     const prior=this.floor===state.floor?new Map([...this.world.userData.stations].map(([id,d])=>[id,{open:d.open,buildAge:d.buildAge}])):null;
     this.scene.remove(this.world);disposeRoom(this.world);this.world=room(state,state.floor);this.scene.add(this.world);this.roomKey=key;
     if(prior)for(const [id,data]of this.world.userData.stations)if(data.open&&(!prior.get(id)?.open||prior.get(id)?.buildAge!==undefined))data.buildAge=prior.get(id)?.buildAge??-1;
     for(const label of this.labels.values())label.remove();this.labels.clear();
     for(const st of LAYOUTS[state.floor]){const button=document.createElement('button');button.className='station-label';button.dataset.station=st.id;button.dataset.action='station';button.dataset.floor=state.floor;this.layer.append(button);this.labels.set(st.id,button);}
-    if(this.floor!==state.floor){for(const m of this.actors.values()){this.scene.remove(m.root);m.contact.material.dispose();}this.actors.clear();for(const el of [...this.customerLabels.values(),...this.quantityLabels.values()])el.remove();this.customerLabels.clear();this.quantityLabels.clear();this.clearEffects();this.follow={x:6,z:5};}this.floor=state.floor;
+    if(this.floor!==state.floor){for(const m of this.actors.values()){this.scene.remove(m.root);m.contact.material.dispose();m.guestPet?.userData.owned?.forEach(g=>g.dispose());}this.actors.clear();for(const el of [...this.customerLabels.values(),...this.quantityLabels.values()])el.remove();this.customerLabels.clear();this.quantityLabels.clear();this.clearEffects();this.follow={x:6,z:5};}this.floor=state.floor;this.layer.classList.toggle('expansion-labels',state.floor>=4);
     this.gl.toneMappingExposure=state.floor===3?1.05:1.18;this.sun.color.set(state.floor===1?'#ffe7cd':state.floor===3?'#ece1ff':'#fff1dc');this.canvas.parentElement.style.background=state.floor===3?'radial-gradient(ellipse at center,#e7d4f0,#fae7dd)':'radial-gradient(ellipse at center,#fff0d8,#f8dbcb)';
   }
   p(x,z,y=0) {v.set(x,y,z).project(this.camera);return{x:(v.x*.5+.5)*this.width,y:(-v.y*.5+.5)*this.height};}
@@ -57,6 +59,7 @@ export class Renderer {
   }
   feedback(event,time) {
     if(event.kind==='pet'&&this.petRig)this.petRig.reaction=1;
+    if(event.kind==='melt'&&event.floor===this.floor){const mesh=shape(this.scene,'sphere','#f2a9c8',event.x,.05,event.y,.65,.03,.55);mesh.castShadow=false;this.melts.push({mesh,time});}
     if(event.kind!=='money'){if(event.kind==='purchase')this.celebrateNext=event.floor;if(event.floor===undefined||event.floor===this.floor)this.burst(event.x??6,event.y??5,'#a5dcaf',4);return;}
     if(event.floor!==undefined&&event.floor!==this.floor)return;const el=document.createElement('span');el.className=`world-feedback ${event.kind==='money'?'money-feedback':''}`;el.textContent=event.text;this.layer.append(el);
     this.effects.push({el,x:event.x??6,z:event.y??5,time,kind:event.kind});if(this.effects.length>10)this.effects.shift().el.remove();if(!this.reducedMotion)this.burst(event.x??6,event.y??5,event.kind==='money'?'#f5ca5b':'#a5dcaf',event.kind==='money'?6:4);
@@ -66,14 +69,14 @@ export class Renderer {
   }
   burst(x,z,color,count=3) {if(this.reducedMotion)return;const cap=this.reducedEffects?8:28;for(let i=0;i<count&&this.particles.length<cap;i++){const mesh=shape(this.scene,'sphere',color,x,.8,z,.09,.09,.09);mesh.castShadow=false;const a=i*2.4;this.particles.push({mesh,life:.6,vx:Math.cos(a)*.8,vz:Math.sin(a)*.8,vy:1.2+i*.1});}}
   transfer(kind,from,to,owner,collector) {if(this.reducedMotion||this.transfers.length>7)return;const mesh=food(kind);mesh.scale.setScalar(kind==='cash'?.95:.65);mesh.position.copy(from);this.scene.add(mesh);this.transfers.push({mesh,kind,from,to,owner,collector,token:owner?.transferToken,age:0});}
-  clearEffects(){for(const e of this.effects)e.el.remove();this.effects=[];for(const p of this.particles)this.scene.remove(p.mesh);this.particles=[];for(const t of this.transfers)this.scene.remove(t.mesh);this.transfers=[];}
+  clearEffects(){for(const p of this.melts)this.scene.remove(p.mesh);this.melts=[];for(const e of this.effects)e.el.remove();this.effects=[];for(const p of this.particles)this.scene.remove(p.mesh);this.particles=[];for(const t of this.transfers)this.scene.remove(t.mesh);this.transfers=[];}
   inventory(data,key,items) {if(data.inventoryKey===key)return;const initial=!data.inventoryKey;data.inventoryKey=key;const old=data.itemModels||new Map(),next=new Map();for(const {kind,x,y,z,scale=1} of items){const id=[kind,x,y,z,scale].join('/');let mesh=old.get(id);if(!mesh){mesh=food(kind);mesh.position.set(x,y,z);mesh.scale.setScalar(scale);mesh.userData.restY=y;mesh.userData.restScale=scale;if(!initial&&!this.reducedMotion){mesh.userData.born=-.32;mesh.visible=false;}data.goods.add(mesh);}next.set(id,mesh);}for(const [id,m]of old)if(!next.has(id))data.goods.remove(m);data.itemModels=next;}
   stations(state,time,dt) {
     const fs=state.floors[state.floor],placed=[];
     for(const [id,data] of this.world.userData.stations) {
       const {st,open}=data,label=this.labels.get(id),active=state.player.action===id,dirty=st.kind==='table'&&fs.tables[Number(id.slice(5))].state==='dirty';
       const cue=updateStationMotion(data,state,dt,time,this.reducedMotion,this.reducedEffects);label.dataset.state=cue.state;label.style.setProperty('--unlock-fill',`${cue.afford*100}%`);label.style.setProperty('--work-fill',`${cue.progress*100}%`);
-      const symbol=!open?'lock':dirty?'clean':stationIcons[st.kind]||'bag';if(label.dataset.icon!==symbol){label.innerHTML=icon(symbol);label.dataset.icon=symbol;}
+      const symbol=!open?'lock':dirty?'clean':stationIcons[st.kind]||'bag';if(label.dataset.icon!==symbol){label.innerHTML=icon(symbol)+(state.floor>=4?`<small>${st.name}</small>`:'');label.dataset.icon=symbol;}
       label.classList.toggle('locked',!open);label.classList.toggle('at-station',active);label.setAttribute('aria-label',`${st.name}: ${stationStatus(state,state.floor,st)} · ${cue.state}`);
       const projected=this.p(st.pad.x,st.pad.y),w=44,h=44;
       label.hidden=projected.x<8||projected.x>this.width-8||projected.y<20||projected.y>this.height-20;
@@ -85,7 +88,14 @@ export class Renderer {
       if(st.kind==='stack'&&open)serviceItems(state.floor,id).forEach((kind,k)=>{for(let i=0;i<Math.min(4,fs.counter[kind]);i++)items.push({kind,x:st.x+.25+k*.7,y:1.15+i*(['controller','snack2','snack3','handheld'].includes(kind)?.18:.43),z,scale:.82});});
       if(id==='shelf'||id==='keyShelf'){const kind=id==='shelf'?'souvenir':'keychain';for(let i=0;i<Math.min(8,fs.shelves[kind]);i++)items.push({kind,x:st.x+.4+(i%4)*.52,y:.27+Math.floor(i/4)*.56,z,scale:.85});}
       if(st.kind==='arcade'){const m=fs.machines[Number(id.at(-1))];for(let i=0;i<Math.min(8,m.quarters);i++)items.push({kind:'quarter',x:x+.5,y:.15+i*.055,z:z+.69});data.screens.forEach((pixel,i)=>{pixel.position.y=1.32+Math.floor(i/3)*.27+(!this.reducedMotion&&m.customer?Math.sin(time*3+i)*.055:0);});}
-      if(st.kind==='table'){const t=fs.tables[Number(id.slice(5))],c=fs.customers.find(c=>c.id===t.customer);if(c?.state==='dining')for(let i=0;i<c.needs.length;i++)if(c.delivered[i])items.push({kind:c.needs[i],x:x-.3+i*.54,y:1.11,z,scale:.72});if(t.state==='dirty')items.push({kind:'raw',x:x-.36,y:1.12,z,scale:.38});label.classList.toggle('dirty-table',dirty);}
+      if(st.kind==='table'){const t=fs.tables[Number(id.slice(5))],c=fs.customers.find(c=>c.id===t.customer);if(c&&['service','dining','payment'].includes(c.state))for(let i=0;i<c.needs.length;i++)if(c.delivered[i])items.push({kind:c.needs[i],x:x-.3+i*.54,y:1.11,z,scale:.72});if(t.state==='dirty')items.push({kind:'raw',x:x-.36,y:1.12,z,scale:.38});label.classList.toggle('dirty-table',dirty);}
+      if(state.floor>=4){
+        const kind=st.kind==='robotPickup'?'robotmeal':st.kind==='factoryPickup'?'factorysnack':st.kind==='seal'?'sealedbox':null;
+        if(kind)for(let i=0;i<Math.min(5,fs.stock[kind]);i++)items.push({kind,x:x+(i%3-1)*.48,y:1.25+Math.floor(i/3)*.4,z,scale:.7});
+        if(st.kind==='packer')for(let i=0;i<Math.min(6,fs.activity.factory.hopper);i++)items.push({kind:'factorysnack',x:x+(i%3-1)*.48,y:1.25+Math.floor(i/3)*.22,z,scale:.7});
+        if(st.kind==='delivery'&&fs.activity.factory.delivery)items.push({kind:'sealedbox',x,y:1,z,scale:1.4});
+        expansionMotion(data,state,time,this.reducedMotion);
+      }
       this.inventory(data,JSON.stringify(items),items);
       if(id==='pickup'&&data.lastCount!==undefined&&fs.stock.controller>data.lastCount){const fry=LAYOUTS[0].find(s=>s.id==='fry');for(let i=0;i<Math.min(3,fs.stock.controller-data.lastCount);i++)this.transfer('controller',new T.Vector3(fry.x+1,1.4,fry.y+.6),new T.Vector3(x+(i-1)*.4,1.21,z));}
       if(id==='pickup')data.lastCount=fs.stock.controller;
@@ -96,10 +106,19 @@ export class Renderer {
     for(const a of state.employees.filter(a=>a.floor===state.floor))entries.push({key:`staff-${a.id}`,actor:a,outfit:{id:'staff',color:ROSTER[a.id].color,hat:'#fff5df',pants:'#345957'},role:'staff',variation:a.id+1});
     for(const a of state.floors[state.floor].customers)entries.push({key:`guest-${a.id}`,actor:a,outfit:{id:'guest',color:['#dc8ca3','#7db2cc','#eac768','#85b38e','#a591cf','#db9470'][a.color],pants:'#51636a'},role:'customer',variation:a.color});
     if(this.security&&state.securityRound?.robber)entries.push({key:'robber',actor:state.securityRound.robber,outfit:{id:'robber',color:'#705b85',hat:'#3a3349'},role:'robber',variation:0});
-    const keys=new Set(entries.map(e=>e.key));for(const [key,m] of this.actors)if(!keys.has(key)){this.scene.remove(m.root);m.contact.material.dispose();this.actors.delete(key);this.customerLabels.get(key)?.remove();this.customerLabels.delete(key);this.quantityLabels.get(key)?.remove();this.quantityLabels.delete(key);}
+    const keys=new Set(entries.map(e=>e.key));for(const [key,m] of this.actors)if(!keys.has(key)){this.scene.remove(m.root);m.contact.material.dispose();m.guestPet?.userData.owned?.forEach(g=>g.dispose());this.actors.delete(key);this.customerLabels.get(key)?.remove();this.customerLabels.delete(key);this.quantityLabels.get(key)?.remove();this.quantityLabels.delete(key);}
     entries.forEach((e,i)=>{e.order=i;const look=JSON.stringify(e.outfit);let m=this.actors.get(e.key);if(m?.look!==look){if(m){this.scene.remove(m.root);m.contact.material.dispose();}m=character(e.outfit,e.variation,e.role);m.look=look;m.key=e.key;this.actors.set(e.key,m);this.scene.add(m.root);}e.rig=m;});crowdTargets(entries,state.floor);
     for(const e of entries){
       if(e.role==='player'&&this.celebrateNext===state.floor&&!document.querySelector('dialog[open]')){e.rig.celebrate=1.05;this.celebrateNext=null;}
+      if(state.floor===9&&e.role==='customer'){
+        if(!e.rig.guestPet){e.rig.guestPet=guestPet();e.rig.root.add(e.rig.guestPet);}
+        const pet=e.rig.guestPet,seated=['service','dining','payment'].includes(e.actor.state),playing=e.actor.state==='playing'&&!e.actor.moving;
+        const offsets=seated?[[.4,1.15],[-.6,1],[-.7,0]]:[[.65,.45],[-.65,.45],[0,.8],[0,-.8],[0,0]];
+        const [px,pz]=offsets.find(([x,z])=>walkable(state.floor,e.actor.x+x,e.actor.y+z,.23))??[0,0];
+        pet.position.set(px,this.reducedMotion?0:Math.abs(Math.sin(time*7+e.actor.id))*(e.actor.moving?.07:playing?.12:.015),pz);
+        pet.rotation.x=seated&&!this.reducedMotion?.12+Math.sin(time*4)*.1:0;
+        pet.rotation.y=seated?Math.PI:playing&&!this.reducedMotion?Math.sin(time*2)*.8:0;
+      }
       const {interaction,received,added,removed,delivered}=animateCharacter(e.rig,e.actor,e.target,state,dt,time);
       if(e.role==='robber'){
         const age=10-state.securityRound.remaining,wave=this.reducedMotion?0:Math.sin(age*7);
@@ -117,8 +136,8 @@ export class Renderer {
       if(destination)for(const item of removed)this.transfer(item,held.clone(),surface(destination),e.rig);
       if(e.actor.purpose==='food')for(const item of delivered)this.transfer(item,surface(LAYOUTS[state.floor].find(s=>s.id===(isDrink(item)?'drinkCounter':'counter'))),held.clone(),e.rig);
       if(e.role==='customer'){let label=this.customerLabels.get(e.key);if(!label){label=document.createElement('span');label.className='order-bubble';this.layer.append(label);this.customerLabels.set(e.key,label);}
-        const a=e.actor,needs=(a.needs||[]).filter((n,i)=>!a.delivered[i]),text=a.state==='leaving'?'♥':a.state==='dining'?'Enjoying!':a.state==='payment'?'$':a.state==='playing'?'PLAY':a.state==='toTable'?'Table time':a.state==='waitingTable'?'Need a clean table':a.state==='seating'?'This way':needs.map(n=>itemNames[n]).join(' + ');
-        if(label.dataset.text!==text){label.dataset.text=text;label.setAttribute('aria-label',text);const stateIcon={leaving:'heart',dining:'serve',payment:'coin',playing:'arcade',toTable:'table',waitingTable:'clock',seating:'arrow'}[a.state];label.innerHTML=stateIcon?icon(stateIcon):needs.map(n=>`<span class="need-icon">${icon(n==='drink'||n==='wine'?'wine':n==='souvenir'||n==='keychain'?'gift':'controller')}</span>`).join('');}
+        const a=e.actor,needs=(a.needs||[]).filter((n,i)=>!a.delivered[i]),text=a.reaction>0?'Melted!':a.fault?'Repair PC':a.state==='leaving'?'♥':a.state==='dining'?'Enjoying!':a.state==='payment'?'$':a.state==='playing'?'PLAY':a.state==='toTable'?'Table time':a.state==='waitingTable'?'Need a clean table':a.state==='seating'?'This way':needs.map(n=>itemNames[n]).join(' + ');
+        if(label.dataset.text!==text){label.dataset.text=text;label.setAttribute('aria-label',text);const stateIcon=a.fault?'bolt':a.reaction>0?'wine':{leaving:'heart',dining:'serve',payment:'coin',playing:'arcade',toTable:'table',waitingTable:'clock',seating:'arrow'}[a.state];label.innerHTML=a.reaction>0?'Oops! Melted':stateIcon?icon(stateIcon):needs.map(n=>`<span class="need-icon">${icon(({icecream:'icecream',cake:'cake',milkshake:'wine',smoothie:'wine',popcorn:'popcorn',robotmeal:'robot',terracemeal:'serve',esnack:'popcorn',cafemeal:'serve',treat:'paw'}[n])||(n==='drink'||n==='wine'?'wine':n==='souvenir'||n==='keychain'?'gift':'controller'))}</span>`).join('');}
         const queue=state.floors[state.floor].customers.filter(c=>c.state!=='leaving');
         label.hidden=!text||(a.state==='browsing'&&state.floor===2)||(state.floor===0&&queue.indexOf(a)>2)||(state.floor===1&&a.state==='waiting'&&queue.indexOf(a)>0);label.classList.toggle('happy',a.state==='leaving'||a.state==='dining');this.place(label,e.rig.root.position.x,e.rig.root.position.z,2.08,-2-(e.order%2)*9);}
     }
@@ -151,7 +170,8 @@ export class Renderer {
     for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i],age=time-e.time;if(age>1.4){e.el.remove();this.effects.splice(i,1);continue;}this.placeEarning(e,age,obstacles);e.el.style.opacity=String(Math.min(1,(1.4-age)*3));}
     for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life-=dt;if(p.life<=0||this.reducedMotion){this.scene.remove(p.mesh);this.particles.splice(i,1);continue;}p.vy-=dt*3;p.mesh.position.x+=p.vx*dt;p.mesh.position.z+=p.vz*dt;p.mesh.position.y+=p.vy*dt;p.mesh.scale.setScalar(.1*p.life/.6);}
     for(let i=this.transfers.length-1;i>=0;i--){const t=this.transfers[i];t.age+=dt;const cash=t.kind==='cash';if(t.collector&&this.actors.get(t.collector.key)===t.collector)t.collector.hands[1].getWorldPosition(t.to);const progress=Math.max(0,Math.min(1,(t.age-(cash?.28:0))/(cash?.5:.32))),p=smooth(progress);t.mesh.position.lerpVectors(t.from,t.to,p);t.mesh.position.y+=cash&&t.age<.28?landing(t.age/.28):Math.sin(p*Math.PI)*.20;if(cash)t.mesh.scale.setScalar(t.age<.14?.95*(.65+.35*smooth(t.age/.14)):.95);if(progress>=1||this.reducedMotion||t.owner&&(this.actors.get(t.owner.key)!==t.owner||t.token!==t.owner.transferToken)){this.scene.remove(t.mesh);this.transfers.splice(i,1);}}
-    this.companion(state,dt,time);
+    for(let i=this.melts.length-1;i>=0;i--){const puddle=this.melts[i],age=time-puddle.time;if(age>2){this.scene.remove(puddle.mesh);this.melts.splice(i,1);}else if(!this.reducedMotion){puddle.mesh.scale.x=.4+Math.min(age,1)*.35;puddle.mesh.scale.z=.35+Math.min(age,1)*.3;}}
+    this.companion(state,dt,time);expansionWorldMotion(this.world,state,time,this.reducedMotion);
     const start=performance.now();this.gl.render(this.scene,this.camera);this.renderSamples.push(performance.now()-start);if(this.renderSamples.length>600)this.renderSamples.shift();
   }
 }

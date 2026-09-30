@@ -47,9 +47,9 @@ function frontClearance(floor,x,z,angle,limit,radius){
 export function animateStickman(model,a,target,state,dt,time,validPosition){
   dt=clamp(dt,0,.1);const reduced=state.settings.reducedMotion,floor=state.floor;
   const carryItems=a.purpose==='food'&&['waiting','payment','toTable','waitingTable'].includes(a.state)?a.needs.filter((_,i)=>a.delivered[i]):a.bag||[];
-  if(!model.previous){model.root.position.set(target.x,0,target.y);model.previous={x:a.x,y:a.y,state:a.state,action:a.action,moving:a.moving,reduced,bag:[...carryItems],delivered:[...(a.delivered||[])]};model.transferToken=0;model.reveal=0;}
-  const previous=model.previous,dx=a.x-previous.x,dz=a.y-previous.y,moved=Math.hypot(dx,dz),wasSitting=previous.state==='dining';
-  const sitting=a.purpose==='food'&&a.table!==null&&a.table!==undefined&&a.state==='dining';
+  if(!model.previous){model.root.position.set(target.x,0,target.y);model.previous={x:a.x,y:a.y,state:a.state,table:a.table,action:a.action,moving:a.moving,reduced,bag:[...carryItems],delivered:[...(a.delivered||[])]};model.transferToken=0;model.reveal=0;}
+  const previous=model.previous,dx=a.x-previous.x,dz=a.y-previous.y,moved=Math.hypot(dx,dz),wasSitting=['dining','service','payment'].includes(previous.state)&&previous.table!==null;
+  const sitting=a.table!==null&&a.table!==undefined&&['dining','service','payment'].includes(a.state);
   if(!reduced&&a.table!==null&&a.table!==undefined&&wasSitting!==sitting){
     const seat=tableSeat(a.table);model.seatOrigin=seat;
     model.seatRoute=sitting?[{x:seat.x-.75,y:seat.y+.75},{x:seat.x,y:seat.y+.75},seat]:[{x:seat.x,y:seat.y+.75},{x:seat.x-.75,y:seat.y+.75}];
@@ -80,7 +80,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   else if(['playing','checkout'].includes(a.state))facing=Math.PI;
   else if(a.state==='browsing')facing=0;
   const seated=sitting&&!model.seatRoute?.length;
-  if(seated)facing=Math.PI/2;
+  if(seated)facing=a.purpose==='movie'?Math.PI:Math.PI/2;
   model.angle=reduced?facing:angleTowards(model.angle,facing,dt);model.rig.rotation.y=model.angle;
   model.sit=reduced?(seated?1:0):damp(model.sit,seated?1:0,12,dt);
   const delta=itemDelta(previous.bag,carryItems),delivered=(a.needs||[]).filter((_,i)=>a.delivered?.[i]&&!previous.delivered[i]),received=delivered.length>0;
@@ -123,7 +123,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   for(const foot of model.feet){foot.getWorldPosition(desired);lowest=Math.min(lowest,desired.y-.06);}
   if(lowest<.018)model.hips.position.y+=.018-lowest;
   const reach= Math.max(smooth(((a.progress||0)/B.actionTime-.2)/.8),model.react);
-  model.tools.spatula.visible=working&&!cheer&&st.kind==='fryer';model.tools.pitcher.visible=working&&!cheer&&['drinks','wine'].includes(st.kind);model.tools.cloth.visible=working&&!cheer&&st.kind==='table';
+  model.tools.spatula.visible=working&&!cheer&&st.kind==='fryer';model.tools.pitcher.visible=working&&!cheer&&(['drinks','wine','water'].includes(st.kind)||['milkshake','smoothie'].includes(st.id));model.tools.cloth.visible=working&&!cheer&&st.kind==='table'&&state.floors[floor].tables[Number(st.id.slice(5))].state==='dirty';
   const clearance=frontClearance(floor,x,z,model.angle,.8,.32);
   const carryDepth=Math.min(.46,Math.max(0,clearance-.3));
   model.carry.position.set(0,.31+(reduced?0:Math.sin(phase-.4)*.012*stride),carryDepth);
@@ -136,14 +136,14 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
     if(working){
       desired.set(side*.23,.10+reach*.15,.22+reach*.24);
       if(st.kind==='fryer')desired.set(side*.22+(i?wave:0),.12+(i?reach*.16:0),.33+(i?wave:0));
-      if(['drinks','wine'].includes(st.kind))desired.set(side*.14,i?.41:.17,i?.31:.38);
-      if(['counter','checkout'].includes(st.kind))desired.set(side*.22,.22,.29+reach*.18);
+      if((['drinks','wine','water'].includes(st.kind)||['milkshake','smoothie'].includes(st.id)))desired.set(side*.14,i?.41:.17,i?.31:.38);
+      if(['counter','checkout','admit','host','usher','robot','processor','packer','seal','delivery','prepare'].includes(st.kind))desired.set(side*.22,.22,.29+reach*.18);
       if(['shelf','keyShelf'].includes(st.kind))desired.set(side*.20,.24+reach*.10,.27+reach*.19);
       if(st.kind==='table')desired.set(side*.18+(i?wave:0),.16,.38+wave);
       if(st.kind==='arcade')desired.set(side*.20,-.10+reach*.28,.23+reach*.20);
     }
     if(a.state==='playing')desired.set(side*.21,.16,.36+(reduced?0:Math.sin(time*8+i)*.035));
-    if(seated)desired.set(side*.18,.22+(i===0&&!reduced?(.5+.5*Math.sin(time*3))* .20:0),i===0?.28:.33);
+    if(seated){if(a.purpose==='esports'){desired.set(side*.18,.18+(reduced?0:Math.sin(time*7+i)*.025),.35);model.motion='gaming';}else if(a.purpose==='movie'&&!a.delivered.some(Boolean)){desired.set(side*.28,-.12,.22);model.motion='watching';}else desired.set(side*.18,.22+(i===0&&!reduced?(.5+.5*Math.sin(time*3))*.20:0),i===0?.28:.33);}
     if((!working||cheer>0)&&!carryItems.length&&i===1&&(model.greet>0||cheer>0)){desired.set(.36,.45+(reduced?0:cheer*.05),.10);model.motion=cheer?'celebrate':'greet';}
     // Retract a reaching hand when a wall/solid prop is close to its path.
     const handX=x+desired.x*Math.cos(model.angle)+desired.z*Math.sin(model.angle),handZ=z-desired.x*Math.sin(model.angle)+desired.z*Math.cos(model.angle);
@@ -152,6 +152,6 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
     if(working&&['wine','drinks'].includes(st.kind)&&i===1&&!reduced)model.hands[i].rotation.z=-.45*reach;
   }
   model.contact.scale.setScalar(1-model.sit*.1);
-  Object.assign(previous,{x:a.x,y:a.y,state:a.state,action:a.action,moving:a.moving,reduced,bag:[...carryItems],delivered:[...(a.delivered||[])]});
+  Object.assign(previous,{x:a.x,y:a.y,state:a.state,table:a.table,action:a.action,moving:a.moving,reduced,bag:[...carryItems],delivered:[...(a.delivered||[])]});
   return {interaction,received,working,...delta,delivered,interrupted};
 }

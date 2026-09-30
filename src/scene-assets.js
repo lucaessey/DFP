@@ -1,3 +1,5 @@
+import {expansionFood,expansionRoom,expansionStation} from './expansion-visuals.js';
+import {EXPANSION} from './expansion-config.js';
 import * as T from 'three';
 import {isDrink,serviceQueue,drinkQueue} from './config.js';
 import {DECOR} from './config.js';
@@ -56,6 +58,7 @@ export function mergeStatic(source) {
 }
 
 export function food(kind) {
+  const expanded=expansionFood(kind);if(expanded)return expanded;
   const g=new T.Group();
   if(kind==='cash'){
     box(g,'#39c949',0,.075,0,.55,.15,.32);box(g,'#9af14d',0,.157,0,.55,.025,.32);
@@ -99,6 +102,7 @@ export const WORLD_PALETTES=[
   {floor:'#e9c8d8',tile:'#ffdfc3',alternate:'#f8d9d1',wall:'#8d74b6',accent:'#7752b1',trim:'#ffd049'},
 ];
 
+WORLD_PALETTES.push(...EXPANSION.map(f=>({floor:f.pale,tile:'#fff0db',alternate:f.pale,wall:f.color,accent:f.color,trim:'#ffd271'})));
 export function room(state,floor) {
   const root=new T.Group(),dynamic=new T.Group(),base=new T.Group(),palette=WORLD_PALETTES[floor],accent=palette.accent;
   const W=WORLD.width,D=WORLD.depth;
@@ -114,7 +118,7 @@ export function room(state,floor) {
   }
   box(base,palette.wall,W/2,.4,-.08,W+.3,.8,.22);box(base,palette.wall,-.08,.4,D/2,.22,.8,D+.3);
   box(base,palette.trim,W/2,.84,-.08,W+.4,.11,.27);box(base,palette.trim,-.08,.84,D/2,.27,.11,D+.35);
-  box(base,accent,WORLD.diningStart,.04,D/2,.12,.04,D);lettering(base,'THE DINING ROOM',21,1.25,.05,4,'#426451','#fff0d1');
+  box(base,accent,WORLD.diningStart,.04,D/2,.12,.04,D);lettering(base,floor===5?'NOW SHOWING':floor===8?'PIXEL CUP':floor===10?'PACK & DELIVER':'THE DINING ROOM',21,1.25,.05,4,'#426451','#fff0d1');
   // Open entrance in the near wall: no tall walls between camera and jobs.
   box(base,palette.wall,(WORLD.entrance.x-.8)/2,.14,D+.05,WORLD.entrance.x-.8,.28,.14);box(base,palette.wall,W-.3,.14,D+.05,.6,.28,.14);
   box(base,'#4b6e60',WORLD.entrance.x,.055,D-.25,1.25,.05,.45);
@@ -125,12 +129,14 @@ export function room(state,floor) {
   for(const p of DECOR)plant(base,p.x,p.y);
   if(floor===0)for(const x of [1.7,4.8,7.9]) {for(let i=0;i<6;i++){const aw=box(base,i%2?'#fff1ce':'#ffb52b',x-.94+i*.38,1.78,.12,.39,.09,.78);aw.rotation.x=.13;} }
   if(floor===1){for(let x=1;x<12;x+=2)box(base,'#c8a771',x,.46,.026,.035,.6,.025);}
+  expansionRoom(base,dynamic,state,floor);
   const stations=new Map();
   for(const st of LAYOUTS[floor]) {
     const x=st.x+st.w/2,z=st.y+st.d/2,open=stationOpen(state,floor,st),c=open?accent:'#b9a9c4',base=new T.Group();
     const detail=group(dynamic),goods=group(detail);const pad=ring(detail,open?(st.id==='counter'?'#f08b47':'#78af95'):'#b8beb3',st.pad.x,.055,st.pad.y,st.id==='counter'?1.25:1);
     stations.set(st.id,{st,detail,goods,pad,open,source:base,inventoryKey:'',screens:[],steam:[],bubbles:[],lights:[],parts:[],age:0});
     const data=stations.get(st.id);
+    if(expansionStation(base,detail,data,state,floor))continue;
     if(isDrink(st.product)&&!open){box(base,'#cdbd9f',x,.07,z,st.w,.10,st.d);box(base,'#fff0c5',x,.13,z,.45,.04,.09);box(base,'#fff0c5',x,.13,z,.09,.04,.45);continue;}
     if(st.auxiliary) {box(base,'#c07942',x,1.115,z,1.1,.04,.73);lettering(base,'STACK',x,1.14,st.y+st.d+.025,.8,'#fff4d8','#bc753d');continue;}
     if(st.kind==='trash') {box(base,'#52786c',x,.38,z,.62,.74,.62);box(base,'#b6c9b7',x,.79,z,.68,.12,.68);box(base,'#284e47',x,.853,z,.39,.02,.35);lettering(base,'BIN',x,.42,z+.321,.42);continue;}
