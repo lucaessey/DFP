@@ -36,22 +36,23 @@ function legPose(model,index,footY,footZ,sit,dt,reduced){
   foot.rotation.x=-leg.rotation.x-knee.rotation.x;
 }
 
-function frontClearance(floor,x,z,angle,limit,radius){
+function frontClearance(floor,x,z,angle,limit,radius,canWalk=walkable){
   const sx=Math.sin(angle),sz=Math.cos(angle);let clear=0;
-  for(let d=.05;d<=limit+.001;d+=.05){if(!walkable(floor,x+sx*d,z+sz*d,radius))break;clear=d;}
+  for(let d=.05;d<=limit+.001;d+=.05){if(!canWalk(floor,x+sx*d,z+sz*d,radius))break;clear=d;}
   return clear;
 }
 
 // All clocks, IK targets, carried meshes and gestures below are presentation only.
 // This module never calls a command, writes an actor, or completes a transaction.
-export function animateStickman(model,a,target,state,dt,time,validPosition){
+export function animateStickman(model,a,target,state,dt,time,validPosition,environment={}){
+  const canWalk=environment.walkable||walkable,seatAt=environment.seat||tableSeat,layout=environment.layout||LAYOUTS[state.floor];
   dt=clamp(dt,0,.1);const reduced=state.settings.reducedMotion,floor=state.floor;
   const carryItems=a.purpose==='food'&&['waiting','payment','toTable','waitingTable'].includes(a.state)?a.needs.filter((_,i)=>a.delivered[i]):a.bag||[];
   if(!model.previous){model.root.position.set(target.x,0,target.y);model.previous={x:a.x,y:a.y,state:a.state,table:a.table,action:a.action,moving:a.moving,reduced,bag:[...carryItems],delivered:[...(a.delivered||[])]};model.transferToken=0;model.reveal=0;}
   const previous=model.previous,dx=a.x-previous.x,dz=a.y-previous.y,moved=Math.hypot(dx,dz),wasSitting=['dining','service','payment'].includes(previous.state)&&previous.table!==null;
   const sitting=a.table!==null&&a.table!==undefined&&['dining','service','payment'].includes(a.state);
   if(!reduced&&a.table!==null&&a.table!==undefined&&wasSitting!==sitting){
-    const seat=tableSeat(a.table);model.seatOrigin=seat;
+    const seat=seatAt(a.table);model.seatOrigin=seat;
     model.seatRoute=sitting?[{x:seat.x-.75,y:seat.y+.75},{x:seat.x,y:seat.y+.75},seat]:[{x:seat.x,y:seat.y+.75},{x:seat.x-.75,y:seat.y+.75}];
     model.standPause=sitting?0:.18;model.transferToken++;
   }
@@ -70,7 +71,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   // Accumulate actual visible travel; render frames cannot advance a stationary gait.
   if(travel<.65)model.travelPhase+=travel*Math.PI*2/R.stride;
   model.phase=damp(model.phase,model.travelPhase,24,dt);
-  const st=LAYOUTS[floor].find(s=>s.id===a.action),working=!!st&&!a.moving&&model.walk<.7;
+  const st=layout.find(s=>s.id===a.action),working=!!st&&!a.moving&&model.walk<.7;
   if(model.role!=='player'&&travel>.0001)model.heading=Math.atan2(x-oldX,z-oldZ);
   else if(moved>.0001&&!wasSitting)model.heading=Math.atan2(dx,dz);
   let facing=model.angle;
@@ -80,7 +81,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   else if(['playing','checkout'].includes(a.state))facing=Math.PI;
   else if(a.state==='browsing')facing=0;
   const seated=sitting&&!model.seatRoute?.length;
-  if(seated)facing=a.purpose==='movie'?Math.PI:Math.PI/2;
+  if(seated)facing=a.purpose==='movie'?Math.PI:(environment.seatFacing??Math.PI/2);
   model.angle=reduced?facing:angleTowards(model.angle,facing,dt);model.rig.rotation.y=model.angle;
   model.sit=reduced?(seated?1:0):damp(model.sit,seated?1:0,12,dt);
   const delta=itemDelta(previous.bag,carryItems),delivered=(a.needs||[]).filter((_,i)=>a.delivered?.[i]&&!previous.delivered[i]),received=delivered.length>0;
@@ -124,7 +125,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
   if(lowest<.018)model.hips.position.y+=.018-lowest;
   const reach= Math.max(smooth(((a.progress||0)/B.actionTime-.2)/.8),model.react);
   model.tools.spatula.visible=working&&!cheer&&st.kind==='fryer';model.tools.pitcher.visible=working&&!cheer&&(['drinks','wine','water'].includes(st.kind)||['milkshake','smoothie'].includes(st.id));model.tools.cloth.visible=working&&!cheer&&st.kind==='table'&&state.floors[floor].tables[Number(st.id.slice(5))].state==='dirty';
-  const clearance=frontClearance(floor,x,z,model.angle,.8,.32);
+  const clearance=frontClearance(floor,x,z,model.angle,.8,.32,canWalk);
   const carryDepth=Math.min(.46,Math.max(0,clearance-.3));
   model.carry.position.set(0,.31+(reduced?0:Math.sin(phase-.4)*.012*stride),carryDepth);
   model.carry.rotation.x=reduced?0:Math.sin(phase)*.018*stride;
@@ -147,7 +148,7 @@ export function animateStickman(model,a,target,state,dt,time,validPosition){
     if((!working||cheer>0)&&!carryItems.length&&i===1&&(model.greet>0||cheer>0)){desired.set(.36,.45+(reduced?0:cheer*.05),.10);model.motion=cheer?'celebrate':'greet';}
     // Retract a reaching hand when a wall/solid prop is close to its path.
     const handX=x+desired.x*Math.cos(model.angle)+desired.z*Math.sin(model.angle),handZ=z-desired.x*Math.sin(model.angle)+desired.z*Math.cos(model.angle);
-    if(!sitting&&!walkable(floor,handX,handZ,.13))desired.set(side*.13,-.12,.03);
+    if(!sitting&&!canWalk(floor,handX,handZ,.13))desired.set(side*.13,-.12,.03);
     armPose(model,i,desired,dt,reduced);
     if(working&&['wine','drinks'].includes(st.kind)&&i===1&&!reduced)model.hands[i].rotation.z=-.45*reach;
   }

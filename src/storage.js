@@ -6,6 +6,7 @@ import { newGame } from './simulation.js';
 import {newBasement,validateBasement} from './security.js';
 import {newComputer} from './computer.js';
 import {newPets,validatePets} from './pets.js';
+import {newStory,validateStory,recoverStory,storyEligible} from './story.js';
 import { ITEMS, OUTFITS, UPGRADE_TYPES, PRODUCTS, BALANCE, WORLD, TABLE_COUNT, FLOORS, ROSTER, upgradeCount } from './config.js';
 export const SAVE_KEY = 'dfp.save';
 export const BACKUP_KEY = 'dfp.backup';
@@ -15,7 +16,7 @@ const uValid = (u, cap) => u && UPGRADE_TYPES.every(k => integer(u[k], 0, cap));
 const point = p => p && finite(p.x, 0, WORLD.width) && finite(p.y, 0, WORLD.depth);
 const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= (a.id===undefined?13:8) && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string' && (a.cold===undefined||Array.isArray(a.cold)&&a.cold.length<=13&&a.cold.every(n=>finite(n,0,30)));
 export function validateSave(s) {
-  if (!s || s.version !== 10 || !validatePets(s.pets) || !validateBasement(s.basement,s.pets.owned.includes('camera')) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
+  if (!s || s.version !== 11 || !validateStory(s.story) || s.story.started&&!storyEligible(s) || !validatePets(s.pets) || !validateBasement(s.basement,s.pets.owned.includes('camera')) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
   if(s.layoutVersion!==undefined&&(!integer(s.layoutVersion,1,LAYOUT_VERSION)))return false;
   if (!integer(s.floor, 0, FLOORS.length-1) || !actorValid(s.player) || !Array.isArray(s.floors) || s.floors.length !== FLOORS.length) return false;
   if (!integer(s.tutorial, 0, 5) || !s.settings || typeof s.settings.sound !== 'boolean' || typeof s.settings.reducedMotion !== 'boolean') return false;
@@ -90,7 +91,9 @@ export function migrate(s) {
     const fresh=newGame();for(const fs of s.floors){for(const item of EXPANSION_ITEMS){fs.stock[item]??=0;fs.counter[item]??=0;}}
     s.floors.push(...fresh.floors.slice(4));s.version=10;
   }
+  if(s?.version===10){s.story=newStory();s.version=11;}
   if (!validateSave(s)) throw new Error('Invalid save data');
+  recoverStory(s.story);
   if((s.layoutVersion??1)<LAYOUT_VERSION){
     const relocate=(actor,floor,position)=>{Object.assign(actor,position??nearestWalkable(floor,actor),{path:[],pathKey:'',moving:false});if(actor.action!==undefined){actor.action='';actor.progress=0;}};
     relocate(s.player,s.floor);for(const e of s.employees)relocate(e,e.floor);
@@ -105,7 +108,7 @@ export function encode(s) { if (!validateSave(s)) throw new Error('Save failed v
 export function decode(raw) {
   const envelope = JSON.parse(raw); let data = envelope;
   if (typeof envelope.data === 'string') { if (checksum(envelope.data) !== envelope.checksum) throw new Error('Checksum mismatch'); data = JSON.parse(envelope.data); }
-  if (data?.version > 10 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
+  if (data?.version > 11 || data?.layoutVersion > LAYOUT_VERSION) throw new Error('FUTURE_VERSION');
   return migrate(data);
 }
 export function loadGame(storage) {

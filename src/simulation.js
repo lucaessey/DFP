@@ -9,11 +9,12 @@ import {newBasement,BASEMENT_PRICE,SECURITY_PRICE,FURNITURE,furnished,securityTi
 import {COMPUTER_PRICE,EMAIL_PRICE,COMPUTER_GAMES} from './computer.js';
 import {newPets,petById,petBonus,equippedPet,preparationStation} from './pets.js';
 import {findPath} from './navigation.js';
+import {newStory} from './story.js';
 
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 10, pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 11, story:newStory(), pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
     floors: FLOORS.map((f, i) => ({ ...(i>=4?{activity:newActivity()}:{}), unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
@@ -423,6 +424,8 @@ export function petTasks(s,dt,active=true){
 }
 export function step(s, dt = B.step, input = {}) {
   if (!Number.isFinite(dt) || dt <= 0 || dt > 0.25) throw new Error('Simulation requires a bounded fixed step');
+  // Preserve the entire regular simulation in place, including unpaid receipts.
+  if(s.story?.active)return;
   s.time += dt;
   securityTick(s,dt,!!input.monitoring);
   if (s.vr && !s.vr.done) stepVR(s, dt);

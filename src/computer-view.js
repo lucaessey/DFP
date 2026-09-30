@@ -4,6 +4,8 @@ import {FURNITURE,SECURITY_PRICE,furnished} from './security.js';
 import './computer.css';
 import {PeopleView} from './people/view.js';
 import {commentsClient} from './people/client.js';
+import {startStory,resumeStory,pauseStory,sendChallenge,storyObjective} from './story.js';
+import {STORY_EMAILS,STORY_CHAPTERS} from './story-data.js';
 
 export class ComputerView {
  constructor(state,{purchase,save,openSecurity,closeSecurity,onClose}){
@@ -18,7 +20,7 @@ export class ComputerView {
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&this.game){this.gameError('Game paused while DFP was away. Relaunch to continue; your DFP purchases are saved.');this.save();}});
  }
  open(){if(!this.state.basement.computer.owned)return;this.opened=true;this.navigate('desktop');commentsClient.init().then(()=>commentsClient.checkOwner()).catch(()=>{});}
- close(){if(!this.opened)return;this.people.close();this.closeSecurity();this.unloadGame();this.opened=false;this.root.hidden=true;this.save();this.onClose();}
+ close(){if(!this.opened)return;this.people.close();this.closeSecurity();this.unloadGame();this.opened=false;this.root.hidden=true;if(this.state.story.active)pauseStory(this.state);this.save();this.onClose();}
  update(){
   this.root.querySelector('#computer-balance').textContent=`${this.state.money<0?'−':''}$${Math.abs(this.state.money).toLocaleString('en-US')}`;
   this.root.querySelector('#computer-connection').textContent=navigator.onLine?'● Local apps ready':'● Offline · local apps ready';
@@ -26,6 +28,12 @@ export class ComputerView {
  navigate(page,id){
   this.people.close();this.screen.classList.remove('people-screen');this.closeSecurity();this.unloadGame();this.page=page;this.root.hidden=false;this.root.classList.remove('playing');this.update();
   const c=this.state.basement.computer;
+  if(page==='story-inbox'){
+   if(!c.owned||!c.email)return this.navigate('email');
+   const st=this.state.story,o=storyObjective(st);this.root.querySelector('#computer-title').textContent='Inbox · Neighborhood Stories';this.root.querySelector('#computer-location').textContent='STORY INBOX';this.root.querySelector('[data-computer="desktop"]').hidden=false;
+   this.screen.innerHTML=!st.started?`<article class="computer-card mail-message"><span class="computer-kicker">AN OPTIONAL, OFFLINE ADVENTURE</span><h2>Would you like to start Story Mode?</h2><p>Meet the neighbors, investigate the restaurant across the road, and compete for the Crunch Cup. Your regular businesses pause safely while you play. Story supplies and retries are free.</p><div class="story-mail-controls"><button class="computer-button primary" data-computer="story-start">Yes · Start Story Mode</button><button class="computer-button" data-computer="desktop">No · Back to Computer</button></div></article>`:`<div class="inbox-heading"><span class="computer-kicker">FICTIONAL MAIL · SAVED ON THIS DEVICE</span><h2>${st.complete?'The neighborhood is back.':STORY_CHAPTERS[o?.chapter??0]}</h2><p>${st.complete?'Crunch Cup complete · All nine victories saved.':o.title}</p></div><div class="story-mail-controls">${st.complete?'':`<button class="computer-button primary" data-computer="story-resume">Resume Story</button>`}${st.active?'<button class="computer-button" data-computer="story-pause">Pause Story / Return to Regular Play</button>':''}${o?.id==='challenge'&&st.location==='computer'?'<button class="computer-button primary" data-computer="story-challenge">Send Challenge</button>':''}</div>${o?.id==='challenge'&&st.location==='computer'?`<article class="computer-card mail-message"><span class="computer-kicker">PREPARED DRAFT · FICTIONAL</span><h2>${STORY_EMAILS.challenge.subject}</h2><p>${STORY_EMAILS.challenge.body}</p></article>`:''}<div class="story-mail-list">${st.emails.slice().reverse().map(id=>{const m=STORY_EMAILS[id];return `<article class="computer-card mail-message story-mail-message"><span class="computer-kicker">FROM ${m.from}</span><h2>${m.subject}</h2><p>${m.body}</p><footer>Story correspondence · Offline · No external email</footer></article>`;}).join('')}</div>`;
+   this.screen.scrollTop=0;this.screen.focus({preventScroll:true});return;
+  }
   const title={desktop:'Your little desktop.',security:'Security.',email:'You’ve got mail.',store:'A little play time.',inbox:'The inbox.',message:'A note for DFP.'}[page]||'Your little desktop.';
   this.root.querySelector('#computer-title').textContent=title;this.root.querySelector('#computer-location').textContent=page==='desktop'?'DESKTOP':page.toUpperCase();this.root.querySelector('[data-computer="desktop"]').hidden=page==='desktop';
   if(['people','producer','producer-signin','add-comment'].includes(page)){
@@ -37,7 +45,7 @@ export class ComputerView {
   }else if(page==='security'){
    this.screen.innerHTML=`<article class="computer-card security-setup">${icon('shield')}<h2>Your upstairs lookout.</h2><p>Furnish the lounge, then install security. Your camera follows the highest open floor.</p><ul id="security-requirements">${FURNITURE.map(p=>`<li class="${this.state.basement.furniture[p.id]?'complete':''}">${this.state.basement.furniture[p.id]?'✓':'○'} ${p.name}</li>`).join('')}</ul><button id="security-buy" data-computer="buy-security" class="computer-button primary" ${furnished(this.state)?'':'disabled'}>Buy security · $${SECURITY_PRICE}</button><p>${furnished(this.state)?'One permanent purchase. Catch +$15 · wrong person / escape −$5.':'Return to the lounge to buy the missing furnishings.'}</p></article>`;
   }else if(page==='email'){
-   this.screen.innerHTML=c.email?`<div class="inbox-heading"><span class="computer-kicker">CUSTOMER POSTBOX</span><h2>Fresh from the floor.</h2><p>Fictional customer notes, just for fun.</p></div><div class="mail-categories">${EMAIL_CATEGORIES.map(cat=>`<button class="computer-card mail-category" data-computer="inbox" data-id="${cat.id}">${icon(cat.icon)}<strong>${cat.name}</strong><span>${cat.messages.length} messages ${icon('arrow')}</span></button>`).join('')}<button class="computer-card mail-category people-category" data-computer="people">${icon('people')}<strong>People Comments</strong><span>Real players · Internet required ${icon('arrow')}</span></button></div>`:`<article class="computer-card app-unlock">${icon('email')}<h2>A little customer mail.</h2><p>${EMAIL_CATEGORIES.map(cat=>cat.name).join(" and ")}. ${EMAIL_CATEGORIES.reduce((total,cat)=>total+cat.messages.length,0)} fictional notes with no effect on your money or progress.</p><button data-computer="buy-email" class="computer-button primary">Unlock Email · $${EMAIL_PRICE}</button><p>Pay once. Read whenever you like, even offline.</p></article>`;
+   this.screen.innerHTML=c.email?`<div class="inbox-heading"><span class="computer-kicker">CUSTOMER POSTBOX</span><h2>Fresh from the floor.</h2><p>Fictional customer notes, just for fun.</p></div><div class="mail-categories"><button class="computer-card mail-category story-inbox-category" data-computer="story-inbox">${icon('email')}<strong>Inbox</strong><span>Neighborhood Stories · Offline ${icon('arrow')}</span></button>${EMAIL_CATEGORIES.map(cat=>`<button class="computer-card mail-category" data-computer="inbox" data-id="${cat.id}">${icon(cat.icon)}<strong>${cat.name}</strong><span>${cat.messages.length} messages ${icon('arrow')}</span></button>`).join('')}<button class="computer-card mail-category people-category" data-computer="people">${icon('people')}<strong>People Comments</strong><span>Real players · Internet required ${icon('arrow')}</span></button></div>`:`<article class="computer-card app-unlock">${icon('email')}<h2>A little customer mail.</h2><p>${EMAIL_CATEGORIES.map(cat=>cat.name).join(" and ")}. ${EMAIL_CATEGORIES.reduce((total,cat)=>total+cat.messages.length,0)} fictional notes with no effect on your money or progress.</p><button data-computer="buy-email" class="computer-button primary">Unlock Email · $${EMAIL_PRICE}</button><p>Pay once. Read whenever you like, even offline.</p></article>`;
   }else if(page==='store'){
    this.screen.innerHTML=`<div class="store-heading"><span class="computer-kicker">THE GAME SHELF</span><h2>Take a well-earned break.</h2><p>Permanent access. Each game stays in its own window.</p></div><div class="computer-games">${COMPUTER_GAMES.map(g=>`<article class="computer-card store-game"><div class="game-mark ${g.id}">${icon(g.icon)}</div><div><h3>${g.name}</h3><p>${g.description}</p><small>${c.games[g.id]?'✓ Owned · Internet may be required':`$${g.cost} · One-time purchase`}</small></div><button class="computer-button primary" data-computer="${c.games[g.id]?'play':'buy-game'}" data-id="${g.id}">${c.games[g.id]?'Play':`Buy · $${g.cost}`}</button></article>`).join('')}</div><p class="computer-note">These are separate games. Their own sound controls apply. Game progress may reset when the window closes.</p>`;
   }else if(page==='inbox'&&c.email){
@@ -50,6 +58,11 @@ export class ComputerView {
   this.screen.scrollTop=0;this.screen.focus({preventScroll:true});
  }
  action(action,id){
+  if(action==='story-start'){if(startStory(this.state).ok){this.save();this.navigate('story-inbox');}return;}
+  if(action==='story-resume'){if(resumeStory(this.state).ok){this.save();this.onStory?.();}return;}
+  if(action==='story-pause'){pauseStory(this.state);this.close();return;}
+  if(action==='story-challenge'){if(!this.state.story.active)resumeStory(this.state);const result=sendChallenge(this.state);if(result.ok){this.save();this.navigate('story-inbox');}return;}
+  if(action==='story-inbox')return this.navigate('story-inbox');
   if(action==='dfp')return this.close();
   if(action==='security'){
    if(this.state.basement.security.owned){this.unloadGame();if(this.openSecurity()){this.page='security';this.root.hidden=true;}return;}

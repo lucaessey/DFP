@@ -26,7 +26,7 @@ test('pet shortcut requires an equipped camera and active viewing; wrong taps an
 });
 test('version eight security history migrates without revaluing old catches or paying again',()=>{
  const old=camera();const round=active(old);securitySelect(old,{roundId:round.id,person:'robber',watching:true});old.floors=old.floors.slice(0,4);old.version=8;delete old.basement.security.remoteCatches;
- const before=structuredClone(old),migrated=decode(JSON.stringify(old));assert.equal(migrated.version,10);assert.equal(migrated.money,before.money);assert.equal(migrated.earned,before.earned);
+ const before=structuredClone(old),migrated=decode(JSON.stringify(old));assert.equal(migrated.version,11);assert.equal(migrated.money,before.money);assert.equal(migrated.earned,before.earned);
  assert.deepEqual(migrated.basement.security,{...before.basement.security,remoteCatches:0});assert.equal(migrated.basement.security.rewards,15);
  assert.equal(securitySelect(migrated,{roundId:round.id,person:'robber',watching:true,remote:true}).ok,false);assert.equal(migrated.money,before.money);
 });
@@ -78,5 +78,5 @@ test('camera descriptions match five upgrades and a full 13-item bag survives un
 });
 test('version seven migrates to ten with pet collection, money, cargo and all previous progress unchanged',()=>{
  const old=newGame();old.money=6000;command(old,{type:'pet-buy',id:'whale'});old.floors=old.floors.slice(0,4);old.version=7;
- const migrated=decode(JSON.stringify(old));assert.equal(migrated.version,10);assert.deepEqual({...migrated,floors:migrated.floors.slice(0,4)},{...old,version:10,events:[]});assert.ok(migrated.floors.slice(4).every(f=>!f.unlocked));
+ const migrated=decode(JSON.stringify(old));assert.equal(migrated.version,11);assert.deepEqual({...migrated,floors:migrated.floors.slice(0,4)},{...old,version:11,events:[]});assert.ok(migrated.floors.slice(4).every(f=>!f.unlocked));
 });

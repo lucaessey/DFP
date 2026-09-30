@@ -1,3 +1,5 @@
+import {StoryView} from './story-view.js';
+import {pauseStory,resumeStory,leaveStoryComputer} from './story.js';
 import {UMBRELLA_COST} from './expansion-config.js';
 import './style.css';
 import './vr.css';
@@ -35,8 +37,10 @@ app.innerHTML = `
   <footer class="bottom-shell"><div class="save-status"><i id="save-dot"></i><span id="save-status">Saved on this device</span></div><nav class="bottom-nav" aria-label="Main navigation">${[['elevator','elevator','Elevator'],['home','home','Home'],['outfits','shirt','Outfits'],['employees','people','Employees'],['pets','paw','Pets']].map(([id,i,label]) => `<button data-tab="${id}" class="nav-tab ${id === 'home' ? 'active' : ''}" aria-current="${id === 'home' ? 'page' : 'false'}">${icon(i)}<span>${label}</span>${id === 'home' ? '<i></i>' : ''}</button>`).join('')}</nav><div class="made-with">FRESHLY FRIED. <span>ALWAYS PLAYFUL.</span></div></footer>
   <div id="toast" role="status" aria-live="polite"></div><dialog id="dialog"><div id="dialog-content"></div></dialog><div id="session-block" hidden><div class="card"><h2>DFP is open in another tab.</h2><p>Keep playing there, or close that tab and reload this one.</p><button class="dark-button" data-action="reload">Reload DFP</button></div></div>`;
 const canvas = document.querySelector('#game'), renderer = new Renderer(canvas), dialog = document.querySelector('#dialog');
-const basement=new BasementView(state,{purchase:act,save,notify:toast,watchAllowed:()=>!paused&&!lockBlocked&&sessionReady&&!dialog.open&&activeTab==='home'&&(inBasement||basement.remote)});
+const basement=new BasementView(state,{purchase:act,save,notify:toast,watchAllowed:()=>!state.story.active&&!paused&&!lockBlocked&&sessionReady&&!dialog.open&&activeTab==='home'&&(inBasement||basement.remote)});
 const petShop=new PetShop(state,act);
+const storyView=new StoryView(state,{save,allowed:()=>!lockBlocked&&sessionReady&&!paused&&!dialog.open,regular:()=>{inBasement=false;selectTab('home');refreshHome();},computer:()=>{inBasement=true;activeTab='home';document.querySelector('#home-view').hidden=true;basement.show(true);basement.computer.open();basement.computer.navigate('story-inbox');}});
+basement.computer.onStory=()=>{stopMovement();basement.computer.close();resumeStory(state);leaveStoryComputer(state);storyView.open();save();};
 renderer.onCue=kind=>sound.play(kind,state.settings.sound);
 mountSignInCompletion();
 let toastTimer;
@@ -140,6 +144,7 @@ function openPetSecurity(button){
   basement.open({remote:true,onReturn:()=>{refreshHome();const source=button.getClientRects().length?button:document.querySelector('#pet-security-mobile').getClientRects().length?document.querySelector('#pet-security-mobile'):canvas;source.focus({preventScroll:true});}});
 }
 function selectTab(tab) {
+  if(storyView.opened||state.story.active){pauseStory(state);storyView.hide();save();}
   activeTab = tab; stopMovement();
   document.querySelector('#home-view').hidden = tab !== 'home'||inBasement; document.querySelector('#panel-view').hidden = tab === 'home';basement.show(tab==='home'&&inBasement);
   document.querySelectorAll('[data-tab]').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'); });
@@ -281,7 +286,7 @@ canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) ret
 canvas.addEventListener('pointermove',e=>{if(e.pointerId===surfacePointer)target=renderer.pick(e.clientX,e.clientY);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{if(e.pointerId===surfacePointer){surfacePointer=null;stopPath();}});
 const movementKey=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'}[e.code]||e.key.toLowerCase());
-window.addEventListener('keydown', e => {const key=movementKey(e);if(e.key==='Escape'){stopMovement();return;}if(dialog.open&&state.vr&&document.querySelector('#vr-field')){if(['arrowleft','a','arrowright','d'].includes(key)){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(key)?-1:1);}return;}if(basement.monitoring||inBasement||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();keys.add(key);target=null;state.player.path=[];state.player.pathKey="";surfacePointer=null;sound.unlock();}});
+window.addEventListener('keydown', e => {const key=movementKey(e);if(e.key==='Escape'){stopMovement();return;}if(dialog.open&&state.vr&&document.querySelector('#vr-field')){if(['arrowleft','a','arrowright','d'].includes(key)){e.preventDefault();if(!e.repeat)vrInput(state,['a','arrowleft'].includes(key)?-1:1);}return;}if(state.story.active||storyView.opened||basement.monitoring||inBasement||dialog.open||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key)){e.preventDefault();keys.add(key);target=null;state.player.path=[];state.player.pathKey="";surfacePointer=null;sound.unlock();}});
 window.addEventListener('keyup',e=>{const key=movementKey(e);if(!['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(key))return;keys.delete(key);if(!keys.size&&!joystick.x&&!joystick.y&&surfacePointer===null)stopPath();});
 window.addEventListener('blur',stopMovement);
 function joyMove(e) { const r = joy.getBoundingClientRect(), x = e.clientX-r.left-r.width/2, y = e.clientY-r.top-r.height/2, d = Math.max(1,Math.hypot(x,y)/34); joystick.x=x/d/34; joystick.y=y/d/34; knob.style.transform=`translate(${x/d}px,${y/d}px)`; target=null; }
@@ -304,7 +309,8 @@ function frame(timestamp) {
     for(const event of state.events.splice(0)) {renderer.feedback(event,state.time);sound.play(event.kind,state.settings.sound);if(event.kind==='trash'||event.kind==='melt'&&event.floor===state.floor)toast(event.text);if(event.kind==='money'){document.querySelector('#balance').textContent=money(state.money);if(!state.settings.reducedMotion){const balance=document.querySelector('.balance');balance.getAnimations().forEach(a=>a.cancel());balance.animate([{transform:'scale(1)'},{transform:'scale(1.055)',offset:.35},{transform:'scale(1)'}],{duration:260,easing:'ease-out'});}}}
     if(state.revision!==lastRevision || state.time-lastSave>2)save();
   }
-  if(activeTab==='home'&&!paused){if(inBasement||basement.monitoring)basement.draw();else renderer.draw(state,state.time);}
+  if(storyView.opened){storyView.tick(delta);}
+  if(activeTab==='home'&&!paused&&!storyView.opened){if(inBasement||basement.monitoring)basement.draw();else renderer.draw(state,state.time);}
   if(activeTab==='pets'&&!paused)petShop.draw(timestamp);
   refreshVR();
   if(timestamp-lastUI>200){refreshHome();lastUI=timestamp;}
@@ -326,3 +332,5 @@ if('serviceWorker' in navigator && import.meta.env.PROD) {
 }
 refreshHome(); requestAnimationFrame(frame); if(loaded.warning)toast(loaded.warning);
 if(state.vr&&!state.vr.done)vrDialog(true);
+
+if(state.story.active){if(state.story.location==='computer'){inBasement=true;document.querySelector('#home-view').hidden=true;basement.show(true);basement.computer.open();basement.computer.navigate('story-inbox');}else storyView.open();}

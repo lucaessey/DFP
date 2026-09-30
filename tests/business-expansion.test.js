@@ -31,7 +31,7 @@ test('new costs charge once, reject poor players, preserve section locks and sur
 test('legacy version nine migrates every old field and appends seven locked floors',()=>{
  const s=rich(3);s.floors=s.floors.slice(0,4);s.version=9;s.money=18791;command(s,{type:'hire',id:5,floor:1});s.employees[0].upgrades={speed:3,capacity:2,profit:1};command(s,{type:'pet-buy',id:'camera'});command(s,{type:'outfit',id:'chef'});s.player.bag=['controller','wine'];s.floors[0].stock.controller=7;
  for(const fs of s.floors){for(const item of EXPANSION_ITEMS){delete fs.stock[item];delete fs.counter[item];}}
- const before=structuredClone(s),restored=decode(JSON.stringify(s));assert.equal(restored.version,10);for(const key of ['money','earned','served','player','employees','outfits','outfit','pets','basement','transactions'])assert.deepEqual(restored[key],before[key],key);
+ const before=structuredClone(s),restored=decode(JSON.stringify(s));assert.equal(restored.version,11);for(const key of ['money','earned','served','player','employees','outfits','outfit','pets','basement','transactions'])assert.deepEqual(restored[key],before[key],key);
  for(let f=0;f<4;f++){const expected=structuredClone(before.floors[f]);for(const item of EXPANSION_ITEMS){expected.stock[item]=0;expected.counter[item]=0;}assert.deepEqual(restored.floors[f],expected);}
  assert.ok(restored.floors.slice(4).every(fs=>!fs.unlocked&&!fs.section&&!Object.values(fs.products).some(Boolean)&&fs.revenue===0));assert.equal(decode(encode(restored)).money,before.money);
 });
