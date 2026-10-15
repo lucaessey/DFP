@@ -72,4 +72,19 @@ const rules={rules:{'.read':false,'.write':false,peopleComments:{
     }
   }}
 }}};
+// A single owner-wide limit and an immutable receipt must be committed together.
+rules.rules.producerRewards={
+  limit:{
+    '.read':owner,
+    '.write':`${owner} && newData.exists() && (!data.exists() || data.child('claimedAt').val() <= now - 300000)`,
+    '.validate':"newData.hasChildren(['id','claimedAt']) && newData.child('id').isString() && newData.child('id').val().matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.child('claimedAt').val() == now && !root.child('producerRewards/receipts').child(newData.child('id').val()).exists() && newData.parent().child('receipts').child(newData.child('id').val()).child('claimedAt').val() == now",
+    ...only(['id','claimedAt'])
+  },
+  receipts:{'$id':{
+    '.read':owner,
+    '.write':`${owner} && !data.exists() && newData.exists()`,
+    '.validate':"$id.matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.hasChildren(['id','amount','claimedAt']) && newData.child('id').val() == $id && newData.child('amount').val() == 1000 && newData.child('claimedAt').val() == now && newData.parent().parent().child('limit/id').val() == $id && newData.parent().parent().child('limit/claimedAt').val() == now",
+    ...only(['id','amount','claimedAt'])
+  }}
+};
 writeFileSync('firebase/database.rules.json',JSON.stringify(rules,null,2)+'\n');

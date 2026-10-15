@@ -1,4 +1,5 @@
 import {newView,validView,recoverLounge} from './first-person.js';
+import {newProducerBonus,validProducerBonus} from '../shared/producer-bonus.js';
 import {EXPANSION_ITEMS} from './expansion-config.js';
 import {newActivity,validateActivity} from './expansion.js';
 import {nearestWalkable} from './navigation.js';
@@ -17,6 +18,7 @@ const uValid = (u, cap) => u && UPGRADE_TYPES.every(k => integer(u[k], 0, cap));
 const point = p => p && finite(p.x, 0, WORLD.width) && finite(p.y, 0, WORLD.depth);
 const actorValid = a => point(a) && Array.isArray(a.bag) && a.bag.length <= (a.id===undefined?13:8) && a.bag.every(v => ITEMS.includes(v)) && typeof a.action === 'string' && finite(a.progress, 0, 1) && Array.isArray(a.path) && a.path.length <= 500 && a.path.every(point) && typeof a.pathKey === 'string' && (a.cold===undefined||Array.isArray(a.cold)&&a.cold.length<=13&&a.cold.every(n=>finite(n,0,30)));
 export function validateSave(s) {
+  if(s?.producerBonus!==undefined&&!validProducerBonus(s.producerBonus))return false;
   if (!s || s.version !== 12 || !validView(s.view) || !validateStory(s.story) || s.story.started&&!storyEligible(s) || !validatePets(s.pets) || !validateBasement(s.basement,s.pets.owned.includes('camera')) || !integer(s.money,-s.basement.security.penalties) || !integer(s.earned) || !integer(s.served) || !finite(s.time) || !integer(s.seed, 0, 4294967295) || !integer(s.nextId, 1) || !integer(s.revision)) return false;
   if(s.layoutVersion!==undefined&&(!integer(s.layoutVersion,1,LAYOUT_VERSION)))return false;
   if (!integer(s.floor, 0, FLOORS.length-1) || !actorValid(s.player) || !Array.isArray(s.floors) || s.floors.length !== FLOORS.length) return false;
@@ -94,6 +96,7 @@ export function migrate(s) {
   }
   if(s?.version===10){s.story=newStory();s.version=11;}
   if(s?.version===11){s.view=newView();s.version=12;}
+  if(s?.version===12&&s.producerBonus===undefined)s.producerBonus=newProducerBonus();
   if (!validateSave(s)) throw new Error('Invalid save data');
   recoverLounge(s);
   recoverStory(s.story);

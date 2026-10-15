@@ -191,6 +191,31 @@
           }
         }
       }
+    },
+    "producerRewards": {
+      "limit": {
+        ".read": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
+        ".write": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && newData.exists() && (!data.exists() || data.child('claimedAt').val() <= now - 300000)",
+        ".validate": "newData.hasChildren(['id','claimedAt']) && newData.child('id').isString() && newData.child('id').val().matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.child('claimedAt').val() == now && !root.child('producerRewards/receipts').child(newData.child('id').val()).exists() && newData.parent().child('receipts').child(newData.child('id').val()).child('claimedAt').val() == now",
+        "id": {},
+        "claimedAt": {},
+        "$other": {
+          ".validate": false
+        }
+      },
+      "receipts": {
+        "$id": {
+          ".read": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com'))",
+          ".write": "(auth != null && auth.token.email == 'lucaessey@gmail.com' && auth.token.email_verified == true && (auth.token.firebase.sign_in_provider == 'password' || auth.token.firebase.sign_in_provider == 'google.com')) && !data.exists() && newData.exists()",
+          ".validate": "$id.matches(/^[a-zA-Z0-9_-]{16,80}$/) && newData.hasChildren(['id','amount','claimedAt']) && newData.child('id').val() == $id && newData.child('amount').val() == 1000 && newData.child('claimedAt').val() == now && newData.parent().parent().child('limit/id').val() == $id && newData.parent().parent().child('limit/claimedAt').val() == now",
+          "id": {},
+          "amount": {},
+          "claimedAt": {},
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

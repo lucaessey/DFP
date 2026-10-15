@@ -1,4 +1,5 @@
 import {commentsClient as client} from './client.js';
+import {ProducerBonus} from './producer-bonus.js';
 import {OWNER_EMAIL,PRIVATE_WARNING,PUBLIC_WARNING,COMMENT_STATES,escapeHTML as esc} from '../../shared/comments.js';
 import './people.css';
 const button=(action,text,extra='')=>`<button class="computer-button" data-people="${action}" ${extra}>${text}</button>`;
@@ -7,6 +8,7 @@ const starsOptions=[['all','All Stars'],...[1,2,3,4,5].map(n=>[n,`${n} Star${n==
 export class PeopleView {
   constructor(computer){
     this.computer=computer;this.screen=computer.screen;this.epoch=0;this.rows=[];this.audience='everyone';this.stars='all';this.cursor=null;this.busy=false;
+    if(computer.state)this.bonus=new ProducerBonus(client,computer,()=>this.renderBonus());
     computer.root.addEventListener('click',e=>{const b=e.target.closest('[data-people]');if(b&&!b.disabled){e.preventDefault();this.action(b.dataset.people,b.dataset.id);}});
     computer.root.addEventListener('submit',e=>{if(e.target.id==='people-form'){e.preventDefault();this.submit();}});
     computer.root.addEventListener('input',e=>{if(e.target.closest('#people-form'))this.readDraft();});
@@ -23,13 +25,14 @@ export class PeopleView {
     window.addEventListener('offline',()=>{if(this.mode==='people'){this.abort?.abort();this.rows=[];this.renderFeed('You’re offline. Connect to load current player comments.');}else if(this.mode==='add-comment')this.form();});
     window.addEventListener('online',()=>{if(this.mode==='add-comment')this.form();});
   }
-  close(){if(this.mode==='producer')this.screen.replaceChildren();this.epoch++;this.abort?.abort();this.abort=null;this.rows=[];this.mode=null;this.busy=false;clearTimeout(this.resendTimer);}
+  close(){if(this.mode==='producer')this.screen.replaceChildren();this.epoch++;this.abort?.abort();this.abort=null;this.rows=[];this.mode=null;this.busy=false;clearTimeout(this.resendTimer);clearInterval(this.bonusTimer);}
   show(mode){
     this.close();this.mode=mode;
     if(mode==='producer-signin'){this.signin();client.init().then(()=>client.checkOwner()).catch(()=>{});return;}
     if(mode==='add-comment'){this.draft=client.loadDraft();return this.form();}
     if(mode==='producer'&&!client.owner)return this.computer.navigate('producer-signin');
     this.audience=mode==='producer'?'producer':'everyone';this.stars='all';this.load(true);
+    if(mode==='producer'&&this.bonus){this.bonus.refresh();this.bonusTimer=setInterval(()=>this.renderBonus(),1000);}
   }
   async load(reset){
     if(reset){this.epoch++;this.abort?.abort();this.rows=[];this.cursor=null;}
@@ -50,6 +53,11 @@ export class PeopleView {
     const choices=owner?[['producer','Private Producer'],['everyone','Public Everyone'],['pending','Awaiting Approval']]:[['everyone','Everyone'],['producer','Producer']];
     this.screen.innerHTML=`<section class="people-pane"><header class="people-heading"><span class="computer-kicker">${owner?'PRODUCER INBOX':'REAL PLAYER FEEDBACK'}</span><h2>${owner?'Your players. Your inbox.':'People Comments'}</h2><p>${owner?'Private feedback stays private, even after approval.':'Player submissions, separate from DFP’s fictional reviews.'}</p><div class="people-filters"><label>Audience<select id="people-audience">${options(this.audience,choices)}</select></label><label>Rating<select id="people-stars">${options(this.stars,starsOptions)}</select></label>${button('refresh','Refresh',this.busy?'disabled':'')}${owner?button('signout','Sign out'):''}</div></header><div class="people-scroll" tabindex="0"><p class="people-status" role="status">${esc(message)}</p><div class="people-results"></div>${this.cursor?button('more','Load more',this.busy?'disabled':''):''}</div><footer class="people-bottom">${owner?'<small>Private data is cleared when you leave, sign out or go offline.</small>':`${button('add','Add Comment')}<small>Everyone comments appear only after the producer approves them.</small>`}</footer></section>`;
     const results=this.screen.querySelector('.people-results');
+    if(owner&&this.bonus){
+      const card=document.createElement('section');card.className='producer-bonus';card.setAttribute('aria-label','Producer cash bonus');
+      card.innerHTML='<div><strong>Producer cash</strong><p>Claim $1,000 every 5 minutes. Added to this saved game.</p></div>'+button('claim-bonus','Checking…','disabled')+'<p class="bonus-status" role="status"></p>';
+      this.screen.querySelector('.people-scroll').prepend(card);this.renderBonus();
+    }
     if(!owner&&this.audience==='producer'){results.innerHTML=`<div class="computer-card"><h3>A private note for the producer.</h3><p>${PRIVATE_WARNING}</p><p>You cannot browse private feedback from other players.</p>${button('add-private','Send private feedback')}</div>`;return;}
     if(!message&&!this.rows.length)results.innerHTML='<div class="people-empty">No comments in this view yet.</div>';
     for(const row of this.rows){
@@ -58,6 +66,15 @@ export class PeopleView {
       card.innerHTML=`<div class="people-comment-meta"><span class="people-stars" aria-label="${row.rating} out of 5 stars">${'★'.repeat(row.rating)}${'☆'.repeat(5-row.rating)}</span><time>${esc(date)}</time></div><p class="people-text">${esc(row.text)}</p>${owner?`<small>${esc(row.audience==='producer'?'Private · Producer':'Public audience · Everyone')}${row.read?' · Read':''}${row.reported?' · Reported':''}</small>${row.reason?`<p class="people-reason">${esc(row.reason)}</p>`:''}`:''}<div class="people-actions">${owner?(this.audience==='pending'?button('approve',row.audience==='producer'?'Approve privately':'Approve for Everyone',`data-id="${row.id}"`)+button('reject','Reject',`data-id="${row.id}"`):this.audience==='producer'?button('read',row.read?'Read':'Mark as read',`data-id="${row.id}" ${row.read?'disabled':''}`):button('hide','Hide comment',`data-id="${row.id}"`)):button('report','Report',`data-id="${row.id}"`)}</div>`;
       results.append(card);
     }
+  }
+  renderBonus(){
+    if(this.mode!=='producer'||!client.owner||!this.bonus)return;
+    const b=this.bonus,card=this.screen.querySelector('.producer-bonus');if(!card)return;
+    const seconds=Math.ceil(b.wait/1000),time=`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
+    const control=card.querySelector('button');
+    control.textContent=b.busy?'Checking…':!b.known?'Retry cash status':b.recoverable?'Recover $1,000':seconds?`Claim in ${time}`:'Claim $1,000';
+    control.disabled=b.busy||!navigator.onLine||(b.known&&!b.recoverable&&seconds>0);
+    card.querySelector('.bonus-status').textContent=b.message||(!navigator.onLine?'Connect to claim.':b.recoverable?'Your earlier claim is confirmed. Recover it without another payout request.':seconds?'Available again after the countdown.':'Ready when you are.');
   }
   form(){
     this.screen.classList.remove('people-screen');this.draft||=client.loadDraft();const d=this.draft;
@@ -90,6 +107,7 @@ export class PeopleView {
     if(client.cooldown)this.resendTimer=setTimeout(()=>{if(this.mode==='producer-signin')this.signin();},Math.min(client.cooldown+50,60000));
   }
   async action(action,id){
+    if(action==='claim-bonus'&&this.mode==='producer'&&client.owner&&this.bonus)return this.bonus.known?this.bonus.claim():this.bonus.refresh();
     if(action==='back'){this.formMessage='';return this.computer.navigate('people');}
     if(action==='add'||action==='add-private'){
       if(action==='add-private'){const d=client.loadDraft();d.audience='producer';d.acknowledged=false;d.requestId=crypto.randomUUID();client.saveDraft(d);}
