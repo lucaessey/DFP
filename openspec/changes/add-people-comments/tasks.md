@@ -47,6 +47,12 @@
 - [x] 7.2 Test malicious direct requests, public/private UI submission, approval/rejection/hiding/reporting, retries, filters, sessions, saves and offline reload with emulators.
 - [x] 7.3 Update documentation, build and publish the static game and matching rules; record actual live checks and remaining owner interaction honestly.
 
-## Activation
+## 8. Custom-domain producer sign-in
+
+- [x] 8.1 Correct the production email return URL and domain error message; verify the built Firebase request targets the custom-domain `/DFP/` game, without sending real email.
+- [x] 8.2 Verify email completion, reload, different-device confirmation, failures and saved progress with the Auth emulator; build and validate the updated specifications.
+- [ ] 8.3 Add both custom domains to Firebase's authorized list, publish the frontend and verify a fresh owner email completes on the live custom-domain game. Keep unverified live work unchecked.
+
+## Activation status
 
 The owner cancelled Cloudflare setup and chose manual approval on September 29. No Cloudflare deployment, service account, secret or billing setup is required. Previously completed backend tasks above record historical implementation, not the currently selected architecture. The tested rules and Firebase-only client are published; the installed update preserved progress and the existing verified owner session. Live submission/approval and a fresh owner sign-in round trip remain distinct from successful emulator verification.

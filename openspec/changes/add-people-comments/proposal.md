@@ -10,6 +10,7 @@ Players need a working feedback channel, and the producer needs a private inbox 
 - Send Producer comments directly to a protected private inbox. Hold every Everyone submission privately until the verified producer approves it.
 - Use anonymous Firebase authentication for ordinary players. Enforce validation, quotas, immutable submissions, retry receipts and owner-only moderation in Realtime Database rules.
 - Keep Google and email-link sign-in for the verified `lucaessey@gmail.com` owner. Other accounts cannot read private content or publish anything.
+- Return new production sign-in emails to `https://www.deepfriedpixels.com/DFP/`, the canonical custom-domain game, and authorize both the apex and www domains in Firebase.
 - Remove the frontend dependency on a Cloudflare endpoint. Use the existing `dfp-game-e2926` Spark project and no administrative credentials in the game.
 - Preserve existing records, game saves, purchases, outfits, floors and offline gameplay.
 

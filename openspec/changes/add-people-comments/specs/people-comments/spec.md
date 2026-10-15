@@ -36,7 +36,15 @@ Producer feedback and pending submissions SHALL never appear in public feeds, ra
 - **THEN** it moves only to the private inbox and never becomes readable through public requests.
 
 ### Requirement: Verified owner sign-in
-A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option alongside Firebase email links for the owner. Only a Firebase-verified `lucaessey@gmail.com` identity using Google or email-link/password SHALL pass protected Firebase rules. A typed email, account hint, local flag, unverified email or different account SHALL never authorize Producer. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `lucaessey.github.io` with an HTTPS `/DFP/` return URL. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
+A discreet Producer Sign-in entry SHALL offer the approved Google sign-in option alongside Firebase email links for the owner. Only a Firebase-verified `lucaessey@gmail.com` identity using Google or email-link/password SHALL pass protected Firebase rules. A typed email, account hint, local flag, unverified email or different account SHALL never authorize Producer. The app SHALL verify the current account, email verification and online authorization, handle different-device confirmation, expired/reused links, failures, cooldowns and sign-out, and preserve valid sessions. Production SHALL authorize `deepfriedpixels.com` and `www.deepfriedpixels.com` and send new sign-in emails with `https://www.deepfriedpixels.com/DFP/` as their return URL. Existing authorized domains SHALL remain available for compatibility. Sign-in tokens and credentials SHALL not be logged. Private reads SHALL require online authorization; sign-out SHALL close Producer, cancel requests/subscriptions and erase private UI data.
+
+#### Scenario: Sign in to the custom-domain game
+- **WHEN** the producer requests a new sign-in email from the production game
+- **THEN** its return address is the HTTPS `/DFP/` game on `www.deepfriedpixels.com`, not the GitHub origin or the collection homepage, and completion verifies the existing owner before enabling Producer.
+
+#### Scenario: Custom domain has not been authorized
+- **WHEN** Firebase rejects the website or return address
+- **THEN** the app identifies the missing domain setup without claiming that sign-in succeeded or granting Producer access.
 
 #### Scenario: Google sign-in while email delivery is unavailable
 - **WHEN** the owner chooses Sign in with Google and completes the Google account flow

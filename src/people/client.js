@@ -131,7 +131,8 @@ export function authMessage(e){
   if(/operation-not-supported-in-this-environment/.test(code))return 'Open DFP in Chrome, Edge or Safari to sign in with Google.';
   if(/expired-action-code|invalid-action-code|invalid-email|invalid-credential/.test(code))return 'This link is expired, already used, or does not match the email. Request a new link.';
   if(/too-many-requests|quota-exceeded/.test(code))return 'Firebase’s email limit has been reached. Try again later; the free plan allows five sign-in emails per day.';
-  if(/operation-not-allowed|unauthorized-domain|invalid-continue-uri/.test(code))return 'Producer sign-in is not configured for this site yet.';
+  if(/unauthorized-domain|unauthorized-continue-uri|invalid-continue-uri/.test(code))return 'This website is not authorized for producer sign-in yet. Enable deepfriedpixels.com and www.deepfriedpixels.com in Firebase Authentication → Settings → Authorized domains, then retry.';
+  if(/operation-not-allowed/.test(code))return 'Producer sign-in is not configured for this site yet.';
   if(/network-request-failed|web-storage-unsupported/.test(code))return 'Sign-in could not connect or save this session. Check your connection and browser storage settings, then retry.';
   return 'Sign-in could not be completed. Check your connection or request a new link.';
 }

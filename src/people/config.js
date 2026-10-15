@@ -10,4 +10,7 @@ export const firebaseConfig={
 };
 export const useEmulators=import.meta.env.MODE==='test-comments'&&['localhost','127.0.0.1'].includes(location.hostname);
 export const databaseURL=useEmulators?'http://127.0.0.1:9000':firebaseConfig.databaseURL;
-export const returnURL=useEmulators?location.origin+'/':'https://lucaessey.github.io/DFP/';
+// The game lives below /DFP/; the domain root is the separate game collection.
+// Use the canonical www host so the session returns to the same site as the game.
+// Keep authDomain on Firebase: GitHub Pages does not serve Firebase's /__/auth helpers.
+export const returnURL=useEmulators?location.origin+'/':'https://www.deepfriedpixels.com/DFP/';
