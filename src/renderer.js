@@ -1,3 +1,5 @@
+import {firstPerson} from './first-person.js';
+import {FirstPersonView} from './first-person-view.js';
 import {expansionMotion,expansionWorldMotion,guestPet} from './expansion-visuals.js';
 import {serviceItems,isDrink} from './config.js';
 import {walkable} from './navigation.js';
@@ -17,7 +19,7 @@ const stationIcons={prepare:'prep',admit:'ticket',usher:'arrow',host:'people',ro
 export class Renderer {
   constructor(canvas,options={}) {
     this.security=!!options.security;this.securityFocus={x:6,y:3.5};this.securityZoom=1;
-    this.canvas=canvas;this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-10,10,10,-10,.1,80);
+    this.canvas=canvas;this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-10,10,10,-10,.1,80);this.overhead=this.camera;this.firstView=new FirstPersonView();
     this.gl=new T.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
     this.gl.setClearColor('#eaf0df',0);this.gl.outputColorSpace=T.SRGBColorSpace;this.gl.toneMapping=T.ACESFilmicToneMapping;this.gl.toneMappingExposure=1.35;this.gl.shadowMap.enabled=true;this.gl.shadowMap.type=T.PCFSoftShadowMap;
     this.scene.add(new T.HemisphereLight('#fff8e7','#cfabc5',2.4));
@@ -27,13 +29,13 @@ export class Renderer {
     canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.contextLost=true;canvas.parentElement.classList.add('graphics-paused');});
     canvas.addEventListener('webglcontextrestored',()=>{this.contextLost=false;canvas.parentElement.classList.remove('graphics-paused');this.last=0;});
     // Read-only telemetry permits real performance checks without game cheats.
-    canvas.dfpDiagnostics=()=>({engine:'Three.js WebGL',style:'stickman',pet:this.petRig?{id:this.petRig.definition.id,x:this.petFollow?.x,y:this.petFollow?.y,moving:this.petFollow?.moving,recovered:this.petFollow?.recovered,models:1}:null,floor:this.floor,calls:this.gl.info.render.calls,triangles:this.gl.info.render.triangles,geometries:this.gl.info.memory.geometries,textures:this.gl.info.memory.textures,frames:[...this.samples],renderMs:[...this.renderSamples],pixelRatio:this.gl.getPixelRatio(),actors:this.actors.size,particles:this.particles.length,transfers:this.transfers.length,contextLost:!!this.contextLost,transferKinds:this.transfers.map(t=>t.kind),stations:this.world?[...this.world.userData.stations].map(([id,d])=>({id,state:d.cue?.state,progress:d.cue?.progress,building:d.buildAge!==undefined,scale:d.body.scale.x,y:d.body.position.y,pending:d.pending||0,fill:d.fill?.scale.y,pouring:!!d.stream?.visible,inventory:d.goods.children.length})):[],positions:[...this.actors].map(([key,m])=>({key,x:m.root.position.x,y:m.root.position.z,rotation:m.angle,walk:m.walk,bag:m.bagKey,sit:m.sit,motion:m.motion,celebrate:m.celebrate,phase:m.phase,visibleGoods:m.bagModels.length,quantity:m.visibleQuantity,carryHeight:m.carry.userData.height||0,handTargets:m.handTargets.map(p=>p.toArray())})),camera:this.camera.position.toArray()});
+    canvas.dfpDiagnostics=()=>({engine:'Three.js WebGL',style:'stickman',view:this.fp?this.firstView.diagnostics():{mode:'overhead'},pet:this.petRig?{id:this.petRig.definition.id,x:this.petFollow?.x,y:this.petFollow?.y,moving:this.petFollow?.moving,recovered:this.petFollow?.recovered,models:1}:null,floor:this.floor,calls:this.gl.info.render.calls,triangles:this.gl.info.render.triangles,geometries:this.gl.info.memory.geometries,textures:this.gl.info.memory.textures,frames:[...this.samples],renderMs:[...this.renderSamples],pixelRatio:this.gl.getPixelRatio(),actors:this.actors.size,particles:this.particles.length,transfers:this.transfers.length,contextLost:!!this.contextLost,transferKinds:this.transfers.map(t=>t.kind),stations:this.world?[...this.world.userData.stations].map(([id,d])=>({id,state:d.cue?.state,progress:d.cue?.progress,building:d.buildAge!==undefined,scale:d.body.scale.x,y:d.body.position.y,pending:d.pending||0,fill:d.fill?.scale.y,pouring:!!d.stream?.visible,inventory:d.goods.children.length})):[],positions:[...this.actors].map(([key,m])=>({key,x:m.root.position.x,y:m.root.position.z,rotation:m.angle,walk:m.walk,bag:m.bagKey,sit:m.sit,motion:m.motion,celebrate:m.celebrate,phase:m.phase,visibleGoods:m.bagModels.length,quantity:m.visibleQuantity,carryHeight:m.carry.userData.height||0,handTargets:m.handTargets.map(p=>p.toArray())})),camera:this.camera.position.toArray()});
   }
   resize(state) {
     const r=this.canvas.getBoundingClientRect();if(!r.width||!r.height)return false;const ratio=state.settings.reducedEffects?1:Math.min(1.65,devicePixelRatio||1);
     if(this.width!==r.width||this.height!==r.height||ratio!==this.gl.getPixelRatio()){this.width=r.width;this.height=r.height;this.gl.setPixelRatio(ratio);this.gl.setSize(r.width,r.height,false);}
     this.gl.shadowMap.enabled=!state.settings.reducedEffects;const aspect=r.width/r.height,depth=this.security&&r.height<260?8:13.7,width=Math.max(r.width<500?14.8:18.6,depth*aspect),height=width/aspect;
-    const zoom=this.security?this.securityZoom:1;Object.assign(this.camera,{left:-width/2/zoom,right:width/2/zoom,top:height/2/zoom,bottom:-height/2/zoom});this.camera.updateProjectionMatrix();return true;
+    const zoom=this.security?this.securityZoom:1;Object.assign(this.overhead,{left:-width/2/zoom,right:width/2/zoom,top:height/2/zoom,bottom:-height/2/zoom});this.overhead.updateProjectionMatrix();return true;
   }
   rebuild(state) {
     const key=`${state.floor}/${JSON.stringify(state.floors[state.floor].products)}/${state.floors[state.floor].tables.map(t=>t.owned)}/${JSON.stringify(state.floors[state.floor].activity?.umbrellas)}`;if(key===this.roomKey)return;
@@ -45,10 +47,10 @@ export class Renderer {
     if(this.floor!==state.floor){for(const m of this.actors.values()){this.scene.remove(m.root);m.contact.material.dispose();m.guestPet?.userData.owned?.forEach(g=>g.dispose());}this.actors.clear();for(const el of [...this.customerLabels.values(),...this.quantityLabels.values()])el.remove();this.customerLabels.clear();this.quantityLabels.clear();this.clearEffects();this.follow={x:6,z:5};}this.floor=state.floor;this.layer.classList.toggle('expansion-labels',state.floor>=4);
     this.gl.toneMappingExposure=state.floor===3?1.05:1.18;this.sun.color.set(state.floor===1?'#ffe7cd':state.floor===3?'#ece1ff':'#fff1dc');this.canvas.parentElement.style.background=state.floor===3?'radial-gradient(ellipse at center,#e7d4f0,#fae7dd)':'radial-gradient(ellipse at center,#fff0d8,#f8dbcb)';
   }
-  p(x,z,y=0) {v.set(x,y,z).project(this.camera);return{x:(v.x*.5+.5)*this.width,y:(-v.y*.5+.5)*this.height};}
-  place(el,x,z,height=0,dy=0) {const p=this.p(x,z,height);el.style.left=`${p.x+this.canvas.offsetLeft}px`;el.style.top=`${p.y+this.canvas.offsetTop+dy}px`;}
+  p(x,z,y=0) {v.set(x,y,z).project(this.camera);return{x:(v.x*.5+.5)*this.width,y:(-v.y*.5+.5)*this.height,visible:v.z>=-1&&v.z<=1&&Math.abs(v.x)<1.1&&Math.abs(v.y)<1.1};}
+  place(el,x,z,height=0,dy=0) {const p=this.p(x,z,height);el.style.visibility=this.fp&&(!p.visible||Math.hypot(x-this.camera.position.x,z-this.camera.position.z)>10)?'hidden':'';el.style.left=`${p.x+this.canvas.offsetLeft}px`;el.style.top=`${p.y+this.canvas.offsetTop+dy}px`;}
   placeEarning(effect,age,obstacles){
-    const point=this.p(effect.x,effect.z,1.9+(this.reducedMotion?0:age*.4)),w=effect.el.getBoundingClientRect().width||70,h=32;
+    const point=this.p(effect.x,effect.z,1.9+(this.reducedMotion?0:age*.4));if(this.fp&&!point.visible){effect.el.hidden=true;return;}const w=effect.el.getBoundingClientRect().width||70,h=32;
     const x=Math.max(w/2+8,Math.min(this.width-w/2-8,point.x))+this.canvas.offsetLeft;let chosen=null;
     for(const offset of [0,-36,36,-72,72,-108,108]){const y=point.y+this.canvas.offsetTop+offset;if(y<h+8||y>this.height-12)continue;if(!obstacles.some(o=>x+w/2>o.x&&x-w/2<o.x+o.w&&y>o.y&&y-h<o.y+o.h)){chosen=y;break;}}
     effect.el.hidden=chosen===null;if(chosen!==null){effect.el.style.left=`${x}px`;effect.el.style.top=`${chosen}px`;obstacles.push({x:x-w/2,y:chosen-h,w,h});}
@@ -68,7 +70,7 @@ export class Renderer {
     if(collector){collector.react=1;collector.root.updateMatrixWorld(true);const hand=collector.hands[1].getWorldPosition(new T.Vector3());this.transfer('cash',new T.Vector3(point.x,point.y,point.z),hand,null,collector);}
   }
   burst(x,z,color,count=3) {if(this.reducedMotion)return;const cap=this.reducedEffects?8:28;for(let i=0;i<count&&this.particles.length<cap;i++){const mesh=shape(this.scene,'sphere',color,x,.8,z,.09,.09,.09);mesh.castShadow=false;const a=i*2.4;this.particles.push({mesh,life:.6,vx:Math.cos(a)*.8,vz:Math.sin(a)*.8,vy:1.2+i*.1});}}
-  transfer(kind,from,to,owner,collector) {if(this.reducedMotion||this.transfers.length>7)return;const mesh=food(kind);mesh.scale.setScalar(kind==='cash'?.95:.65);mesh.position.copy(from);this.scene.add(mesh);this.transfers.push({mesh,kind,from,to,owner,collector,token:owner?.transferToken,age:0});}
+  transfer(kind,from,to,owner,collector) {if(this.reducedMotion||this.transfers.length>7||this.fp&&(owner?.key==='player'||collector?.key==='player'))return;const mesh=food(kind);mesh.scale.setScalar(kind==='cash'?.95:.65);mesh.position.copy(from);this.scene.add(mesh);this.transfers.push({mesh,kind,from,to,owner,collector,token:owner?.transferToken,age:0});}
   clearEffects(){for(const p of this.melts)this.scene.remove(p.mesh);this.melts=[];for(const e of this.effects)e.el.remove();this.effects=[];for(const p of this.particles)this.scene.remove(p.mesh);this.particles=[];for(const t of this.transfers)this.scene.remove(t.mesh);this.transfers=[];}
   inventory(data,key,items) {if(data.inventoryKey===key)return;const initial=!data.inventoryKey;data.inventoryKey=key;const old=data.itemModels||new Map(),next=new Map();for(const {kind,x,y,z,scale=1} of items){const id=[kind,x,y,z,scale].join('/');let mesh=old.get(id);if(!mesh){mesh=food(kind);mesh.position.set(x,y,z);mesh.scale.setScalar(scale);mesh.userData.restY=y;mesh.userData.restScale=scale;if(!initial&&!this.reducedMotion){mesh.userData.born=-.32;mesh.visible=false;}data.goods.add(mesh);}next.set(id,mesh);}for(const [id,m]of old)if(!next.has(id))data.goods.remove(m);data.itemModels=next;}
   stations(state,time,dt) {
@@ -78,10 +80,10 @@ export class Renderer {
       const cue=updateStationMotion(data,state,dt,time,this.reducedMotion,this.reducedEffects);label.dataset.state=cue.state;label.style.setProperty('--unlock-fill',`${cue.afford*100}%`);label.style.setProperty('--work-fill',`${cue.progress*100}%`);
       const symbol=!open?'lock':dirty?'clean':stationIcons[st.kind]||'bag';if(label.dataset.icon!==symbol){label.innerHTML=icon(symbol)+(state.floor>=4?`<small>${st.name}</small>`:'');label.dataset.icon=symbol;}
       label.classList.toggle('locked',!open);label.classList.toggle('at-station',active);label.setAttribute('aria-label',`${st.name}: ${stationStatus(state,state.floor,st)} · ${cue.state}`);
-      const projected=this.p(st.pad.x,st.pad.y),w=44,h=44;
+      const projected=this.p(st.pad.x,st.pad.y,this.fp?1:0),w=44,h=44;
       label.hidden=projected.x<8||projected.x>this.width-8||projected.y<20||projected.y>this.height-20;
       let shift=12;if(!label.hidden){for(const delta of [12,36,-12,60,-36,84,-60,108,-84]){const y=projected.y+delta;if(y<h/2||y>this.height-h/2)continue;if(!placed.some(r=>Math.abs(r.x-projected.x)<(r.w+w)/2&&Math.abs(r.y-y)<(r.h+h)/2+2)){shift=delta;break;}}placed.push({x:projected.x,y:projected.y+shift,w,h});}
-      this.place(label,st.pad.x,st.pad.y,0,shift);label.style.setProperty('--stem-height',`${Math.max(0,Math.abs(shift)-10)}px`);label.style.setProperty('--stem-top',shift<0?'calc(50% + 9px)':`calc(50% - ${shift}px)`);
+      this.place(label,st.pad.x,st.pad.y,this.fp?1:0,this.fp?0:shift);label.style.setProperty('--stem-height',`${Math.max(0,Math.abs(shift)-10)}px`);label.style.setProperty('--stem-top',shift<0?'calc(50% + 9px)':`calc(50% - ${shift}px)`);
       data.pad.scale.setScalar((id==='counter'?1.25:1)*(active&&!this.reducedMotion?1+Math.sin(time*4)*.045:1));
       const items=[],x=st.x+st.w/2,z=st.y+st.d/2;
       if(id==='pickup')for(let i=0;i<Math.min(6,fs.stock.controller);i++)items.push({kind:'controller',x:x+(i%3-1)*.5,y:1.205,z:z+(Math.floor(i/3)-.5)*.36,scale:.7});
@@ -119,7 +121,7 @@ export class Renderer {
         pet.rotation.x=seated&&!this.reducedMotion?.12+Math.sin(time*4)*.1:0;
         pet.rotation.y=seated?Math.PI:playing&&!this.reducedMotion?Math.sin(time*2)*.8:0;
       }
-      const {interaction,received,added,removed,delivered}=animateCharacter(e.rig,e.actor,e.target,state,dt,time);
+      const {interaction,received,added,removed,delivered}=animateCharacter(e.rig,e.actor,e.target,state,dt,time);e.rig.root.visible=!(this.fp&&e.role==='player');
       if(e.role==='robber'){
         const age=10-state.securityRound.remaining,wave=this.reducedMotion?0:Math.sin(age*7);
         if(!e.rig.sack){e.rig.sack=ball(e.rig.torso,'#352e45',0,-.03,-.36,.48,.54,.38);box(e.rig.torso,'#f0bd55',0,.06,-.56,.16,.09,.025);}
@@ -129,7 +131,7 @@ export class Renderer {
       if(interaction){this.burst(e.rig.root.position.x,e.rig.root.position.z,received?'#f6d476':'#fff0bd',2);if(e.role==='player')this.onCue?.('pickup');}
       const st=LAYOUTS[state.floor].find(s=>s.id===e.actor.action);e.rig.root.updateMatrixWorld(true);
       const held=e.rig.carry.getWorldPosition(new T.Vector3());
-      if(e.rig.visibleQuantity>1){let quantity=this.quantityLabels.get(e.key);if(!quantity){quantity=document.createElement('span');quantity.className='quantity-badge';this.layer.append(quantity);this.quantityLabels.set(e.key,quantity);}quantity.hidden=false;quantity.textContent=`×${e.rig.visibleQuantity}`;quantity.setAttribute('aria-label',`${e.rig.visibleQuantity} carried items`);this.place(quantity,held.x,held.z,held.y+(e.rig.carry.userData.height||0)+.16);}else if(this.quantityLabels.has(e.key))this.quantityLabels.get(e.key).hidden=true;
+      if(e.rig.visibleQuantity>1&&!(this.fp&&e.role==='player')){let quantity=this.quantityLabels.get(e.key);if(!quantity){quantity=document.createElement('span');quantity.className='quantity-badge';this.layer.append(quantity);this.quantityLabels.set(e.key,quantity);}quantity.hidden=false;quantity.textContent=`×${e.rig.visibleQuantity}`;quantity.setAttribute('aria-label',`${e.rig.visibleQuantity} carried items`);this.place(quantity,held.x,held.z,held.y+(e.rig.carry.userData.height||0)+.16);}else if(this.quantityLabels.has(e.key))this.quantityLabels.get(e.key).hidden=true;
       const surface=s=>new T.Vector3(Math.max(s.x-.08,Math.min(s.x+s.w+.08,e.rig.root.position.x)),1.24,Math.max(s.y-.08,Math.min(s.y+s.d+.08,e.rig.root.position.z)));
       for(const item of added){const source=st||(e.actor.purpose==='shop'?LAYOUTS[2].find(s=>s.id===(item==='keychain'?'keyShelf':'shelf')):null);if(source)this.transfer(item,surface(source),held.clone(),e.rig);}
       const destination=st||(e.actor.purpose==='food'&&e.actor.state==='dining'?LAYOUTS[state.floor].find(s=>s.id==='table'+e.actor.table):null);
@@ -154,25 +156,25 @@ export class Renderer {
     if(this.petRig?.definition.id!==pet?.id){if(this.petRig)this.scene.remove(this.petRig.root);this.petRig=pet?petModel(pet):null;this.petFollow=null;if(this.petRig){this.petRig.root.scale.setScalar(.7);this.scene.add(this.petRig.root);this.petRig.reaction=1;}}
     if(!this.petRig)return;
     const actors=[state.player,...state.employees.filter(e=>e.floor===state.floor),...state.floors[state.floor].customers];
-    this.petFollow??=newFollower(state.floor,state.player,actors,this.petRig.clearance);followPet(this.petFollow,state.floor,state.player,actors,dt);
+    this.petFollow??=newFollower(state.floor,state.player,actors,this.petRig.clearance,this.fp?state.view.yaw:null);followPet(this.petFollow,state.floor,state.player,actors,dt,this.fp?state.view.yaw:null);
     const p=this.petFollow;this.petRig.root.position.set(p.x,0,p.y);this.petRig.root.rotation.y=p.angle;
     if(this.petRecovery!==p.recovered){this.petRecovery=p.recovered;this.petArrival=0;}
     this.petArrival=Math.min(1,(this.petArrival??0)+dt*6);this.petRig.root.scale.setScalar(.7*(this.reducedMotion?1:.75+.25*this.petArrival));
     animatePet(this.petRig,dt,time,p.moving,this.reducedMotion,p.velocity);
   }
   draw(state,time) {
-    if(this.contextLost||!this.resize(state))return;const now=performance.now(),dt=this.last?Math.max(0,Math.min(.1,(now-this.last)/1000)):1/60;
+    this.fp=!this.security&&firstPerson(state);this.camera=this.fp?this.firstView.camera:this.overhead;if(this.contextLost||!this.resize(state))return;const now=performance.now(),dt=this.last?Math.max(0,Math.min(.1,(now-this.last)/1000)):1/60;
     if(this.last){this.samples.push(now-this.last);if(this.samples.length>600)this.samples.shift();}this.last=now;this.reducedMotion=state.settings.reducedMotion;this.reducedEffects=state.settings.reducedEffects;this.rebuild(state);
     const bounds=WORLD.camera,focusX=this.reducedMotion?5+Math.round((state.player.x-5)/6)*6:state.player.x,focusY=this.reducedMotion?4+Math.round((state.player.y-4)/5)*5:state.player.y;
     const tx=this.security?this.securityFocus.x:Math.max(bounds.minX,Math.min(bounds.maxX,focusX)),tz=this.security?this.securityFocus.y:Math.max(bounds.minY,Math.min(bounds.maxY,focusY));
-    this.follow.x=this.reducedMotion||this.security?tx:damp(this.follow.x,tx,3,dt);this.follow.z=this.reducedMotion||this.security?tz:damp(this.follow.z,tz,3,dt);this.camera.position.set(this.follow.x+13,18,this.follow.z+16);this.camera.lookAt(this.follow.x,.4,this.follow.z);this.camera.updateMatrixWorld();this.stations(state,time,dt);this.people(state,dt,time);
+    this.follow.x=this.reducedMotion||this.security?tx:damp(this.follow.x,tx,3,dt);this.follow.z=this.reducedMotion||this.security?tz:damp(this.follow.z,tz,3,dt);if(this.fp)this.firstView.update(state,state.player,this.width,this.height);else{this.camera.position.set(this.follow.x+13,18,this.follow.z+16);this.camera.lookAt(this.follow.x,.4,this.follow.z);this.camera.updateMatrixWorld();}this.stations(state,time,dt);this.people(state,dt,time);
     const canvasBounds=this.canvas.parentElement.getBoundingClientRect(),obstacles=this.effects.length?[...this.canvas.parentElement.querySelectorAll('button:not([hidden]),.scene-top,.scene-bottom,#joystick')].filter(el=>el.getClientRects().length).map(el=>{const r=el.getBoundingClientRect();return{x:r.left-canvasBounds.left,y:r.top-canvasBounds.top,w:r.width,h:r.height};}):[];
     for(let i=this.effects.length-1;i>=0;i--){const e=this.effects[i],age=time-e.time;if(age>1.4){e.el.remove();this.effects.splice(i,1);continue;}this.placeEarning(e,age,obstacles);e.el.style.opacity=String(Math.min(1,(1.4-age)*3));}
     for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life-=dt;if(p.life<=0||this.reducedMotion){this.scene.remove(p.mesh);this.particles.splice(i,1);continue;}p.vy-=dt*3;p.mesh.position.x+=p.vx*dt;p.mesh.position.z+=p.vz*dt;p.mesh.position.y+=p.vy*dt;p.mesh.scale.setScalar(.1*p.life/.6);}
     for(let i=this.transfers.length-1;i>=0;i--){const t=this.transfers[i];t.age+=dt;const cash=t.kind==='cash';if(t.collector&&this.actors.get(t.collector.key)===t.collector)t.collector.hands[1].getWorldPosition(t.to);const progress=Math.max(0,Math.min(1,(t.age-(cash?.28:0))/(cash?.5:.32))),p=smooth(progress);t.mesh.position.lerpVectors(t.from,t.to,p);t.mesh.position.y+=cash&&t.age<.28?landing(t.age/.28):Math.sin(p*Math.PI)*.20;if(cash)t.mesh.scale.setScalar(t.age<.14?.95*(.65+.35*smooth(t.age/.14)):.95);if(progress>=1||this.reducedMotion||t.owner&&(this.actors.get(t.owner.key)!==t.owner||t.token!==t.owner.transferToken)){this.scene.remove(t.mesh);this.transfers.splice(i,1);}}
     for(let i=this.melts.length-1;i>=0;i--){const puddle=this.melts[i],age=time-puddle.time;if(age>2){this.scene.remove(puddle.mesh);this.melts.splice(i,1);}else if(!this.reducedMotion){puddle.mesh.scale.x=.4+Math.min(age,1)*.35;puddle.mesh.scale.z=.35+Math.min(age,1)*.3;}}
     this.companion(state,dt,time);expansionWorldMotion(this.world,state,time,this.reducedMotion);
-    const start=performance.now();this.gl.render(this.scene,this.camera);this.renderSamples.push(performance.now()-start);if(this.renderSamples.length>600)this.renderSamples.shift();
+    const start=performance.now();this.gl.render(this.scene,this.camera);if(this.fp)this.firstView.render(this.gl);this.renderSamples.push(performance.now()-start);if(this.renderSamples.length>600)this.renderSamples.shift();
   }
 }
 

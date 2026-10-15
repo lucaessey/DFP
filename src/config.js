@@ -57,6 +57,7 @@ export const OUTFITS = [
   { id: 'formal', name: 'At your service', subtitle: 'Formal server', color: '#273c3e', hat: null, pants: '#263d3f', price: 220, floor: 1 },
   { id: 'retro', name: 'Player one', subtitle: 'Retro gamer', color: '#bc799d', hat: '#62a69e', pants: '#4e6092', price: 300, floor: 2 },
   { id: 'neon', name: 'After hours', subtitle: 'Neon arcade', color: '#615186', hat: '#bafd72', pants: '#383553', price: 400, floor: 3 },
+  { id: 'explorer', name: 'First-Person Explorer', subtitle: 'See DFP through your eyes', description: 'Equip for eye-level exploration. Mouse look or right-side drag; same abilities and upgrades.', color: '#2cbeb4', hat: '#f2c86c', pants: '#15191f', price: 1000, floor: 0 },
 ];
 const NAMES = ['Milo', 'Poppy', 'Jules', 'Remy', 'Bea', 'Olive', 'Felix', 'Cleo', 'Theo', 'Ivy', 'Kit', 'Sunny', 'Max', 'Lou', 'Coco', 'Nova', 'Ash', 'Juno', 'Lex', 'Ziggy'];
 const stationProducts=[{prep:'controller',fry:'controller',pickup:'controller',drink:'drink'},{tower:'tower',handheld:'handheld',wine:'wine'},{stock:'souvenir',shelf:'souvenir',keyStock:'keychain',keyShelf:'keychain'},{machine0:'machine0',machine1:'machine1',machine2:'machine2',vr:'vr'}];

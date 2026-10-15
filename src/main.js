@@ -1,3 +1,5 @@
+import {firstPerson} from './first-person.js';
+import {FirstPersonControls} from './first-person-controls.js';
 import {StoryView} from './story-view.js';
 import {pauseStory,resumeStory,leaveStoryComputer} from './story.js';
 import {UMBRELLA_COST} from './expansion-config.js';
@@ -53,6 +55,7 @@ function save() {
   return result.ok;
 }
 function act(c) {
+  if(c.type==='outfit')stopMovement();
   if (lockBlocked) return;
   const result = command(state, { ...c, token: crypto.randomUUID() });
   if (!result.ok) { toast(result.message,'error'); return false; }
@@ -123,7 +126,7 @@ function refreshHome() {
   areaButton.textContent=state.player.x>WORLD.diningStart?'← Workstations':state.floor===10?'Packing area →':'Seating area →';
   let status=document.querySelector('#business-status');if(!status){status=document.createElement('div');status.id='business-status';status.setAttribute('role','status');document.querySelector('.play-area').append(status);}
   const cold=state.player.cold?.length?Math.ceil(Math.min(...state.player.cold)):null;
-  let help=document.querySelector('#business-help');if(!help){help=document.createElement('button');help.id='business-help';help.className='small-button';help.dataset.action='business-help';help.textContent='How to play';document.querySelector('.play-area').append(help);}help.hidden=state.floor<4;
+  let help=document.querySelector('#business-help');if(!help){help=document.createElement('button');help.id='business-help';help.className='small-button';help.dataset.action='business-help';help.textContent='How to play';document.querySelector('.play-area').append(help);}help.hidden=state.floor<4&&!firstPerson(state);help.textContent=firstPerson(state)?'Workstations':'How to play';
   status.hidden=state.floor<4;status.textContent=state.floor===4?(cold!==null?`Ice cream: ${cold}s before melting${cold<=10?' · Stack it now!':''}`:'Ice cream stays cold on the counter') :state.floor===7?(fs.activity.weather>=40?'Rain · umbrellas protect covered tables':fs.activity.weather>=35?`Rain in ${Math.ceil(40-fs.activity.weather)}s`:'Clear skies') :state.floor===6?(fs.activity.robot.fault?'Robot fault · repair at the robot for free':'Robot online') :state.floor===10?`${fs.activity.factory.completed} deliveries · ${fs.activity.factory.hopper}/3 snacks to seal` :state.floor===8?`${fs.customers.filter(c=>c.fault).length} PCs need repair`:state.floor===9?'Fresh bowls, happy paws':'14-second movies · tickets and popcorn paid separately';
   let stopButton=document.querySelector('#stop-movement');if(!stopButton){stopButton=document.createElement('button');stopButton.id='stop-movement';stopButton.dataset.action='stop';stopButton.setAttribute('aria-label','Stop walking');stopButton.innerHTML=icon('stop');document.querySelector('.play-area').append(stopButton);}stopButton.hidden=!target||surfacePointer!==null;
 }
@@ -161,7 +164,7 @@ function renderPanel() {
     panel.innerHTML = panelHeading('A LITTLE HIGHER, A LITTLE HAPPIER', 'Going up?', `${FLOORS.length} businesses, and a cozy basement of your own.`) + `<div class="floor-grid">${basementCard(state,inBasement)}${FLOORS.map(f => { const fs = state.floors[f.id], current = !inBasement && state.floor === f.id; return `<article class="floor-card ${fs.unlocked ? '' : 'locked'}" style="--accent:${f.color};--pale:${f.pale}"><div class="floor-illustration"><span class="floor-number">${String(f.id + 1).padStart(2,'0')}</span><span class="floor-art">${icon(f.icon)}</span><span class="floor-card-badge">${current ? 'YOU ARE HERE' : fs.unlocked ? 'OPEN FOR BUSINESS' : 'ROOM TO GROW'}</span></div><div class="floor-card-body"><h2>${f.name}</h2><p>${f.description}</p><div class="floor-detail">${fs.unlocked ? `${floorCount(state,f.id)} / 12 employees · ${money(fs.revenue)} earned` : f.id > 0 && !state.floors[f.id - 1].unlocked ? `Open floor ${f.id} first` : 'Ready for your next chapter'}</div>${fs.unlocked?'':unlockProgress(f.cost,f.name)}<button class="${current ? 'outline-button' : 'dark-button'}" data-action="${fs.unlocked ? 'visit' : 'unlock-floor'}" data-floor="${f.id}" ${!fs.unlocked && !state.floors[f.id - 1]?.unlocked ? 'disabled' : ''}>${current ? 'Back to your restaurant' : fs.unlocked ? 'Visit floor' : `Unlock · ${money(f.cost)}`} ${icon(fs.unlocked ? 'arrow' : 'lock')}</button></div></article>`; }).join('')}</div><p class="panel-note">${icon('people')} Your assigned team keeps working on every open floor while you play.</p>`;
   }
   if (activeTab === 'outfits') {
-    panel.innerHTML = panelHeading('A FRESH LOOK FOR EVERY FLOOR', 'Wear your flavor.', 'All style. All earned in-game. Find a look that feels like you.') + `<div class="outfit-grid">${OUTFITS.map(o => { const owned = state.outfits.includes(o.id), equipped = state.outfit === o.id, open = state.floors[o.floor].unlocked; return `<article class="outfit-card ${equipped ? 'equipped' : ''}"><div class="outfit-preview" style="--outfit:${o.color}"><span class="outfit-badge">${equipped ? 'EQUIPPED' : owned ? 'IN YOUR WARDROBE' : `FLOOR ${o.floor + 1}`}</span><canvas width="160" height="150" data-outfit="${o.id}" aria-label="${o.subtitle} preview"></canvas></div><div class="outfit-body"><small>${o.subtitle}</small><h2>${o.name}</h2><button class="${equipped ? 'outline-button' : 'dark-button'}" data-action="outfit" data-id="${o.id}" ${equipped || !open ? 'disabled' : ''}>${equipped ? 'Looking good' : !open ? `Unlock floor ${o.floor + 1}` : owned ? 'Wear this' : `Unlock · ${money(o.price)}`} ${icon(equipped ? 'check' : open ? 'shirt' : 'lock')}</button></div></article>`; }).join('')}</div>`;
+    panel.innerHTML = panelHeading('A FRESH LOOK FOR EVERY FLOOR', 'Wear your flavor.', 'All style. All earned in-game. Find a look that feels like you.') + `<div class="outfit-grid">${OUTFITS.map(o => { const owned = state.outfits.includes(o.id), equipped = state.outfit === o.id, open = state.floors[o.floor].unlocked; return `<article class="outfit-card ${equipped ? 'equipped' : ''}"><div class="outfit-preview" style="--outfit:${o.color}"><span class="outfit-badge">${equipped ? 'EQUIPPED' : owned ? 'OWNED' : `FLOOR ${o.floor + 1}`}</span><canvas width="160" height="150" data-outfit="${o.id}" aria-label="${o.subtitle} preview"></canvas></div><div class="outfit-body"><small>${o.subtitle}</small><h2>${o.name}</h2>${o.description?`<p>${o.description}</p>`:''}<button class="${equipped ? 'outline-button' : 'dark-button'}" data-action="outfit" data-id="${o.id}" ${equipped || !open ? 'disabled' : ''}>${equipped ? 'Equipped' : !open ? `Unlock floor ${o.floor + 1}` : owned ? 'Equip' : `Buy · ${money(o.price)}`} ${icon(equipped ? 'check' : open ? 'shirt' : 'lock')}</button></div></article>`; }).join('')}</div>`;
     panel.querySelectorAll('[data-outfit]').forEach(c => drawPortrait(c, OUTFITS.find(o => o.id === c.dataset.outfit)));
   }
   if (activeTab === 'employees') {
@@ -237,7 +240,7 @@ app.addEventListener('click', event => {
   if (action === 'upgrades') upgradesDialog();
   if (action === 'pet-security') openPetSecurity(button);
   if (action === 'menu') menuDialog();
-  if(action==='business-help')showDialog(`<span class="eyebrow">YOUR BUSINESS GUIDE</span><h2>${FLOORS[state.floor].name}</h2><p>${FLOORS[state.floor].guide}</p><div class="business-jobs">${LAYOUTS[state.floor].map(st=>`<button class="outline-button" data-action="business-job" data-station="${st.id}">${st.name}<small>${stationStatus(state,state.floor,st)}</small></button>`).join('')}</div>`);
+  if(action==='business-help')showDialog(`<span class="eyebrow">YOUR BUSINESS GUIDE</span><h2>${FLOORS[state.floor].name}</h2><p>${FLOORS[state.floor].guide||'Choose a workstation, then stay in its ring to work automatically.'}</p><div class="business-jobs">${LAYOUTS[state.floor].map(st=>`<button class="outline-button" data-action="business-job" data-station="${st.id}">${st.name}<small>${stationStatus(state,state.floor,st)}</small></button>`).join('')}</div>`);
   if(action==='business-job'){const st=LAYOUTS[state.floor].find(st=>st.id===button.dataset.station);dialog.close();if(st.product&&!state.floors[state.floor].products[st.product])menuDialog();else target={...st.pad};}
   if(action==='drinks-section'){if(state.floor<2){if(state.floors[state.floor].section)target={...LAYOUTS[state.floor].find(st=>st.id===(state.floor===0?'drink':'wine')).pad};else drinksDialog();}}
   if(action==='buy-drinks-section'){if(state.floor<2&&act({type:'section'}))dialog.close();}
@@ -282,7 +285,8 @@ const joy = document.querySelector('#joystick'), knob = document.querySelector('
 function stopPath(){target=null;state.player.path=[];state.player.pathKey='';state.player.moving=false;}
 function releaseJoy(){joyPointer=null;joystick.x=joystick.y=0;knob.style.transform='';}
 function stopMovement(){stopPath();keys.clear();releaseJoy();surfacePointer=null;}
-canvas.addEventListener('pointerdown', e => { if (lockBlocked||e.button!==0) return; stopMovement();sound.unlock();const picked=renderer.pick(e.clientX,e.clientY);if(picked.locked){if(picked.station?.startsWith('table'))tablesDialog();else if(state.floor<2&&['drink','wine','drinkStack','drinkCounter'].includes(picked.station))drinksDialog();else menuDialog();return;}surfacePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);target=picked;canvas.focus({preventScroll:true}); });
+const fpControls=new FirstPersonControls(canvas,state,{active:()=>activeTab==='home'&&!inBasement&&!basement.monitoring&&!basement.computer.opened&&!storyView.opened&&!state.story.active&&!dialog.open&&!paused&&!lockBlocked&&sessionReady,stop:stopMovement});
+canvas.addEventListener('pointerdown', e => { if(firstPerson(state))return;if (lockBlocked||e.button!==0) return; stopMovement();sound.unlock();const picked=renderer.pick(e.clientX,e.clientY);if(picked.locked){if(picked.station?.startsWith('table'))tablesDialog();else if(state.floor<2&&['drink','wine','drinkStack','drinkCounter'].includes(picked.station))drinksDialog();else menuDialog();return;}surfacePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);target=picked;canvas.focus({preventScroll:true}); });
 canvas.addEventListener('pointermove',e=>{if(e.pointerId===surfacePointer)target=renderer.pick(e.clientX,e.clientY);});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,e=>{if(e.pointerId===surfacePointer){surfacePointer=null;stopPath();}});
 const movementKey=e=>({KeyW:'w',KeyA:'a',KeyS:'s',KeyD:'d',ArrowUp:'arrowup',ArrowDown:'arrowdown',ArrowLeft:'arrowleft',ArrowRight:'arrowright'}[e.code]||e.key.toLowerCase());
@@ -296,6 +300,8 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])window.addE
 document.addEventListener('visibilitychange', () => { paused=document.hidden; last=0; accumulator=0; stopMovement(); save(); });
 window.addEventListener('pagehide',save);
 function frame(timestamp) {
+  fpControls.update(state.player);basement.updateLook();
+  if(firstPerson(state)){const st=LAYOUTS[state.floor].find(s=>s.id===state.player.action);fpControls.layer.querySelector('.fp-task').textContent=st?`${st.name} · ${stationStatus(state,state.floor,st)}`:'Walk to a work ring · work starts automatically';}
   const delta = last ? Math.min((timestamp-last)/1000,0.2) : 0; last=timestamp;
   if (!paused && !lockBlocked && sessionReady) {
     accumulator += delta;

@@ -1,3 +1,5 @@
+import {firstPerson,petInView} from './first-person.js';
+import {FirstPersonView} from './first-person-view.js';
 import * as T from 'three';
 import {box,ball,cylinder,ring,group,lettering,character,food,mergeStatic} from './scene-assets.js';
 import {animateStickman} from './character-motion.js';
@@ -60,29 +62,29 @@ function eventRoom(type){
 }
 export class StoryRenderer{
  constructor(canvas){
-  this.canvas=canvas;this.scene=new T.Scene();this.scene.background=new T.Color('#e8eedb');this.camera=new T.OrthographicCamera(-10,10,8,-8,.1,100);
+  this.canvas=canvas;this.scene=new T.Scene();this.scene.background=new T.Color('#e8eedb');this.camera=new T.OrthographicCamera(-10,10,8,-8,.1,100);this.overhead=this.camera;this.firstView=new FirstPersonView();
   this.gl=new T.WebGLRenderer({canvas,antialias:true});this.gl.outputColorSpace=T.SRGBColorSpace;this.gl.toneMapping=T.ACESFilmicToneMapping;this.gl.toneMappingExposure=1.15;this.gl.shadowMap.enabled=true;this.gl.shadowMap.type=T.PCFSoftShadowMap;
   this.scene.add(new T.HemisphereLight('#fff3d9','#b8c4c6',2.7));const sun=new T.DirectionalLight('#fff0d5',3);sun.position.set(4,30,18);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,far:65});sun.shadow.normalBias=.04;sun.target.position.set(15,0,13);this.scene.add(sun,sun.target);
   this.rooms=new Map();this.rigs=new Map();this.dynamic=group(this.scene);this.mark=ring(this.scene,'#ffc940',0,.28,0,1.8);this.arrow=group(this.scene);this.focus={x:6,y:20};this.type=null;this.ray=new T.Raycaster();this.plane=new T.Plane(new T.Vector3(0,1,0),0);this.lastTime=0;
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});canvas.addEventListener('webglcontextrestored',()=>this.lost=false);
-  canvas.dfpDiagnostics=()=>({scene:this.type,calls:this.gl.info.render.calls,characters:this.rigs.size,pet:this.pet?{id:this.pet.definition.id,x:this.follower.x,y:this.follower.y,recovered:this.recovered||0}:null,camera:{x:this.focus.x,y:this.focus.y},actor:this.playerPosition});
+  canvas.dfpDiagnostics=()=>({scene:this.type,view:this.fp?this.firstView.diagnostics():{mode:'overhead'},calls:this.gl.info.render.calls,characters:this.rigs.size,pet:this.pet?{id:this.pet.definition.id,x:this.follower.x,y:this.follower.y,recovered:this.recovered||0}:null,camera:{x:this.focus.x,y:this.focus.y},actor:this.playerPosition});
  }
  switch(type){
   if(this.type===type)return;if(this.room)this.scene.remove(this.room);if(!this.rooms.has(type))this.rooms.set(type,type==='outside'?outside():eventRoom(type));this.room=this.rooms.get(type);this.scene.add(this.room);this.type=type;for(const m of this.rigs.values())this.scene.remove(m.root);this.rigs.clear();this.follower=null;this.focus=null;
  }
  rig(id,outfit,role='customer',variation=0){let m=this.rigs.get(id);if(m?.outfit!==outfit.id){if(m)this.scene.remove(m.root);m=character(outfit,variation,role);m.outfit=outfit.id;this.rigs.set(id,m);this.scene.add(m.root);}m.root.visible=true;return m;}
  draw(s,dt){
-  if(this.lost)return;const st=s.story,type=storyScene(st),a=currentStoryActor(st),e=st.event,time=st.clock,reduced=s.settings.reducedMotion;this.switch(type);this.playerPosition={x:a.x,y:a.y};
+  if(this.lost)return;this.fp=firstPerson(s);this.camera=this.fp?this.firstView.camera:this.overhead;const st=s.story,type=storyScene(st),a=currentStoryActor(st),e=st.event,time=st.clock,reduced=s.settings.reducedMotion;this.switch(type);this.playerPosition={x:a.x,y:a.y};
   const rect=this.canvas.getBoundingClientRect();if(rect.width<1||rect.height<1)return;const ratio=Math.min(devicePixelRatio,1.7),w=Math.round(rect.width*ratio),h=Math.round(rect.height*ratio);if(this.canvas.width!==w||this.canvas.height!==h){this.gl.setPixelRatio(ratio);this.gl.setSize(rect.width,rect.height,false);}
   const aspect=rect.width/rect.height,span=aspect<.8?13:aspect>1.8?12:15;this.camera.left=-span*aspect/2;this.camera.right=span*aspect/2;this.camera.top=span/2;this.camera.bottom=-span/2;this.camera.updateProjectionMatrix();
   this.focus??={x:a.x,y:a.y};const f=1-Math.exp(-8*dt);this.focus.x+=(a.x-this.focus.x)*f;this.focus.y+=(a.y-this.focus.y)*f;
   const world=storyWorld(type);this.focus.x=Math.max(3,Math.min(world.width-3,this.focus.x));this.focus.y=Math.max(3,Math.min(world.depth-3,this.focus.y));
-  this.camera.position.set(this.focus.x+12,20,this.focus.y+12);this.camera.lookAt(this.focus.x,0,this.focus.y);
+  if(!this.fp){this.camera.position.set(this.focus.x+12,20,this.focus.y+12);this.camera.lookAt(this.focus.x,0,this.focus.y);}
   const canWalk=(_,x,y,r=.2)=>storyWalkable(type,x,y,r),seat=i=>({x:9.5+i*4,y:9.1}),env={walkable:canWalk,layout:[{id:'story-prep',kind:'prepare',x:6,y:6,w:2,d:1}],seat,seatFacing:-Math.PI/2};
   for(const rig of this.rigs.values())rig.root.visible=false;
   const player=this.rig('player',OUTFITS.find(o=>o.id===s.outfit),'player');
   const visualActor=e?.type==='race'?{...a,bag:['souvenir']}:e?.cooking&&storyDistance(a,EVENT_SPOTS.prep)<1.6?{...a,action:'story-prep',progress:2.5-e.cooking.left}:a;
-  animateStickman(player,visualActor,a,s,dt,time,canWalk,env);
+  animateStickman(player,visualActor,a,s,dt,time,canWalk,env);player.root.visible=!this.fp;if(this.fp)this.firstView.update(s,visualActor,rect.width,rect.height);
   if(e?.type==='fight'){player.rig.rotation.y=Math.atan2(e.aim.x-a.x,e.aim.y-a.y);if(!reduced){if(e.dodge>0)player.torso.rotation.z=.2*Math.sin(e.dodge*12);if(e.stun>0)player.head.rotation.z=Math.sin(time*20)*.15;if(e.throwCooldown>.28)player.arms[1].rotation.x-=Math.sin((.65-e.throwCooldown)/.37*Math.PI)*1.2;}}
   if(st.complete)player.celebrate=1;
   if(type==='outside'){
@@ -96,9 +98,9 @@ export class StoryRenderer{
   }
   const pet=equippedPet(s);if(this.pet?.definition.id!==pet?.id){if(this.pet)this.scene.remove(this.pet.root);this.pet=pet?petModel(pet):null;if(this.pet)this.scene.add(this.pet.root);this.follower=null;}
   if(this.pet){
-   const spawn=()=>{for(let r=1.1;r<3;r+=.4)for(let i=0;i<12;i++){const p={x:a.x+Math.cos(i*Math.PI/6)*r,y:a.y+Math.sin(i*Math.PI/6)*r};if(storyWalkable(type,p.x,p.y,.6))return {...storyActor(p.x,p.y)};}return storyActor(a.x,a.y);};
+   const spawn=()=>{for(let r=1.1;r<3;r+=.4)for(let i=0;i<12;i++){const p={x:a.x+Math.cos(i*Math.PI/6)*r,y:a.y+Math.sin(i*Math.PI/6)*r};if(storyWalkable(type,p.x,p.y,.6)&&(!this.fp||!petInView(p,a,s.view.yaw)))return {...storyActor(p.x,p.y)};}return storyActor(a.x,a.y);};
    this.follower??=spawn();if(storyDistance(this.follower,a)>8){this.follower=spawn();this.recovered=(this.recovered||0)+1;}
-   const before={x:this.follower.x,y:this.follower.y};if(storyDistance(this.follower,a)>1.65){const d=storyDistance(this.follower,a),target={x:a.x+(this.follower.x-a.x)/d*1.3,y:a.y+(this.follower.y-a.y)/d*1.3};if(storyWalkable(type,target.x,target.y,.6))storyFollow(this.follower,type,target,dt,5.1,.6);}
+   const before={x:this.follower.x,y:this.follower.y};if(storyDistance(this.follower,a)>1.65||this.fp&&petInView(this.follower,a,s.view.yaw)){const d=storyDistance(this.follower,a),target=this.fp?spawn():{x:a.x+(this.follower.x-a.x)/d*1.3,y:a.y+(this.follower.y-a.y)/d*1.3};if(storyWalkable(type,target.x,target.y,.6))storyFollow(this.follower,type,target,dt,5.1,.6);}
    const moved=storyDistance(before,this.follower);this.pet.root.position.set(this.follower.x,0,this.follower.y);if(moved>.001)this.pet.root.rotation.y=Math.atan2(this.follower.x-before.x,this.follower.y-before.y);animatePet(this.pet,dt,time,moved>.001,reduced,moved/Math.max(.001,dt));
    this.stuck=moved<.001&&storyDistance(this.follower,a)>3?(this.stuck||0)+dt:0;if(this.stuck>2){this.follower=spawn();this.stuck=0;this.recovered=(this.recovered||0)+1;}
   }
@@ -119,8 +121,8 @@ export class StoryRenderer{
    if(e.type==='serve')e.tables.forEach((t,i)=>{if(['eating','dirty'].includes(t.state)){if(t.state==='eating'){const dish=food(RECIPES[t.recipe].id);dish.position.set(8+i*4,1.44,9.1);this.dynamic.add(dish);}else for(let j=0;j<4;j++)ball(this.dynamic,'#b28657',7.5+i*4+j*.28,1.43,9.1+(j%2)*.18,.12,.04,.12);}});
    if(e.cooking){const dish=food(e.cooking.recipe);dish.position.set(7,1.5,6.5);this.dynamic.add(dish);}
   }
-  this.gl.render(this.scene,this.camera);
+  this.gl.render(this.scene,this.camera);if(this.fp)this.firstView.render(this.gl);
  }
  pick(clientX,clientY){const r=this.canvas.getBoundingClientRect();this.ray.setFromCamera({x:(clientX-r.left)/r.width*2-1,y:1-(clientY-r.top)/r.height*2},this.camera);if(!this.ray.ray.intersectPlane(this.plane,v))return null;return {x:v.x,y:v.z};}
- project(p,height=0){v.set(p.x,height,p.y).project(this.camera);const r=this.canvas.getBoundingClientRect();return {x:(v.x+1)*r.width/2,y:(1-v.y)*r.height/2};}
+ project(p,height=0){v.set(p.x,height,p.y).project(this.camera);const r=this.canvas.getBoundingClientRect();return {x:(v.x+1)*r.width/2,y:(1-v.y)*r.height/2,visible:v.z>=-1&&v.z<=1&&Math.abs(v.x)<1&&Math.abs(v.y)<1};}
 }

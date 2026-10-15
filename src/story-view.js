@@ -1,3 +1,5 @@
+import {firstPerson} from './first-person.js';
+import {FirstPersonControls} from './first-person-controls.js';
 import './story.css';
 import {StoryRenderer} from './story-renderer.js';
 import {STORY_CHAPTERS,STORY_PLACES,STORY_OBJECTIVES,RECIPES,INGREDIENTS,EVENT_SPOTS,eventRules} from './story-data.js';
@@ -12,8 +14,9 @@ export class StoryView{
   this.root=document.createElement('section');this.root.id='story-view';this.root.hidden=true;this.root.setAttribute('aria-label','Story Mode');
   this.root.innerHTML=`<header class="story-header"><div><span class="story-kicker">DFP · NEIGHBORHOOD STORIES</span><h2 id="story-chapter"></h2></div><div>${button('pause','Pause')}${button('regular','Return to Regular Play')}</div></header><div class="story-objective"><div><b id="story-objective"></b><small id="story-score"></small></div><div>${button('guide','Go to objective')}${button('home','DFP / Inbox')}</div></div><div class="story-scene"><canvas id="story-canvas" tabindex="0" aria-label="3D neighborhood. Move with WASD, arrows or joystick. E to interact; F to throw; Space to dodge."></canvas><div id="story-markers"></div><div id="story-message" role="status" aria-live="polite"></div><div id="story-modal" hidden></div></div><footer class="story-controls"><div id="story-joystick" aria-label="Story movement joystick" role="slider" tabindex="0"><span></span><small>MOVE</small></div><div class="story-actions"><div id="story-route"></div><div id="story-context"></div><small id="story-inventory"></small></div></footer>`;
   document.querySelector('#app').append(this.root);this.canvas=this.root.querySelector('canvas');this.dialog=this.root.querySelector('#story-modal');
+  this.look=new FirstPersonControls(this.canvas,state,{active:()=>this.opened&&!this.modal&&this.allowed()&&this.focused,stop:()=>this.stop(),onLook:()=>{const e=this.state.story.event;if(e?.type==='fight'){const {yaw,pitch}=this.state.view,d=pitch<-.08?Math.min(16,Math.max(1,1.615/-Math.tan(pitch))):10;e.aim={x:Math.max(.5,Math.min(19.5,e.actor.x-Math.sin(yaw)*d)),y:Math.max(.5,Math.min(15.5,e.actor.y-Math.cos(yaw)*d))};}}});
   this.root.addEventListener('click',e=>{const b=e.target.closest('[data-story]');if(b&&!b.disabled)this.action(b.dataset.story,b.dataset.id);});
-  this.canvas.addEventListener('pointerdown',e=>{if(e.button!==0||this.modal||!this.allowed())return;this.canvas.focus({preventScroll:true});const p=this.renderer.pick(e.clientX,e.clientY);if(!p)return;if(this.state.story.event?.type==='fight'){const e=this.state.story.event;e.aim={x:Math.max(.5,Math.min(19.5,p.x)),y:Math.max(.5,Math.min(15.5,p.y))};this.save();}else if(storyWalkable(storyScene(this.state.story),p.x,p.y)){this.target=p;this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);}});
+  this.canvas.addEventListener('pointerdown',e=>{if(firstPerson(this.state)||e.button!==0||this.modal||!this.allowed())return;this.canvas.focus({preventScroll:true});const p=this.renderer.pick(e.clientX,e.clientY);if(!p)return;if(this.state.story.event?.type==='fight'){const e=this.state.story.event;e.aim={x:Math.max(.5,Math.min(19.5,p.x)),y:Math.max(.5,Math.min(15.5,p.y))};this.save();}else if(storyWalkable(storyScene(this.state.story),p.x,p.y)){this.target=p;this.pointer=e.pointerId;this.canvas.setPointerCapture(e.pointerId);}});
   this.canvas.addEventListener('pointermove',e=>{if(e.pointerId===this.pointer){const p=this.renderer.pick(e.clientX,e.clientY);if(p&&storyWalkable(storyScene(this.state.story),p.x,p.y))this.target=p;}});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])this.canvas.addEventListener(type,e=>{if(e.pointerId===this.pointer){this.pointer=null;this.stop();}});
   const joy=this.root.querySelector('#story-joystick');const move=e=>{const r=joy.getBoundingClientRect(),x=e.clientX-r.x-r.width/2,y=e.clientY-r.y-r.height/2,n=Math.max(30,Math.hypot(x,y));this.joy={x:x/n,y:y/n};joy.querySelector('span').style.transform=`translate(${x/n*24}px,${y/n*24}px)`;};
@@ -25,11 +28,11 @@ export class StoryView{
   document.addEventListener('visibilitychange',()=>{this.stop();if(this.opened)this.save();});
  }
  open(){if(!this.state.story.started)return;this.opened=true;this.root.hidden=false;this.renderer??=new StoryRenderer(this.canvas);this.stop();this.modal=null;this.dialog.hidden=true;this.update();if(this.state.story.restart)this.showModal('restart');else if(this.state.story.event?.status!=='running'&&this.state.story.event)this.showModal('result');this.canvas.focus({preventScroll:true});}
- hide(){this.opened=false;this.root.hidden=true;this.stop();}
+ hide(){this.opened=false;this.root.hidden=true;this.look.release();this.look.update();this.stop();}
  stop(){this.target=null;this.keys.clear();this.joy={x:0,y:0};this.root.querySelector('#story-joystick span').style.transform='';const a=currentStoryActor(this.state.story);a.moving=false;a.path=[];a.pathKey='';}
  tell(message){if(message)this.root.querySelector('#story-message').textContent=message;}
  showModal(kind,body){
-  this.stop();this.modal=kind;const st=this.state.story,e=st.event,o=e?STORY_OBJECTIVES.find(o=>o.id===e.id):storyObjective(st);this.dialog.hidden=false;
+  this.look.release();this.stop();this.modal=kind;const st=this.state.story,e=st.event,o=e?STORY_OBJECTIVES.find(o=>o.id===e.id):storyObjective(st);this.dialog.hidden=false;
   let content='';
   if(kind==='brief'){const r=eventRules(o);content=`<span class="story-kicker">FREE SUPPLIES · NO UPGRADES REQUIRED</span><h2>${o.title}</h2><p>${r.text}</p><p><b>${r.limit} seconds.</b> ${r.tip}</p><p>Use WASD / arrows or the joystick. Station buttons walk you there; use the action button when nearby. Pausing stops the timer.</p>${button('begin','Begin competition')}${button('close-modal','Keep exploring')}`;}
   if(kind==='pause')content=`<h2>A little breather.</h2><p>Story timers and regular businesses are paused. Your progress is safe.</p>${button('unpause','Continue Story')}${button('regular','Pause Story / Return to Regular Play')}`;
@@ -71,10 +74,10 @@ export class StoryView{
   this.root.querySelector('#story-score').textContent=e?`${Math.max(0,Math.ceil(eventRules(def).limit-e.elapsed-e.penalty))}s · You ${e.score} / Rival ${e.type==='race'?`${eventRules(def).rival}s`:e.rival} · ${e.type==='fight'?`${4-e.rival} splats left`:e.type==='race'?`+${e.penalty}s penalties`:''}`:`Next: ${STORY_PLACES[o?.place]?.name||'DFP'} · ${st.wins.length} / 9 wins · Businesses paused`;
   this.root.querySelector('[data-story="guide"]').hidden=!!e;this.root.querySelector('[data-story="home"]').hidden=!!e;
   let context='',inventory='',routes='';
-  if(!e){context=button('interact',near?.id==='dfp'?'Enter DFP / Computer':near?.id==='arena'&&o?.kind==='event'?'Competition briefing':`Talk · ${near?.name||'neighbor'}`,'',!near||near.distance>1.65);inventory='WASD / arrows · E interact · hold the floor to walk';}
+  if(!e){context=button('interact',near?.id==='dfp'?'Enter DFP / Computer':near?.id==='arena'&&o?.kind==='event'?'Competition briefing':`Talk · ${near?.name||'neighbor'}`,'',!near||near.distance>1.65);inventory=firstPerson(this.state)?'WASD / joystick to move · mouse / right drag to look · E interact':'WASD / arrows · E interact · hold the floor to walk';}
   else{
    const spots=Object.entries(EVENT_SPOTS).filter(([id])=>e.type==='cook'?['batter','pixel','leaf','berry','prep','serve'].includes(id):e.type==='serve'?id==='pantry'||id.startsWith('table'):e.type==='race'?id===`checkpoint${e.checkpoint}`:false);routes=spots.map(([id,p])=>button('walk',p.name,id)).join('');
-   if(e.type==='fight'){context=button('aim','Aim at rival')+button('throw','Throw · F','',e.throwCooldown>0||e.stun>0)+button('dodge',e.dodgeCooldown>0?'Dodge charging':'Dodge · Space','',e.dodgeCooldown>0);inventory=`Land ${eventRules(def).target} splats. Tap arena to aim. Orange ring = incoming!`;}
+   if(e.type==='fight'){context=button('aim','Aim at rival')+button('throw','Throw · F','',e.throwCooldown>0||e.stun>0)+button('dodge',e.dodgeCooldown>0?'Dodge charging':'Dodge · Space','',e.dodgeCooldown>0);inventory=`Land ${eventRules(def).target} splats. ${firstPerson(this.state)?'Look to aim, or use Aim at rival.':'Tap arena to aim.'} Orange ring = incoming!`;}
    else if(near?.distance<1.65){
     if(e.type==='cook'&&near.id==='prep')context=RECIPES.map(r=>button('prepare',r.name,r.id,!!e.cooking||!!e.dish)).join('');
     else if(e.type==='serve'&&near.id==='pantry')context=RECIPES.map(r=>button('meal',r.name,r.id,!!e.dish)).join('');
@@ -85,11 +88,11 @@ export class StoryView{
    if(e.type==='serve'){inventory=e.tables.map((t,i)=>`${EVENT_SPOTS[`table${i}`].name}: ${RECIPES[t.recipe].name} (${t.state})`).join(' · ');inventory+=` · Carrying: ${e.dish?RECIPES.find(r=>r.id===e.dish).name:'nothing'}`;context+=button('clear','Clear tray');}
    if(e.type==='race')inventory=`Next: ${EVENT_SPOTS[`checkpoint${Math.min(2,e.checkpoint)}`].name}. Carts add 2 seconds. Complete all 3; ties retry.`;
   }
-  for(const [id,content]of [['story-context',context],['story-route',routes]]){const el=this.root.querySelector(`#${id}`);if(el.innerHTML!==content)el.innerHTML=content;}
+  for(const [id,content]of [['story-context',context],['story-route',routes]]){const el=this.root.querySelector(`#${id}`);if(el.dfpContent!==content){el.innerHTML=content;el.dfpContent=content;}}
   this.root.querySelector('#story-inventory').textContent=inventory;
  }
  tick(dt){
-  if(!this.opened)return;const st=this.state.story;
+  if(!this.opened)return;const st=this.state.story;this.look.update(currentStoryActor(st));
   const blocked=!this.allowed()||!this.focused||document.hidden||!!this.modal;
   storyTick(this.state,Math.min(.1,Math.max(.0001,dt)),{paused:blocked,x:this.joy.x+(this.keys.has('d')||this.keys.has('arrowright')?1:0)-(this.keys.has('a')||this.keys.has('arrowleft')?1:0),y:this.joy.y+(this.keys.has('s')||this.keys.has('arrowdown')?1:0)-(this.keys.has('w')||this.keys.has('arrowup')?1:0),target:this.target});
   if(this.target&&storyDistance(currentStoryActor(st),this.target)<.15)this.target=null;
@@ -97,6 +100,6 @@ export class StoryView{
   this.renderer.draw(this.state,blocked?0:Math.min(dt,.1));
   this.lastUI+=dt;if(this.lastUI>.1){this.update();this.lastUI=0;}this.lastSave+=dt;if(this.lastSave>2){this.save();this.lastSave=0;}
   const target=st.event?.type==='fight'?{...st.event.rivalActor,name:'Romaine · Aim + Throw'}:st.event?.type==='race'?EVENT_SPOTS[`checkpoint${Math.min(2,st.event.checkpoint)}`]:!st.event?STORY_PLACES[storyObjective(st)?.place]:null;
-  const layer=this.root.querySelector('#story-markers');if(target){const p=this.renderer.project(target,2),r=this.canvas.getBoundingClientRect();layer.textContent=target.name;layer.style.left=`${Math.max(70,Math.min(r.width-70,p.x))}px`;layer.style.top=`${Math.max(16,Math.min(r.height-40,p.y))}px`;layer.hidden=false;}else layer.hidden=true;
+  const layer=this.root.querySelector('#story-markers');if(target){const p=this.renderer.project(target,2),r=this.canvas.getBoundingClientRect();layer.textContent=target.name;layer.style.left=`${Math.max(70,Math.min(r.width-70,p.x))}px`;layer.style.top=`${Math.max(16,Math.min(r.height-40,p.y))}px`;layer.hidden=firstPerson(this.state)&&!p.visible;}else layer.hidden=true;
  }
 }

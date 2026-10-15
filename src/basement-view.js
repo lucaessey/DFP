@@ -1,3 +1,7 @@
+import {firstPerson,moveLounge,recoverLounge,loungeWalkable,petInView} from './first-person.js';
+import {FirstPersonView} from './first-person-view.js';
+import {FirstPersonControls} from './first-person-controls.js';
+import {speed} from './simulation.js';
 import * as T from 'three';
 import {Renderer} from './renderer.js';
 import {ComputerView} from './computer-view.js';
@@ -13,14 +17,14 @@ export function basementCard(s,visiting){return `<article class="floor-card base
 
 class LoungeRenderer{
  constructor(canvas){
-  this.canvas=canvas;this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-8,8,6,-6,.1,60);this.gl=new T.WebGLRenderer({canvas,antialias:true,alpha:true});this.gl.outputColorSpace=T.SRGBColorSpace;this.gl.toneMapping=T.ACESFilmicToneMapping;this.gl.toneMappingExposure=1.18;this.gl.shadowMap.enabled=true;this.gl.shadowMap.type=T.PCFSoftShadowMap;
+  this.canvas=canvas;this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-8,8,6,-6,.1,60);this.overhead=this.camera;this.firstView=new FirstPersonView();this.gl=new T.WebGLRenderer({canvas,antialias:true,alpha:true});this.gl.outputColorSpace=T.SRGBColorSpace;this.gl.toneMapping=T.ACESFilmicToneMapping;this.gl.toneMappingExposure=1.18;this.gl.shadowMap.enabled=true;this.gl.shadowMap.type=T.PCFSoftShadowMap;
   this.scene.add(new T.HemisphereLight('#fff8e7','#bda1cb',2.4));const sun=new T.DirectionalLight('#fff0d3',3.4);sun.position.set(-3,15,10);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16});sun.shadow.normalBias=.04;this.scene.add(sun);
   box(this.scene,'#eed7b9',6,-.2,5,12.2,.4,10.2);for(let x=0;x<12;x+=2)for(let z=0;z<10;z+=2)box(this.scene,(x+z)%4?'#ffe0ac':'#fff0d4',x+1,.015,z+1,1.985,.04,1.985);
   box(this.scene,'#caaddd',6,.55,0,12.2,1.1,.2);box(this.scene,'#caaddd',0,.55,5,.2,1.1,10.2);box(this.scene,'#ffc04b',6,1.13,0,12.3,.1,.26);box(this.scene,'#ffc04b',0,1.13,5,.26,.1,10.3);
   box(this.scene,'#ccace7',6,.057,4.5,6.2,.04,6.6);box(this.scene,'#ebdafa',6,.08,4.5,5.8,.02,6.2);lettering(this.scene,'THE DOWNSTAIRS CLUB',6,1.8,.1,4.7,'#754996','#fff2d2');
   this.objects=new Map();this.known=null;this.last=0;this.lost=false;
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();this.lost=true;});canvas.addEventListener('webglcontextrestored',()=>{this.lost=false;this.last=0;});
-  canvas.dfpDiagnostics=()=>({pet:this.pet?.definition.id??null,furniture:[...this.objects].filter(([id])=>id!=='system').map(([id,o])=>({id,building:o.age<.6})),security:this.objects.has('system'),calls:this.gl.info.render.calls});
+  canvas.dfpDiagnostics=()=>({view:this.fp?this.firstView.diagnostics():{mode:'overhead'},pet:this.pet?.definition.id??null,furniture:[...this.objects].filter(([id])=>id!=='system').map(([id,o])=>({id,building:o.age<.6})),security:this.objects.has('system'),calls:this.gl.info.render.calls});
  }
  object(id){
   const def=FURNITURE.find(p=>p.id===id),g=group(this.scene,def?.x??(id==='computer'?2.2:10),.0,def?.y??(id==='computer'?7.5:1.8));
@@ -42,15 +46,21 @@ class LoungeRenderer{
   return g;
  }
  draw(s){
-  if(this.lost)return;const b=this.canvas.getBoundingClientRect();if(!b.width||!b.height)return;const now=performance.now(),dt=this.last?Math.min(.1,(now-this.last)/1000):0;this.last=now;
+  if(this.lost)return;this.fp=firstPerson(s);this.camera=this.fp?this.firstView.camera:this.overhead;recoverLounge(s);const b=this.canvas.getBoundingClientRect();if(!b.width||!b.height)return;const now=performance.now(),dt=this.last?Math.min(.1,(now-this.last)/1000):0;this.last=now;
   const ratio=s.settings.reducedEffects?1:Math.min(1.5,devicePixelRatio||1);if(this.width!==b.width||this.height!==b.height||ratio!==this.gl.getPixelRatio()){this.width=b.width;this.height=b.height;this.gl.setPixelRatio(ratio);this.gl.setSize(b.width,b.height,false);}this.gl.shadowMap.enabled=!s.settings.reducedEffects;
   const owned={...s.basement.furniture,system:s.basement.security.owned,computer:s.basement.computer.owned};for(const [id,yes]of Object.entries(owned))if(yes&&!this.objects.has(id)){this.objects.set(id,{mesh:this.object(id),age:this.known?0:1});}this.known=owned;
   for(const o of this.objects.values()){o.age+=dt;const t=Math.min(1,o.age/.6),rise=s.settings.reducedMotion?1:1-(1-t)**3;const scale=s.settings.reducedMotion?1:.8+.2*rise+.035*Math.sin(t*Math.PI);o.mesh.scale.setScalar(scale);o.mesh.position.y=-.25*(1-rise);}
   if(this.look!==s.outfit){if(this.actor){this.scene.remove(this.actor.root);this.actor.contact.material.dispose();}this.actor=character(OUTFITS.find(o=>o.id===s.outfit));this.actor.root.position.set(8.8,0,8.4);this.actor.rig.rotation.y=-2.3;this.scene.add(this.actor.root);this.look=s.outfit;}
-  this.actor.torso.scale.y=s.settings.reducedMotion?1:1+Math.sin(now*.0018)*.012;
+  this.actor.root.visible=!this.fp;this.actor.root.position.set(s.view.lounge.x,0,s.view.lounge.y);this.actor.torso.scale.y=s.settings.reducedMotion?1:1+Math.sin(now*.0018)*.012;
   const pet=equippedPet(s);if(this.pet?.definition.id!==pet?.id){if(this.pet)this.scene.remove(this.pet.root);this.pet=pet?petModel(pet):null;if(this.pet){this.pet.root.scale.setScalar(.7);this.pet.root.position.set(7.65,0,8.35);this.pet.root.rotation.y=-2.3;this.pet.reaction=1;this.scene.add(this.pet.root);}}
-  if(this.pet)animatePet(this.pet,dt,now/1000,false,s.settings.reducedMotion);
-  const aspect=b.width/b.height,w=Math.max(15,11.7*aspect);Object.assign(this.camera,{left:-w/2,right:w/2,top:w/aspect/2,bottom:-w/aspect/2});this.camera.position.set(17,16,20);this.camera.lookAt(6,.45,4.5);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();this.gl.render(this.scene,this.camera);
+  if(this.pet){
+   const p=s.view.lounge,r=this.pet.root.position,valid=(x,y)=>loungeWalkable(s,x,y,.5);let target=null;
+   for(let gap=1.3;gap<3&&!target;gap+=.4)for(let i=0;i<12;i++){const t={x:p.x+Math.cos(i*Math.PI/6)*gap,y:p.y+Math.sin(i*Math.PI/6)*gap};if(valid(t.x,t.y)&&(!this.fp||!petInView(t,p,s.view.yaw))){target=t;break;}}
+   const before=r.clone(),d=Math.hypot(r.x-p.x,r.z-p.y);if(target&&(d>1.8||this.fp&&petInView({x:r.x,y:r.z},p,s.view.yaw))){const n=Math.max(.001,Math.hypot(target.x-r.x,target.y-r.z)),factor=Math.min(1,dt*4.2/n),dx=(target.x-r.x)*factor,dz=(target.y-r.z)*factor;if(valid(r.x+dx,r.z))r.x+=dx;if(valid(r.x,r.z+dz))r.z+=dz;}
+   const moved=before.distanceTo(r);this.petStuck=d>2&&moved<.001?(this.petStuck||0)+dt:0;if(target&&(d>8||this.petStuck>2||!valid(r.x,r.z))){r.set(target.x,0,target.y);this.petStuck=0;}
+   if(moved>.001)this.pet.root.rotation.y=Math.atan2(r.x-before.x,r.z-before.z);animatePet(this.pet,dt,now/1000,moved>.001,s.settings.reducedMotion,moved/Math.max(.001,dt));
+  }
+  const aspect=b.width/b.height,w=Math.max(15,11.7*aspect);Object.assign(this.overhead,{left:-w/2,right:w/2,top:w/aspect/2,bottom:-w/aspect/2});if(this.fp)this.firstView.update(s,{...s.view.lounge,bag:s.player.bag},b.width,b.height);else{this.camera.position.set(17,16,20);this.camera.lookAt(6,.45,4.5);this.camera.updateProjectionMatrix();this.camera.updateMatrixWorld();}this.gl.render(this.scene,this.camera);if(this.fp)this.firstView.render(this.gl);
  }
  project(x,z,y=0){const p=new T.Vector3(x,y,z).project(this.camera),r=this.canvas.getBoundingClientRect();return{x:(p.x*.5+.5)*r.width,y:(-.5*p.y+.5)*r.height};}
 }
@@ -58,7 +68,11 @@ class LoungeRenderer{
 export class BasementView{
  constructor(s,{purchase,save,notify,watchAllowed}){
   this.state=s;this.purchase=purchase;this.save=save;this.notify=notify;this.watchAllowed=watchAllowed;this.monitoring=false;this.focused=true;this.people=new Map();
-  this.view=document.createElement('section');this.view.id='basement-view';this.view.hidden=true;this.view.innerHTML=`<div class="basement-heading"><div><span class="eyebrow">B1 · YOUR LITTLE HIDEAWAY</span><h1>The Basement.</h1><p>Make yourself comfortable. Keep an eye upstairs.</p></div><button class="outline-button" data-action="elevator">Elevator ↑</button></div><div class="basement-layout"><div class="lounge-scene"><canvas id="lounge-canvas" aria-label="3D basement lounge"></canvas><span id="lounge-tv" class="small-button">TV</span><button id="lounge-computer" class="small-button" data-action="basement-computer">Open computer</button></div><div class="basement-shop"><div id="furniture-shop"></div><section class="computer-purchase"><span class="eyebrow">YOUR DOWNSTAIRS DESKTOP</span><h2>Pixel Desk computer</h2><p>Security, customer mail and a little play time.</p><button class="computer-button" id="computer-buy" data-action="basement-computer-buy">Buy computer · $100</button><p id="computer-hint"></p></section></div></div>`;document.querySelector('#main').append(this.view);
+  this.view=document.createElement('section');this.view.id='basement-view';this.view.hidden=true;this.view.innerHTML=`<div class="basement-heading"><div><span class="eyebrow">B1 · YOUR LITTLE HIDEAWAY</span><h1>The Basement.</h1><p>Make yourself comfortable. Keep an eye upstairs.</p></div><button class="outline-button" data-action="elevator">Elevator ↑</button></div><div class="basement-layout"><div class="lounge-scene"><canvas id="lounge-canvas" aria-label="3D basement lounge"></canvas><div class="lounge-joystick" role="slider" aria-label="Lounge movement joystick" tabindex="0"><span></span></div><span id="lounge-tv" class="small-button">TV</span><button id="lounge-computer" class="small-button" data-action="basement-computer">Open computer</button></div><div class="basement-shop"><div id="furniture-shop"></div><section class="computer-purchase"><span class="eyebrow">YOUR DOWNSTAIRS DESKTOP</span><h2>Pixel Desk computer</h2><p>Security, customer mail and a little play time.</p><button class="computer-button" id="computer-buy" data-action="basement-computer-buy">Buy computer · $100</button><p id="computer-hint"></p></section></div></div>`;document.querySelector('#main').append(this.view);
+  this.walkKeys=new Set();this.joy={x:0,y:0};this.look=new FirstPersonControls(this.view.querySelector('canvas'),s,{active:()=>this.loungeActive(),stop:()=>this.stopWalk()});
+  const joy=this.view.querySelector('.lounge-joystick'),move=e=>{const r=joy.getBoundingClientRect(),x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2,n=Math.max(28,Math.hypot(x,y));this.joy={x:x/n,y:y/n};joy.querySelector('span').style.transform=`translate(${x/n*24}px,${y/n*24}px)`;};
+  joy.addEventListener('pointerdown',e=>{if(!this.loungeActive()||this.joyPointer!==undefined)return;this.joyPointer=e.pointerId;joy.setPointerCapture(e.pointerId);move(e);});joy.addEventListener('pointermove',e=>{if(e.pointerId===this.joyPointer)move(e);});for(const type of ['pointerup','pointercancel','lostpointercapture'])joy.addEventListener(type,e=>{if(e.pointerId===this.joyPointer){this.joyPointer=undefined;this.joy={x:0,y:0};joy.querySelector('span').style.transform='';}});
+  window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(!firstPerson(s)||!this.loungeActive()||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){e.preventDefault();this.walkKeys.add(k);}});window.addEventListener('keyup',e=>this.walkKeys.delete(e.key.toLowerCase()));
   this.overlay=document.createElement('section');this.overlay.className='security-overlay';this.overlay.hidden=true;this.overlay.setAttribute('aria-label','Live security monitoring');this.overlay.innerHTML=`<header class="security-header"><div><span class="eyebrow">● DFP SECURITY · LIVE</span><h2 id="security-floor"></h2></div><strong id="security-balance"></strong><div class="security-returns"><button class="outline-button" data-action="security-exit" aria-label="Back to Computer">Back to Computer</button><button class="outline-button" data-action="security-dfp">Back to DFP</button></div></header><div class="security-info"><strong id="security-status"></strong><span>Catch +$15 · Wrong person / escape −$5</span></div><div class="security-feed"><canvas id="security-canvas" tabindex="0" aria-label="Live security footage. Click or tap the person stealing. Use arrow keys to pan."></canvas><div id="security-targets"></div><span class="camera-corner">CAM <b id="camera-number">1</b> · LIVE</span></div><div class="security-feedback" id="security-feedback" role="status" aria-live="polite">Look for a person taking goods and hiding them in a sack.</div><footer class="security-controls"><div><button data-action="security-camera" data-id="work" aria-pressed="true">Workstations</button><button data-action="security-camera" data-id="service" aria-pressed="false">Service</button><button data-action="security-camera" data-id="dining" aria-pressed="false">Dining</button></div><div><button data-action="security-zoom" data-id="out" aria-label="Zoom out">−</button><button data-action="security-zoom" data-id="in" aria-label="Zoom in">+</button></div></footer>`;document.querySelector('#app').append(this.overlay);
   this.computer=new ComputerView(s,{purchase,save,openSecurity:()=>this.open(),closeSecurity:()=>this.close(false),onClose:()=>this.view.querySelector('#lounge-computer').focus({preventScroll:true})});
   this.overlay.addEventListener('click',e=>{let b=e.target.closest('[data-person]');if(!b)return;
@@ -105,7 +119,12 @@ export class BasementView{
   if(action==='security-camera'){const positions={work:{x:6,y:3.5},service:{x:8,y:10},dining:{x:20,y:8}};this.feed.securityFocus={...positions[id]};this.overlay.querySelectorAll('[data-action="security-camera"]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===id)));document.querySelector('#camera-number').textContent=({work:1,service:2,dining:3})[id];}
   this.update();
  }
+ loungeActive(){return !this.view.hidden&&!this.monitoring&&!this.computer?.opened&&this.focused&&this.watchAllowed();}
+ stopWalk(){this.walkKeys.clear();this.joy={x:0,y:0};this.joyPointer=undefined;this.view.querySelector('.lounge-joystick span').style.transform='';}
+ updateLook(){this.look.update(this.state.player);}
  draw(){
+  const now=performance.now(),dt=this.walkLast?Math.min(.1,(now-this.walkLast)/1000):0;this.walkLast=now;
+  if(firstPerson(this.state)&&this.loungeActive()){const k=this.walkKeys;moveLounge(this.state,this.joy.x+(k.has('d')||k.has('arrowright')?1:0)-(k.has('a')||k.has('arrowleft')?1:0),this.joy.y+(k.has('s')||k.has('arrowdown')?1:0)-(k.has('w')||k.has('arrowup')?1:0),dt,speed(this.state,this.state.player,this.state.floor));}
   const s=this.state;if(!this.view.hidden&&!this.monitoring&&!this.computer.opened){this.lounge.draw(s);const p=this.lounge.project(6,1.7,2.4),tv=this.view.querySelector('#lounge-tv');tv.style.left=`${p.x}px`;tv.style.top=`${p.y}px`;const cp=this.lounge.project(2.2,7.5,2.65),button=this.view.querySelector('#lounge-computer');button.style.left=`${cp.x}px`;button.style.top=`${cp.y}px`;}this.computer.update();
   if(!this.monitoring)return;const floor=highestFloor(s),r=s.basement.security.round,projection={...s,floor,player:{...s.player,action:'',moving:false,x:7.5,y:5},securityRound:r};
   this.feed.draw(projection,s.time);const visible=new Set();

@@ -4,11 +4,11 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {newGame,command} from '../src/simulation.js';
 import {encode} from '../src/storage.js';
 import {STORY_OBJECTIVES,STORY_PLACES,EVENT_SPOTS,RECIPES} from '../src/story-data.js';
-const base=process.env.DFP_TEST_URL||'http://127.0.0.1:4173/',out='artifacts/story';mkdirSync(out,{recursive:true});
+const base=process.env.DFP_TEST_URL||'http://127.0.0.1:4173/',out=process.env.DFP_TEST_OUTFIT==='explorer'?'artifacts/first-person/story':'artifacts/story';mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({channel:'msedge',headless:true}),checks=[],errors=[];let context,page;
-const press=sel=>page.locator(sel).press('Enter');const button=(action,id)=>`[data-story="${action}"]${id===undefined?'':`[data-id="${id}"]`}`;
+const press=sel=>process.env.DFP_TEST_OUTFIT==='explorer'?page.locator(sel).click():page.locator(sel).press('Enter');const button=(action,id)=>`[data-story="${action}"]${id===undefined?'':`[data-id="${id}"]`}`;
 const advance=ms=>page.clock.runFor(ms),snap=()=>page.evaluate(()=>JSON.parse(JSON.parse(localStorage.getItem('dfp.save')).data));
-function ready(){const s=newGame();s.money=20000;for(const c of [{type:'basement'},{type:'computer'},{type:'email'},{type:'pet-buy',id:'dog'},{type:'outfit',id:'chef'}])command(s,c);s.settings.sound=false;s.player.bag=['controller','drink'];return s;}
+function ready(){const s=newGame();s.money=20000;for(const c of [{type:'basement'},{type:'computer'},{type:'email'},{type:'pet-buy',id:'dog'},{type:'outfit',id:process.env.DFP_TEST_OUTFIT||'chef'}])command(s,c);s.settings.sound=false;s.player.bag=['controller','drink'];return s;}
 async function open(s,viewport={width:1360,height:900},touch=false){await context?.close();context=await browser.newContext({viewport,isMobile:touch,hasTouch:touch});await context.addInitScript(data=>{if(!sessionStorage.seeded){localStorage.setItem('dfp.save',data);sessionStorage.seeded='1';}},encode(s));page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.clock.install();await page.goto(base);await advance(150);}
 async function inbox(){await press('[data-tab="elevator"]');await press('[data-action="basement-visit"]');await press('#lounge-computer');await press('[data-computer="email"]');await press('[data-computer="story-inbox"]');}
 async function waitAt(p){for(let i=0;i<70;i++){await advance(300);const a=await page.locator('#story-canvas').evaluate(c=>c.dfpDiagnostics().actor);if(Math.hypot(a.x-p.x,a.y-p.y)<.15){await advance(150);return;}}throw new Error(`Did not reach ${JSON.stringify(p)}; ${await page.locator('#story-message').textContent()}`);}

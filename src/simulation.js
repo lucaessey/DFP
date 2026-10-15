@@ -1,3 +1,4 @@
+import {newView,movementDirection} from './first-person.js';
 import {newActivity,expansionSpawn,expansionStatus,expansionInteract,expansionGoal,expansionTick,expansionPet} from './expansion.js';
 import {UMBRELLA_COST} from './expansion-config.js';
 import { BALANCE as B, FLOORS, LAYOUTS, OUTFITS, ROSTER, UPGRADE_TYPES, PRODUCTS, ITEMS, WORLD, TABLE_COUNT, FLOOR_FOODS, tableCost, tableSeat, stationOpen, stationPrice, floorCount, upgradeCount, playerUpgradeCost, employeeUpgradeCost } from './config.js';
@@ -14,7 +15,7 @@ import {newStory} from './story.js';
 const upgrades = () => ({ speed: 0, capacity: 0, profit: 0 });
 export const newActor = () => ({ x: WORLD.kitchen.x, y: WORLD.kitchen.y, bag: [], action: '', progress: 0, path: [], pathKey: '', moving: false, facing: 1 });
 export function newGame() {
-  return { version: 11, story:newStory(), pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
+  return { version: 12, view:newView(), story:newStory(), pets:newPets(), basement:newBasement(), layoutVersion: LAYOUT_VERSION, money: B.startCash, earned: 0, served: 0, time: 0, seed: 37042, nextId: 1, revision: 0, floor: 0,
     player: newActor(), employees: [], outfits: ['uniform'], outfit: 'uniform', tutorial: 0,
     settings: { sound: true, reducedMotion: false, reducedEffects: false }, transactions: [], events: [], vr: null,
     floors: FLOORS.map((f, i) => ({ ...(i>=4?{activity:newActivity()}:{}), unlocked: i === 0, section: false, products:Object.fromEntries(PRODUCTS.filter(p=>p.floor===i).map(p=>[p.id,false])), upgrades: upgrades(), stock: Object.fromEntries(['raw',...ITEMS].map(k=>[k,0])), counter:Object.fromEntries(ITEMS.map(k=>[k,0])), fry: 0, cooking: false, customers: [], arrival: i === 0 ? 0.2 : 1, revenue: 0, served: 0, shelves: { souvenir: 0, keychain: 0 }, tables: Array.from({length:TABLE_COUNT},()=>({owned:false,state:'free',customer:null,meal:null})), machines: [0, 1, 2].map(() => ({ customer: null, quarters: 0, timer: 0 })) })),
@@ -433,9 +434,7 @@ export function step(s, dt = B.step, input = {}) {
   a.moving = false;
   if (input.x || input.y) {
     a.path = []; a.pathKey = '';
-    // Convert screen-space joystick/keyboard direction to isometric world direction.
-    let dx = (input.x || 0) + (input.y || 0), dy = (input.y || 0) - (input.x || 0);
-    const length = Math.hypot(dx, dy); dx /= Math.max(1, length); dy /= Math.max(1, length);
+    const {x:dx,y:dy}=movementDirection(s,input.x,input.y);
     move(a, dx * speed(s, a, s.floor) * dt, dy * speed(s, a, s.floor) * dt, s.floor);
   } else if (input.target) followPath(a, s.floor, input.target, dt, speed(s, a, s.floor));
   for (let f = 0; f < FLOORS.length; f++) {

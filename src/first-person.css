@@ -1,0 +1,29 @@
+.fp-controls{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.fp-controls[hidden]{display:none}
+.fp-look-zone{position:absolute;left:50%;right:0;top:0;bottom:0;pointer-events:auto;touch-action:none;cursor:grab}
+.fp-crosshair{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:white;text-shadow:0 1px 3px #25464b}
+.fp-look-button{pointer-events:auto;position:absolute;top:78px;left:50%;transform:translateX(-50%);border:1px solid #bed3cb;border-radius:20px;background:#fff9e9ed;color:#294749;padding:8px 14px;font:inherit;font-size:12px;font-weight:700;white-space:nowrap}
+.fp-look-hint{display:none;position:absolute;right:12px;bottom:38px;font-size:10px;color:#294749;background:#fff9e9d9;border-radius:9px;padding:5px 8px}
+.fp-carry{position:absolute;right:12px;bottom:12px;color:#294749;font-size:12px;font-weight:800;background:#fff6d9e8;border-radius:9px;padding:5px 9px}
+.fp-carry:empty{display:none}
+.fp-task:empty{display:none}
+.fp-task{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);max-width:65%;padding:7px 12px;border-radius:12px;background:#fff8e9e8;color:#294749;font-size:11px;text-align:center}
+.first-person .world-ui{z-index:6;pointer-events:none}
+.first-person .world-ui button{pointer-events:auto}
+.first-person .scene-top,.first-person .scene-bottom,.first-person #joystick{z-index:7}
+.first-person .station-label{max-width:145px}
+#main .first-person>button{z-index:8}
+.play-area .fp-carry{display:none}
+.story-scene .fp-look-button,.lounge-scene .fp-look-button{top:12px}
+.first-person #story-modal{z-index:20}
+.first-person #story-markers{pointer-events:none;z-index:7}
+.lounge-scene.first-person #lounge-computer{left:50%!important;top:auto!important;bottom:20px;z-index:8;transform:translateX(-50%)}
+.lounge-scene.first-person #lounge-tv{display:none}
+.lounge-joystick{display:none;position:absolute;bottom:16px;left:16px;width:80px;height:80px;border:2px solid #fff9e9;border-radius:50%;background:#ffffff88;z-index:8;touch-action:none}
+.first-person .lounge-joystick{display:grid;place-items:center}
+.lounge-joystick span{width:32px;height:32px;border-radius:50%;background:#e9a75a;pointer-events:none}
+@media(pointer:coarse){.fp-look-button{display:none}.fp-look-hint{display:block;top:12px;bottom:auto;right:auto;left:15px;white-space:nowrap}.play-area .fp-look-hint{top:148px;font-size:9px}}
+@media(max-width:480px){.fp-look-button{top:65px;font-size:10px}.fp-carry{font-size:10px}.outfit-body p{font-size:12px}}
+@media(max-width:650px){.play-area .fp-task{bottom:115px;max-width:75%;font-size:10px}}
+@media(max-height:480px){.play-area .fp-task{bottom:40px;max-width:40%;font-size:9px;padding:4px 7px}}
+@media(max-height:480px) and (pointer:coarse){.play-area .fp-look-hint{top:25px;left:50%;transform:translateX(-50%)}}

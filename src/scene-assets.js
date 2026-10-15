@@ -223,6 +223,7 @@ export function character(outfit,variation=0,role='player') {
   if(['chef','staff'].includes(outfit.id)){
     box(torso,'#fff4dc',0,.025,.17,.30,.35,.04);box(torso,role==='staff'?outfit.color:'#e98b3e',0,.045,.196,.16,.06,.018);
   }
+  if(outfit.id==='explorer'){box(torso,'#f4d17a',0,.06,.18,.28,.22,.04);box(torso,'#254b54',0,.08,.21,.15,.1,.025);ball(torso,'#a8e5e2',0,.08,.23,.055);}
   if(outfit.id==='formal'){box(torso,'#fff4df',0,.19,.17,.14,.25,.026);box(torso,'#ddaa53',0,.17,.19,.048,.19,.018);}
   if(outfit.id==='retro'){box(torso,'#ffe7a2',0,.09,.173,.23,.13,.025);for(const x of [-.065,.065])ball(torso,'#526d94',x,.09,.19,.045);}
   if(outfit.id==='neon'){for(const x of [-.15,.15])capsule(torso,'#c4f97b',x,.08,.14,.036,.35,.028);}

@@ -1,3 +1,4 @@
+import {movementDirection} from './first-person.js';
 import {STORY_OBJECTIVES,STORY_PLACES,STORY_EMAILS,RECIPES,EVENT_SPOTS,eventRules} from './story-data.js';
 import {storyDistance,storyMove,storyFollow,storyWalkable} from './story-navigation.js';
 
@@ -83,7 +84,7 @@ export function storyTick(s,dt,input={}){
  const st=s.story;if(!st.active||input.paused||st.location==='computer'||st.restart)return;
  const e=st.event;if(e&&e.status!=='running')return;st.clock+=dt;
  const a=currentStoryActor(st),type=storyScene(st);a.moving=false;
- if(!e||e.stun<=0){if(input.x||input.y){const dx=(input.x||0)+(input.y||0),dy=(input.y||0)-(input.x||0),n=Math.max(1,Math.hypot(dx,dy));a.path=[];a.pathKey='';storyMove(a,type,dx/n*4.2*dt,dy/n*4.2*dt);}else if(input.target)storyFollow(a,type,input.target,dt);}
+ if(!e||e.stun<=0){if(input.x||input.y){const {x:dx,y:dy}=movementDirection(s,input.x,input.y),n=1;a.path=[];a.pathKey='';storyMove(a,type,dx/n*4.2*dt,dy/n*4.2*dt);}else if(input.target)storyFollow(a,type,input.target,dt);}
  if(!e)return;
  const o=STORY_OBJECTIVES.find(o=>o.id===e.id),rules=eventRules(o);e.elapsed+=dt;
  e.stun=Math.max(0,e.stun-dt);e.dodge=Math.max(0,e.dodge-dt);e.dodgeCooldown=Math.max(0,e.dodgeCooldown-dt);e.throwCooldown=Math.max(0,e.throwCooldown-dt);
