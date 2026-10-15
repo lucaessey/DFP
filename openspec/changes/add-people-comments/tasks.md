@@ -51,7 +51,8 @@
 
 - [x] 8.1 Correct the production email return URL and domain error message; verify the built Firebase request targets the custom-domain `/DFP/` game, without sending real email.
 - [x] 8.2 Verify email completion, reload, different-device confirmation, failures and saved progress with the Auth emulator; build and validate the updated specifications.
-- [ ] 8.3 Add both custom domains to Firebase's authorized list, publish the frontend and verify a fresh owner email completes on the live custom-domain game. Keep unverified live work unchecked.
+- [x] 8.3 Verify both custom domains in Firebase's authorized list, publish the frontend and confirm the live game serves the corrected return URL.
+- [ ] 8.4 Verify a fresh owner email completes on the live custom-domain game and the session survives reload. Keep this owner inbox check unverified until confirmed.
 
 ## Activation status
 
